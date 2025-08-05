@@ -5,119 +5,78 @@ import {
   StatusBar,
   Image,
   TouchableOpacity,
-  Alert,
-  Switch,
   TextInput,
   ScrollView,
   StyleSheet,
 } from 'react-native';
-import { Button } from 'react-native/types_generated/index';
+import LinearGradient from 'react-native-linear-gradient';
+import { Dimensions } from 'react-native';
+const { width } = Dimensions.get('window');
 
 const Login = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   return (
-    <ScrollView style={{ backgroundColor: 'white' }}>
-      <View style={{ flex: 1, justifyContent: 'center' }}>
+    <LinearGradient
+      colors={['#ffffff', 'rgba(255,0,0,0.18)']}
+      style={{ flex: 1 }}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+    >
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
         <StatusBar barStyle={'dark-content'} />
-        <View
-          style={{
-            justifyContent: 'center',
-            alignItems: 'center',
-            marginTop: 90,
-          }}
-        >
+
+        {/* Gambar di atas */}
+        <View style={styles.imageContainer}>
           <Image
-            source={require('../../src/img/bg_ukai_new.png')}
-            style={{ width: 250, height: 100 }}
+            source={require('../../src/img/img_login.png')}
+            style={styles.image}
           />
         </View>
 
-        <View
-          style={{
-            justifyContent: 'center',
-            backgroundColor: '#981417',
-            padding: 20,
-            marginHorizontal: 30,
-            borderRadius: 20,
-            marginTop: 50,
-            marginBottom: 20,
-          }}
-        >
-          <View style={{ paddingHorizontal: 5 }}>
-            <Text
-              style={{
-                fontSize: 30,
-                fontWeight: 'bold',
-                color: 'white',
-                textAlign: 'center',
-              }}
+        {/* Konten form login */}
+        <View style={styles.content}>
+          <Text style={styles.loginTitle}>SELAMAT DATANG</Text>
+          <Text style={styles.label}>
+            Platform penyedia layanan Pendidikan Farmasi berbasis teknologi
+            terbaik dan termurah
+          </Text>
+
+          <TextInput
+            value={email}
+            style={styles.inputtext}
+            placeholder="Masukkan Email"
+            placeholderTextColor="gray"
+            onChangeText={teks => setEmail(teks)}
+          />
+
+          <TextInput
+            value={password}
+            style={styles.inputtext}
+            placeholder="Masukkan Password"
+            placeholderTextColor="gray"
+            onChangeText={teks => setPassword(teks)}
+            secureTextEntry
+          />
+
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity
+              style={styles.tombol}
+              onPress={() => navigation.navigate('Home')}
             >
-              Login
-            </Text>
-            <Text style={{ color: 'white', marginTop: 20 }}>Email</Text>
-            <TextInput
-              value={email}
-              style={styles.inputtext}
-              placeholder="Masukkan Email"
-              placeholderTextColor="gray"
-              onChangeText={teks => setEmail(teks)}
-            ></TextInput>
-            <Text style={{ color: 'white' }}>Password</Text>
-            <TextInput
-              value={password}
-              style={styles.inputtext}
-              placeholder="Masukkan Password"
-              placeholderTextColor="gray"
-              onChangeText={teks => setPassword(teks)}
-              secureTextEntry
-            ></TextInput>
-            <View
-              style={{
-                justifyContent: 'center',
-                alignItems: 'center',
-                marginTop: 10,
-              }}
-            >
-              <TouchableOpacity
-                style={styles.tombol}
-                onPress={() => navigation.navigate('Home')}
-              >
-                <Text
-                  style={{ color: 'white', fontWeight: 'bold', fontSize: 18 }}
-                >
-                  Login
-                </Text>
-              </TouchableOpacity>
-            </View>
-            {/* <View
-              style={{
-                justifyContent: 'center',
-                alignItems: 'center',
-                marginTop: 10,
-              }}
-            >
-              <TouchableOpacity
-                style={[styles.tombol, { backgroundColor: 'green' }]}
-              >
-                <Text
-                  style={{ color: 'white', fontWeight: 'bold', fontSize: 18 }}
-                >
-                  Register
-                </Text>
-              </TouchableOpacity>
-            </View> */}
+              <Text style={styles.loginButtonText}>Login</Text>
+            </TouchableOpacity>
           </View>
         </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
   tombol: {
-    backgroundColor: 'blue',
+    backgroundColor: '#a81414ff',
     marginVertical: 10,
     paddingVertical: 10,
     paddingHorizontal: 10,
@@ -128,11 +87,54 @@ const styles = StyleSheet.create({
   },
   inputtext: {
     backgroundColor: 'white',
-    borderRadius: 10,
+    borderRadius: 20,
     marginTop: 4,
     color: '#000000',
-    paddingLeft: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    marginHorizontal: 10,
+    marginVertical: 10,
     fontSize: 14,
+  },
+  loginTitle: {
+    fontSize: 30,
+    fontWeight: 'bold',
+    color: '#000',
+    textAlign: 'center',
+    paddingHorizontal: 10,
+  },
+  label: {
+    color: '#000',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  loginButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 18,
+  },
+
+  imageContainer: {
+    alignItems: 'center',
+    marginTop: 30,
+    marginBottom: 10,
+  },
+  image: {
+    width: width * 0.7, // 70% dari lebar layar
+    height: width * 0.7,
+    resizeMode: 'contain',
+  },
+
+  content: {
+    flex: 1,
+    paddingHorizontal: 30,
+    marginTop: 20,
+  },
+
+  buttonContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 20,
   },
 });
 
