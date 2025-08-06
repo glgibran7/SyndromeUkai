@@ -9,7 +9,7 @@ import {
   Button,
   TouchableOpacity,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/FontAwesome6';
+//import Icon from 'react-native-vector-icons/FontAwesome6';
 
 const Home = () => {
   return (
@@ -90,7 +90,7 @@ const Home = () => {
                 marginRight: 10,
               }}
             >
-              <Icon name="user" size={18} color="blue" />
+              {/* <Icon name="user" size={18} color="blue" /> */}
             </View>
             <Text style={{ color: 'white', fontWeight: 'bold' }}>User</Text>
           </TouchableOpacity>
@@ -118,7 +118,7 @@ const Home = () => {
                 marginRight: 10,
               }}
             >
-              <Icon name="list" size={18} color="blue" />
+              {/* <Icon name="list" size={18} color="blue" /> */}
             </View>
             <Text style={{ color: 'white', fontWeight: 'bold' }}>
               Pendaftaran
@@ -150,7 +150,7 @@ const Home = () => {
                 marginRight: 10,
               }}
             >
-              <Icon name="pen-to-square" size={18} color="blue" />
+              {/* <Icon name="pen-to-square" size={18} color="blue" /> */}
             </View>
             <Text style={{ color: 'white', fontWeight: 'bold' }}>Soal</Text>
           </TouchableOpacity>
@@ -177,9 +177,7 @@ const Home = () => {
                 alignItems: 'center',
                 marginRight: 10,
               }}
-            >
-              <Icon name="book" size={18} color="blue" />
-            </View>
+            ></View>
             <Text style={{ color: 'white', fontWeight: 'bold' }}>Materi</Text>
           </TouchableOpacity>
         </View>
@@ -208,7 +206,7 @@ const Home = () => {
                 marginRight: 10,
               }}
             >
-              <Icon name="video" size={18} color="blue" />
+              {/* <Icon name="video" size={18} color="blue" /> */}
             </View>
             <Text style={{ color: 'white', fontWeight: 'bold' }}>Video</Text>
           </TouchableOpacity>
@@ -236,7 +234,7 @@ const Home = () => {
                 marginRight: 10,
               }}
             >
-              <Icon name="suitcase" size={18} color="blue" />
+              {/* <Icon name="suitcase" size={18} color="blue" /> */}
             </View>
             <Text style={{ color: 'white', fontWeight: 'bold' }}>Paket</Text>
           </TouchableOpacity>

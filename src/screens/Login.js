@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -10,12 +10,17 @@ import {
   StyleSheet,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
+import Ionicons from '@react-native-vector-icons/ionicons';
+
+import FontAwesome6 from '@react-native-vector-icons/fontawesome';
+
 import { Dimensions } from 'react-native';
 const { width } = Dimensions.get('window');
 
 const Login = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [secureText, setSecureText] = useState(true);
 
   return (
     <LinearGradient
@@ -27,7 +32,7 @@ const Login = ({ navigation }) => {
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
         <StatusBar barStyle={'dark-content'} />
 
-        {/* Gambar di atas */}
+        {/* Gambar */}
         <View style={styles.imageContainer}>
           <Image
             source={require('../../src/img/img_login.png')}
@@ -35,37 +40,81 @@ const Login = ({ navigation }) => {
           />
         </View>
 
-        {/* Konten form login */}
+        {/* Konten */}
         <View style={styles.content}>
           <Text style={styles.loginTitle}>SELAMAT DATANG</Text>
           <Text style={styles.label}>
-            Platform penyedia layanan Pendidikan Farmasi berbasis teknologi
-            terbaik dan termurah
+            Platform penyedia layanan Pendidikan Farmasi berbasis teknologi{' '}
+            <Text style={[styles.label, { fontWeight: 'bold' }]}>
+              terbaik dan termurah
+            </Text>
           </Text>
 
-          <TextInput
-            value={email}
-            style={styles.inputtext}
-            placeholder="Masukkan Email"
-            placeholderTextColor="gray"
-            onChangeText={teks => setEmail(teks)}
-          />
+          {/* Input Email dengan Icon */}
+          <View style={styles.inputWrapper}>
+            <Ionicons name="mail" size={18} color="gray" style={styles.icon} />
+            <TextInput
+              value={email}
+              style={styles.inputtext}
+              placeholder="Masukkan Email"
+              placeholderTextColor="gray"
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+          </View>
 
-          <TextInput
-            value={password}
-            style={styles.inputtext}
-            placeholder="Masukkan Password"
-            placeholderTextColor="gray"
-            onChangeText={teks => setPassword(teks)}
-            secureTextEntry
-          />
+          {/* Input Password dengan Icon dan View Button */}
+          <View style={styles.inputWrapper}>
+            <FontAwesome6
+              name="lock"
+              size={21}
+              color="gray"
+              style={styles.iconPassword}
+            />
 
+            <TextInput
+              value={password}
+              style={styles.inputtext}
+              placeholder="Masukkan Password"
+              placeholderTextColor="gray"
+              onChangeText={setPassword}
+              secureTextEntry={secureText}
+            />
+            <TouchableOpacity onPress={() => setSecureText(!secureText)}>
+              <FontAwesome6
+                name={secureText ? 'eye-slash' : 'eye'}
+                size={20}
+                color="gray"
+                style={styles.iconRight}
+              />
+            </TouchableOpacity>
+          </View>
+
+          {/* Lupa Password */}
+          <TouchableOpacity
+            onPress={() => navigation.navigate('ForgotPassword')}
+          >
+            <Text style={styles.forgotPassword}>Lupa Password?</Text>
+          </TouchableOpacity>
+
+          {/* Tombol Login */}
           <View style={styles.buttonContainer}>
             <TouchableOpacity
               style={styles.tombol}
               onPress={() => navigation.navigate('Home')}
             >
               <Text style={styles.loginButtonText}>Login</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Tombol Sign Up */}
+          <View style={styles.buttonContainerSignUp}>
+            <TouchableOpacity
+              style={styles.tombolSignUp}
+              onPress={() => navigation.navigate('SignUp')}
+            >
+              <Text style={styles.loginButtonText}>Sign Up</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -85,56 +134,90 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 20,
   },
-  inputtext: {
-    backgroundColor: 'white',
-    borderRadius: 20,
-    marginTop: 4,
-    color: '#000000',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    marginHorizontal: 10,
+  tombolSignUp: {
+    backgroundColor: '#feb600ff',
     marginVertical: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    width: 150,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 20,
+  },
+  inputtext: {
+    flex: 1,
+    color: '#000',
+    paddingHorizontal: 10,
     fontSize: 14,
   },
+  inputWrapper: {
+    backgroundColor: 'white',
+    borderRadius: 20,
+    marginHorizontal: 10,
+    marginVertical: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  icon: {
+    marginLeft: 5,
+  },
+  iconPassword: {
+    marginLeft: 9,
+  },
+  iconRight: {
+    marginRight: 5,
+  },
   loginTitle: {
-    fontSize: 30,
+    fontSize: 40,
     fontWeight: 'bold',
     color: '#000',
     textAlign: 'center',
-    paddingHorizontal: 10,
+    marginTop: -12,
   },
+
   label: {
     color: '#000',
     textAlign: 'center',
     marginBottom: 10,
+    paddingHorizontal: 10,
+    fontSize: 12,
+  },
+  forgotPassword: {
+    color: '#000000ff',
+    fontSize: 13,
+    textAlign: 'right',
+    marginRight: 20,
+    marginTop: 2,
   },
   loginButtonText: {
     color: 'white',
     fontWeight: 'bold',
     fontSize: 18,
   },
-
   imageContainer: {
     alignItems: 'center',
-    marginTop: 30,
-    marginBottom: 10,
+    marginTop: 50,
   },
   image: {
-    width: width * 0.7, // 70% dari lebar layar
+    width: width * 0.7,
     height: width * 0.7,
     resizeMode: 'contain',
   },
-
   content: {
     flex: 1,
     paddingHorizontal: 30,
     marginTop: 20,
   },
-
   buttonContainer: {
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: 10,
+  },
+  buttonContainerSignUp: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 
