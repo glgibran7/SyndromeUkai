@@ -23,21 +23,21 @@ const Paket = ({ navigation }) => {
     },
     {
       id: 2,
-      title: 'Paket Diamond 27X',
-      detail: '12x Intensif, 4–5 jam\n60x Online',
-      icon: require('../../src/img/diamond.png'),
-    },
-    {
-      id: 3,
       title: 'Paket Silver 24X',
-      detail: '12x Intensif, 4–5 jam\n60x Online',
+      detail: '12x Intensif, 4–5 jam\n12x Online',
       icon: require('../../src/img/silver.png'),
     },
     {
-      id: 4,
+      id: 3,
       title: 'Paket Gold 73X',
       detail: '12x Intensif, 4–5 jam\n60x Online',
       icon: require('../../src/img/gold.png'),
+    },
+    {
+      id: 4,
+      title: 'Paket Diamond 27X',
+      detail: '12x Intensif, 4–5 jam\n12x Online, 3x Kelas OSCE',
+      icon: require('../../src/img/diamond.png'),
     },
   ];
 

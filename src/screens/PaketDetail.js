@@ -37,31 +37,10 @@ const PaketDetail = ({ route, navigation }) => {
         '*Garansi Lulus',
       ],
       waLink:
-        'https://wa.me/6281234567890?text=Halo%2C%20saya%20tertarik%20dengan%20Paket%20Premium%2070X',
+        'https://wa.me/6282130070505?text=Halo%2C%20saya%20tertarik%20dengan%20Paket%20Premium',
     },
     {
       id: 2,
-      title: 'Paket Diamond 27X',
-      detail: '12x Intensif, 4–5 jam\n60x Online',
-      icon: require('../../src/img/diamond.png'),
-      features: [
-        'Free akses record sampai ukai',
-        'Tryout CBT via website',
-        'Pemantauan perkembangan oleh walikelas',
-        'Modul belajar UKAI CBT fisik',
-        'Modul belajar OSCE fisik',
-        'Latian 800 soal via zoom',
-        'Pretest & posttest 600 soal',
-        'Free konsultasi kejiwaan oleh walikelas/psikolog',
-        'Networking antar kampus',
-        'Kisi-kisi dan Prediksi Soal UKMPPAI',
-        '*Garansi Lulus',
-      ],
-      waLink:
-        'https://wa.me/6281234567890?text=Halo%2C%20saya%20tertarik%20dengan%20Paket%20Diamond%2027X',
-    },
-    {
-      id: 3,
       title: 'Paket Silver 24X',
       detail: '12x Intensif, 4–5 jam\n60x Online',
       icon: require('../../src/img/silver.png'),
@@ -78,10 +57,10 @@ const PaketDetail = ({ route, navigation }) => {
         '*Garansi Lulus',
       ],
       waLink:
-        'https://wa.me/6281234567890?text=Halo%2C%20saya%20tertarik%20dengan%20Paket%20Silver%2024X',
+        'https://wa.me/6282130070505?text=Halo%2C%20saya%20tertarik%20dengan%20Paket%20Silver',
     },
     {
-      id: 4,
+      id: 3,
       title: 'Paket Gold 73X',
       detail: '12x Intensif, 4–5 jam\n60x Online',
       icon: require('../../src/img/gold.png'),
@@ -99,7 +78,28 @@ const PaketDetail = ({ route, navigation }) => {
         '*Garansi Lulus',
       ],
       waLink:
-        'https://wa.me/6281234567890?text=Halo%2C%20saya%20tertarik%20dengan%20Paket%20Gold%2073X',
+        'https://wa.me/6282130070505?text=Halo%2C%20saya%20tertarik%20dengan%20Paket%20Gold',
+    },
+    {
+      id: 4,
+      title: 'Paket Diamond 27X',
+      detail: '12x Intensif, 4–5 jam\n60x Online',
+      icon: require('../../src/img/diamond.png'),
+      features: [
+        'Free akses record sampai ukai',
+        'Tryout CBT via website',
+        'Pemantauan perkembangan oleh walikelas',
+        'Modul belajar UKAI CBT fisik',
+        'Modul belajar OSCE fisik',
+        'Latian 800 soal via zoom',
+        'Pretest & posttest 600 soal',
+        'Free konsultasi kejiwaan oleh walikelas/psikolog',
+        'Networking antar kampus',
+        'Kisi-kisi dan Prediksi Soal UKMPPAI',
+        '*Garansi Lulus',
+      ],
+      waLink:
+        'https://wa.me/6282130070505?text=Halo%2C%20saya%20tertarik%20dengan%20Paket%20Diamond',
     },
   ];
 
