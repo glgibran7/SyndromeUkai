@@ -83,12 +83,12 @@ const Paket = ({ navigation }) => {
             </TouchableOpacity>
           ))}
 
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={styles.button}
             onPress={() => navigation.navigate('CheckoutScreen')} // ganti route jika perlu
           >
             <Text style={styles.buttonText}>Pilih</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
       </ScrollView>
     </LinearGradient>
@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
     marginTop: 50,
   },
   headerImage: {
-    width: width * 0.6,
+    width: width * 0.7,
     height: width * 0.4,
     resizeMode: 'contain',
   },
@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#fff',
     fontSize: 14,
-    marginTop: 5,
+    marginTop: -5,
   },
   content: {
     paddingHorizontal: 30,

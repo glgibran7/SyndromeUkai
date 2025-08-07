@@ -43,13 +43,22 @@ const Login = ({ navigation }) => {
         JSON.stringify({ id_user, nama, email: userEmail, role }),
       );
 
-      // Navigasi berdasarkan role
+      // Reset navigasi agar halaman login tidak bisa kembali
       if (role === 'admin') {
-        navigation.navigate('Paket');
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Home' }],
+        });
       } else if (role === 'mentor') {
-        navigation.navigate('MentorDashboard');
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Home' }],
+        });
       } else {
-        navigation.navigate('Paket');
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Home' }],
+        });
       }
     } catch (error) {
       console.error('Login gagal:', error);
