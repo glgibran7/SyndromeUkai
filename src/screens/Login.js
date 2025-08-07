@@ -57,7 +57,7 @@ const Login = ({ navigation }) => {
       } else {
         navigation.reset({
           index: 0,
-          routes: [{ name: 'Home' }],
+          routes: [{ name: 'Paket' }],
         });
       }
     } catch (error) {

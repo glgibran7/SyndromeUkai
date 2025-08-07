@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -10,37 +10,42 @@ import {
   StatusBar,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import { FlatList } from 'react-native';
-import MentorList from '../components/MentorList';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width } = Dimensions.get('window');
-const capitalizeWords = str => {
-  return str
-    .toLowerCase()
-    .split(' ')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-};
 
-const Home = ({ navigation }) => {
-  const flatListRef = useRef(null);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const nextIndex = (currentIndex + 1) % MentorList.length;
+const videoList = [
+  {
+    title: 'Bahan Bakar',
+    desc: 'dan Kimfar',
+    icon: require('../../src/img/icon_folder.png'),
+    backgroundColor: '#FFF8E3',
+    wave: require('../../src/img/wave1.png'),
+  },
+  {
+    title: 'CPOB',
+    desc: '',
+    icon: require('../../src/img/icon_folder.png'),
+    backgroundColor: '#FFF8E3',
+    wave: require('../../src/img/wave2.png'),
+  },
+  {
+    title: 'Ilmu Resep',
+    desc: '',
+    icon: require('../../src/img/icon_folder.png'),
+    backgroundColor: '#FFF8E3',
+    wave: require('../../src/img/wave3.png'),
+  },
+  {
+    title: 'Infeksi',
+    desc: '',
+    icon: require('../../src/img/icon_folder.png'),
+    backgroundColor: '#FFF8E3',
+    wave: require('../../src/img/wave4.png'),
+  },
+];
 
-      flatListRef.current?.scrollToIndex({
-        index: nextIndex,
-        animated: true,
-      });
-
-      setCurrentIndex(nextIndex);
-    }, 3000); // setiap 3 detik
-
-    return () => clearInterval(interval);
-  }, [currentIndex]);
-
+const VideoScreen = () => {
   const [user, setUser] = useState({
     name: 'Peserta',
     paket: 'Premium',
@@ -54,7 +59,7 @@ const Home = ({ navigation }) => {
           const parsedUser = JSON.parse(storedUser);
           setUser({
             name: parsedUser.nama || 'Peserta',
-            paket: 'Premium', // atau bisa diambil dari backend jika tersedia
+            paket: 'Premium',
           });
         }
       } catch (error) {
@@ -64,41 +69,6 @@ const Home = ({ navigation }) => {
 
     getUserData();
   }, []);
-
-  const menus = [
-    {
-      title: 'TryOut',
-      desc: 'Kumpulan soal-soal',
-      icon: require('../../src/img/icon_file.png'),
-      backgroundColor: '#FFF8F8',
-      wave: require('../../src/img/wave1.png'),
-      to: 'SoalMateriScreen',
-    },
-    {
-      title: 'Materi',
-      desc: 'Kumpulan Materi',
-      icon: require('../../src/img/icon_folder.png'),
-      backgroundColor: '#FFF8E3',
-      wave: require('../../src/img/wave2.png'),
-      to: 'MateriScreen',
-    },
-    {
-      title: 'Video',
-      desc: 'Kumpulan Materi Video',
-      icon: require('../../src/img/icon_video.png'),
-      backgroundColor: '#FFF8E3',
-      wave: require('../../src/img/wave3.png'),
-      to: 'VideoScreen',
-    },
-    {
-      title: 'Hasil Try Out',
-      desc: 'Kumpulan Hasil Try Out',
-      icon: require('../../src/img/icon_pesan.png'),
-      backgroundColor: '#FFEAEA',
-      wave: require('../../src/img/wave4.png'),
-      to: 'TryoutScreen',
-    },
-  ];
 
   return (
     <LinearGradient
@@ -124,71 +94,40 @@ const Home = ({ navigation }) => {
             </View>
             <View style={styles.avatarInitial}>
               <Text style={styles.avatarText}>
-                {capitalizeWords(user.name.split(' ')[0][0])}
-                {capitalizeWords(user.name.split(' ')[1]?.[0])}
+                {user.name.split(' ')[0][0]}
               </Text>
             </View>
           </View>
         </View>
 
-        {/* Greeting */}
+        {/* Title */}
         <View style={styles.greetingBox}>
-          <Text style={styles.greeting}>Hi, {capitalizeWords(user.name)}</Text>
-          <Text style={styles.subtext}>
-            Platform penyedia layanan pendidikan farmasi{'\n'}
-            <Text style={{ fontWeight: 'bold' }}>terbaik dan ter-murah</Text>
-          </Text>
+          <Text style={styles.greeting}>Video</Text>
+          <Text style={styles.subtext}>Kumpulan materi berupa video</Text>
         </View>
 
-        {/* Content */}
+        {/* Grid */}
         <View style={styles.mainContent}>
-          {/* Menu */}
-          <Text style={styles.sectionTitle}>Daftar Menu</Text>
+          <Text style={styles.sectionTitle}>Daftar Video</Text>
           <View style={styles.menuGrid}>
-            {menus.map((item, index) => (
+            {videoList.map((item, index) => (
               <TouchableOpacity
                 key={index}
                 style={[
                   styles.menuItem,
                   { backgroundColor: item.backgroundColor },
                 ]}
-                onPress={() => navigation.navigate(item.to)}
               >
                 <Text style={styles.menuTitle}>{item.title}</Text>
                 <Text style={styles.menuDesc}>{item.desc}</Text>
 
-                {/* Icon di atas wave */}
                 <View style={styles.menuIconContainer}>
                   <Image source={item.icon} style={styles.menuIcon} />
                 </View>
-
-                {/* Wave PNG di bagian bawah card */}
                 <Image source={item.wave} style={styles.waveImage} />
               </TouchableOpacity>
             ))}
           </View>
-
-          {/* Mentor */}
-          <Text style={styles.sectionTitle}>Daftar Mentor</Text>
-          <FlatList
-            ref={flatListRef}
-            data={MentorList}
-            keyExtractor={(item, index) => index.toString()}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            renderItem={({ item }) => (
-              <View style={{ marginRight: 15 }}>
-                <Image
-                  source={item.image}
-                  style={{
-                    width: width * 0.4,
-                    height: width * 0.5,
-                    resizeMode: 'contain',
-                  }}
-                />
-              </View>
-            )}
-          />
         </View>
       </ScrollView>
     </LinearGradient>
@@ -208,11 +147,10 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
   },
   userInfo: {
-    flexDirection: 'row', // sejajar horizontal
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: 8, // jarak antara avatar dan badge
+    gap: 8,
   },
-
   avatarInitial: {
     width: 35,
     height: 35,
@@ -221,17 +159,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-
   avatarText: {
     color: '#fff',
     fontWeight: 'bold',
-  },
-
-  avatar: {
-    width: 35,
-    height: 35,
-    borderRadius: 999,
-    marginBottom: 4,
+    textTransform: 'capitalize',
   },
   paketBadge: {
     backgroundColor: '#feb600',
@@ -262,7 +193,6 @@ const styles = StyleSheet.create({
   },
   mainContent: {
     backgroundColor: 'white',
-
     paddingVertical: 25,
     paddingHorizontal: 20,
     marginTop: 30,
@@ -283,8 +213,8 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     padding: 15,
     marginBottom: 20,
-    overflow: 'hidden', // agar wave tidak keluar dari card
-    position: 'relative', // penting agar wave absolute mengacu ke card
+    overflow: 'hidden',
+    position: 'relative',
   },
   menuTitle: {
     fontWeight: 'bold',
@@ -297,25 +227,24 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   menuIcon: {
-    width: 45,
-    height: 45,
+    width: 50,
+    height: 50,
     resizeMode: 'contain',
     alignSelf: 'flex-end',
     marginTop: 10,
   },
-
   waveImage: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
     width: 'auto',
-    height: 80, // atur sesuai ukuran wave.png
+    height: 80,
     resizeMode: 'cover',
     borderBottomLeftRadius: 15,
     borderBottomRightRadius: 15,
-    zIndex: -1, // pastikan wave berada di belakang konten card
+    zIndex: -1,
   },
 });
 
-export default Home;
+export default VideoScreen;

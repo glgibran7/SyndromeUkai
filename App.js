@@ -9,7 +9,7 @@ import Detail from './src/screens/Detail';
 import Splash from './src/screens/Splash';
 import Paket from './src/screens/Paket';
 import PaketDetail from './src/screens/PaketDetail';
-import Home from './src/screens/Home';
+import MainTabNavigator from './src/navigation/MainTabNavigator';
 
 const Stack = createNativeStackNavigator();
 
@@ -25,7 +25,8 @@ function App() {
         <Stack.Screen name="Splash" component={Splash} />
         <Stack.Screen name="Paket" component={Paket} />
         <Stack.Screen name="PaketDetail" component={PaketDetail} />
-        <Stack.Screen name="Home" component={Home} />
+        <Stack.Screen name="Main" component={MainTabNavigator} />
+
         {/* Add other screens here as needed */}
       </Stack.Navigator>
     </NavigationContainer>

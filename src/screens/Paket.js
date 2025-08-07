@@ -83,12 +83,12 @@ const Paket = ({ navigation }) => {
             </TouchableOpacity>
           ))}
 
-          {/* <TouchableOpacity
+          <TouchableOpacity
             style={styles.button}
-            onPress={() => navigation.navigate('CheckoutScreen')} // ganti route jika perlu
+            onPress={() => navigation.navigate('Main')} // ganti route jika perlu
           >
-            <Text style={styles.buttonText}>Pilih</Text>
-          </TouchableOpacity> */}
+            <Text style={styles.buttonText}>Kelas Saya</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </LinearGradient>
