@@ -16,11 +16,46 @@ import FontAwesome6 from '@react-native-vector-icons/fontawesome';
 
 import { Dimensions } from 'react-native';
 const { width } = Dimensions.get('window');
+import Api from '../utils/Api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Alert } from 'react-native';
 
 const Login = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [secureText, setSecureText] = useState(true);
+
+  const handleLogin = async () => {
+    try {
+      const response = await Api.post('/auth/login', { email, password });
+
+      const {
+        access_token,
+        id_user,
+        nama,
+        email: userEmail,
+        role,
+      } = response.data;
+
+      await AsyncStorage.setItem('token', access_token);
+      await AsyncStorage.setItem(
+        'user',
+        JSON.stringify({ id_user, nama, email: userEmail, role }),
+      );
+
+      // Navigasi berdasarkan role
+      if (role === 'admin') {
+        navigation.navigate('Paket');
+      } else if (role === 'mentor') {
+        navigation.navigate('MentorDashboard');
+      } else {
+        navigation.navigate('Paket');
+      }
+    } catch (error) {
+      console.error('Login gagal:', error);
+      Alert.alert('Login Gagal', 'Email atau password salah!');
+    }
+  };
 
   return (
     <LinearGradient
@@ -100,10 +135,7 @@ const Login = ({ navigation }) => {
 
           {/* Tombol Login */}
           <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={styles.tombol}
-              onPress={() => navigation.navigate('Home')}
-            >
+            <TouchableOpacity style={styles.tombol} onPress={handleLogin}>
               <Text style={styles.loginButtonText}>Login</Text>
             </TouchableOpacity>
           </View>
