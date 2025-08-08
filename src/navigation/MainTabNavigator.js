@@ -8,6 +8,7 @@ import VideoScreen from '../screens/VideoScreen';
 import MateriScreen from '../screens/MateriScreen';
 import TryOutScreen from '../screens/TryOutScreen';
 import HasilTryOut from '../screens/HasilTryOut';
+import MateriStackNavigator from './MateriStackNavigator';
 
 const Tab = createBottomTabNavigator();
 
@@ -51,7 +52,7 @@ const MainTabNavigator = () => {
       }}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Materi" component={MateriScreen} />
+      <Tab.Screen name="Materi" component={MateriStackNavigator} />
       <Tab.Screen name="Video" component={VideoScreen} />
       <Tab.Screen name="TryOut" component={TryOutScreen} />
       <Tab.Screen name="Hasil" component={HasilTryOut} />

@@ -8,44 +8,16 @@ import {
   StyleSheet,
   Dimensions,
   StatusBar,
+  Navigation,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Api from '../utils/Api';
 
 const { width } = Dimensions.get('window');
 
-const materiList = [
-  {
-    title: 'Farmakologi Dasar',
-    desc: 'Mengenal dasar farmasi',
-    icon: require('../../src/img/icon_folder.png'),
-    backgroundColor: '#FFF8E3',
-    wave: require('../../src/img/wave1.png'),
-  },
-  {
-    title: 'CPOB',
-    desc: '',
-    icon: require('../../src/img/icon_folder.png'),
-    backgroundColor: '#FFF8E3',
-    wave: require('../../src/img/wave2.png'),
-  },
-  {
-    title: 'Ilmu Resep',
-    desc: '',
-    icon: require('../../src/img/icon_folder.png'),
-    backgroundColor: '#FFF8E3',
-    wave: require('../../src/img/wave3.png'),
-  },
-  {
-    title: 'Farmasi Klinik',
-    desc: '',
-    icon: require('../../src/img/icon_folder.png'),
-    backgroundColor: '#FFF8E3',
-    wave: require('../../src/img/wave4.png'),
-  },
-];
-
-const MateriScreen = () => {
+const MateriScreen = ({ navigation }) => {
+  const [modulList, setmodulList] = useState([]);
   const [user, setUser] = useState({
     name: 'Peserta',
     paket: 'Premium',
@@ -68,6 +40,44 @@ const MateriScreen = () => {
     };
 
     getUserData();
+  }, []);
+  useEffect(() => {
+    const getUserData = async () => {
+      try {
+        const storedUser = await AsyncStorage.getItem('user');
+        if (storedUser) {
+          const parsedUser = JSON.parse(storedUser);
+          setUser({
+            name: parsedUser.nama || 'Peserta',
+            paket: 'Premium',
+          });
+        }
+      } catch (error) {
+        console.error('Gagal mengambil data user:', error);
+      }
+    };
+
+    const getModul = async () => {
+      try {
+        const res = await Api.get('/modul/user');
+        if (res.data.status === 'success') {
+          const formatted = res.data.data.map((item, index) => ({
+            id_modul: item.id_modul,
+            title: item.judul,
+            desc: item.deskripsi,
+            icon: require('../../src/img/icon_folder.png'),
+            backgroundColor: '#FFF8E3',
+            wave: require(`../../src/img/wave1.png`),
+          }));
+          setmodulList(formatted);
+        }
+      } catch (error) {
+        console.error('Gagal mengambil data modul:', error);
+      }
+    };
+
+    getUserData();
+    getModul();
   }, []);
 
   return (
@@ -110,17 +120,19 @@ const MateriScreen = () => {
         <View style={styles.mainContent}>
           <Text style={styles.sectionTitle}>Daftar Materi</Text>
           <View style={styles.menuGrid}>
-            {materiList.map((item, index) => (
+            {modulList.map((item, index) => (
               <TouchableOpacity
                 key={index}
                 style={[
                   styles.menuItem,
                   { backgroundColor: item.backgroundColor },
                 ]}
+                onPress={() =>
+                  navigation.navigate('MateriList', { id_modul: item.id_modul })
+                }
               >
                 <Text style={styles.menuTitle}>{item.title}</Text>
                 <Text style={styles.menuDesc}>{item.desc}</Text>
-
                 <View style={styles.menuIconContainer}>
                   <Image source={item.icon} style={styles.menuIcon} />
                 </View>
@@ -220,11 +232,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
     color: '#700101',
+    textTransform: 'capitalize',
   },
   menuDesc: {
-    fontSize: 13,
+    fontSize: 10,
     color: '#555',
-    marginTop: 5,
+    marginTop: 2,
+    textTransform: 'capitalize',
   },
   menuIcon: {
     width: 50,
