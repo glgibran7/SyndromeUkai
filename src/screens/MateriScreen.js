@@ -208,6 +208,7 @@ const styles = StyleSheet.create({
     paddingVertical: 25,
     paddingHorizontal: 20,
     marginTop: 30,
+    height: '100%',
   },
   sectionTitle: {
     fontSize: 18,

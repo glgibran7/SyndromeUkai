@@ -269,10 +269,11 @@ const styles = StyleSheet.create({
   },
   mainContent: {
     backgroundColor: 'white',
-    paddingVertical: 25,
+    paddingVertical: 20,
     paddingHorizontal: 20,
     marginTop: 30,
     minHeight: height - 200,
+    height: '100%',
   },
   filterContainer: {
     flexDirection: 'row',
