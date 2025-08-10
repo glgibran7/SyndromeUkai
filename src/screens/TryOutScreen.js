@@ -137,7 +137,7 @@ const TryOutScreen = () => {
 const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
-    paddingHorizontal: 20,
+    paddingHorizontal: 10,
     paddingTop: 20,
     alignItems: 'center',
   },

@@ -173,26 +173,36 @@ const MateriListScreen = ({ route, navigation }) => {
           {/* List Card */}
           <View style={styles.menuGrid}>
             {filteredList.map(item => (
-              <LinearGradient
+              <TouchableOpacity
                 key={item.id_materi}
-                colors={['#B71C1C', '#7B0D0D']}
-                style={styles.menuItem}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
+                activeOpacity={0.8}
+                onPress={() =>
+                  navigation.navigate('MateriViewer', {
+                    url: item.url_file,
+                    title: item.judul,
+                  })
+                }
               >
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <Ionicons
-                    name="document-text-outline"
-                    size={28}
-                    color="#fff"
-                    style={{ marginRight: 10 }}
-                  />
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.menuTitle}>{item.judul}</Text>
-                    <Text style={styles.menuDesc}>{item.tipe_materi}</Text>
+                <LinearGradient
+                  colors={['#B71C1C', '#7B0D0D']}
+                  style={styles.menuItem}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Ionicons
+                      name="document-text-outline"
+                      size={28}
+                      color="#fff"
+                      style={{ marginRight: 10 }}
+                    />
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.menuTitle}>{item.judul}</Text>
+                      <Text style={styles.menuDesc}>{item.tipe_materi}</Text>
+                    </View>
                   </View>
-                </View>
-              </LinearGradient>
+                </LinearGradient>
+              </TouchableOpacity>
             ))}
           </View>
         </View>

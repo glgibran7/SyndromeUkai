@@ -5,6 +5,7 @@ import { View, Text } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Login from './src/screens/Login';
+import SignUp from './src/screens/SignUp';
 import Detail from './src/screens/Detail';
 import Splash from './src/screens/Splash';
 import Paket from './src/screens/Paket';
@@ -21,6 +22,7 @@ function App() {
         screenOptions={{ headerShown: false }}
       >
         <Stack.Screen name="Login" component={Login} />
+        <Stack.Screen name="SignUp" component={SignUp} />
         <Stack.Screen name="Detail" component={Detail} />
         <Stack.Screen name="Splash" component={Splash} />
         <Stack.Screen name="Paket" component={Paket} />
