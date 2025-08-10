@@ -114,7 +114,7 @@ const Home = ({ navigation }) => {
 
           <View style={styles.userInfo}>
             <View style={styles.paketBadge}>
-              <Text style={styles.paketText}>🥇 {user.paket}</Text>
+              <Text style={styles.paketText}>👑 {user.paket}</Text>
             </View>
             <View style={styles.avatarInitial}>
               <Text style={styles.avatarText}>
