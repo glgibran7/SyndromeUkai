@@ -61,14 +61,6 @@ const Home = ({ navigation }) => {
 
   const menus = [
     {
-      title: 'TryOut',
-      desc: 'Kumpulan soal-soal',
-      icon: require('../../src/img/icon_file.png'),
-      backgroundColor: '#FFF8F8',
-      wave: require('../../src/img/wave1.png'),
-      to: 'TryOut',
-    },
-    {
       title: 'Materi',
       desc: 'Kumpulan Materi',
       icon: require('../../src/img/icon_folder.png'),
@@ -85,12 +77,20 @@ const Home = ({ navigation }) => {
       to: 'Video',
     },
     {
+      title: 'TryOut',
+      desc: 'Kumpulan soal-soal',
+      icon: require('../../src/img/icon_file.png'),
+      backgroundColor: '#FFF8F8',
+      wave: require('../../src/img/wave1.png'),
+      to: 'TryOut',
+    },
+    {
       title: 'Hasil Try Out',
       desc: 'Kumpulan Hasil Try Out',
       icon: require('../../src/img/icon_pesan.png'),
       backgroundColor: '#FFEAEA',
       wave: require('../../src/img/wave4.png'),
-      to: 'HasilTryOut',
+      to: 'Hasil',
     },
   ];
 

@@ -128,7 +128,9 @@ const VideoScreen = ({ navigation }) => {
                   { backgroundColor: item.backgroundColor },
                 ]}
                 onPress={() =>
-                  navigation.navigate('MateriList', { id_modul: item.id_modul })
+                  navigation.navigate('VideoListScreen', {
+                    id_modul: item.id_modul,
+                  })
                 }
               >
                 <Text style={styles.menuTitle}>{item.title}</Text>
