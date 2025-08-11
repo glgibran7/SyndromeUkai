@@ -2,13 +2,11 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Ionicons from '@react-native-vector-icons/ionicons';
-
 import HomeScreen from '../screens/HomeScreen';
-import VideoScreen from '../screens/VideoScreen';
-import MateriScreen from '../screens/MateriScreen';
 import TryOutScreen from '../screens/TryOutScreen';
 import HasilTryOut from '../screens/HasilTryOut';
 import MateriStackNavigator from './MateriStackNavigator';
+import VideoStackNavigator from './VideoStackNavigator';
 
 const Tab = createBottomTabNavigator();
 
@@ -53,10 +51,9 @@ const MainTabNavigator = () => {
     >
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Materi" component={MateriStackNavigator} />
-      <Tab.Screen name="Video" component={VideoScreen} />
+      <Tab.Screen name="Video" component={VideoStackNavigator} />
       <Tab.Screen name="TryOut" component={TryOutScreen} />
       <Tab.Screen name="Hasil" component={HasilTryOut} />
-      {/* <Tab.Screen name="Profile" component={ProfileScreen} /> Uncomment if you have a Profile screen */}
     </Tab.Navigator>
   );
 };
