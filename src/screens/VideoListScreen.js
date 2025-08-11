@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,15 +9,22 @@ import {
   Dimensions,
   StatusBar,
   TextInput,
+  Animated,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Api from '../utils/Api';
 import Ionicons from '@react-native-vector-icons/ionicons';
 
-const { height } = Dimensions.get('window');
+const { height, width } = Dimensions.get('window');
 
-const { width } = Dimensions.get('window');
+const getDirectGoogleDriveLink = url => {
+  const match = url.match(/\/d\/(.+?)\//);
+  if (match && match[1]) {
+    return `https://drive.google.com/uc?export=download&id=${match[1]}`;
+  }
+  return url;
+};
 
 const VideoListScreen = ({ route, navigation }) => {
   const { id_modul } = route.params;
@@ -25,10 +32,10 @@ const VideoListScreen = ({ route, navigation }) => {
   const [filteredList, setFilteredList] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('Semua');
-  const [user, setUser] = useState({
-    name: 'Peserta',
-    paket: 'Premium',
-  });
+  const [user, setUser] = useState({ name: 'Peserta', paket: 'Premium' });
+
+  const scrollRef = useRef(null);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     const getUserData = async () => {
@@ -65,43 +72,58 @@ const VideoListScreen = ({ route, navigation }) => {
     getMateri();
   }, [id_modul]);
 
-  // Search & filter
   useEffect(() => {
     let data = materiList;
-
     if (searchQuery) {
       data = data.filter(item =>
         item.judul.toLowerCase().includes(searchQuery.toLowerCase()),
       );
     }
-
     if (filterType === 'Baru') {
       data = data.filter(item => !item.viewer_only);
     }
-
     setFilteredList(data);
   }, [searchQuery, filterType, materiList]);
 
+  const handleScroll = event => {
+    const offsetY = event.nativeEvent.contentOffset.y;
+    if (offsetY > 100) {
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }
+  };
+
+  const scrollToTop = () => {
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
+  };
+
   return (
-    <LinearGradient
-      colors={['#9D2828', '#191919']}
-      style={{ flex: 1 }}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-    >
+    <LinearGradient colors={['#9D2828', '#191919']} style={{ flex: 1 }}>
       <StatusBar barStyle="light-content" backgroundColor="#a10505" />
-      <ScrollView style={{ flex: 1 }}>
+      <ScrollView
+        ref={scrollRef}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+        contentContainerStyle={{ paddingBottom: 50 }}
+      >
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Ionicons name="arrow-back" size={26} color="#fff" />
           </TouchableOpacity>
-
           <Image
             source={require('../../src/img/logo_putih.png')}
             style={styles.logo}
           />
-
           <View style={styles.userInfo}>
             <View style={styles.paketBadge}>
               <Text style={styles.paketText}>🥇 {user.paket}</Text>
@@ -129,12 +151,10 @@ const VideoListScreen = ({ route, navigation }) => {
           </View>
         </View>
 
-        {/* Main Content */}
+        {/* Filter */}
         <View style={styles.mainContent}>
-          {/* Filter */}
           <View style={styles.filterContainer}>
             <Text style={styles.sectionTitle2}>Daftar Materi</Text>
-
             <TouchableOpacity
               style={[
                 styles.filterButton,
@@ -151,7 +171,6 @@ const VideoListScreen = ({ route, navigation }) => {
                 Semua
               </Text>
             </TouchableOpacity>
-
             <TouchableOpacity
               style={[
                 styles.filterButton,
@@ -165,48 +184,63 @@ const VideoListScreen = ({ route, navigation }) => {
                   filterType === 'Baru' && styles.filterTextActive,
                 ]}
               >
-                Baru Dibaca
+                Baru di Tonton
               </Text>
             </TouchableOpacity>
           </View>
 
-          {/* List Card */}
-          <View style={styles.menuGrid}>
+          {/* Video List */}
+          <View style={styles.videoList}>
             {filteredList.map(item => (
               <TouchableOpacity
                 key={item.id_materi}
-                activeOpacity={0.8}
                 onPress={() =>
-                  navigation.navigate('MateriViewer', {
-                    url: item.url_file,
+                  navigation.navigate('VideoViewer', {
+                    id_materi: item.id_materi,
                     title: item.judul,
+                    url_file: item.url_file,
+                    channel: 'UKAI',
+                    views: '90K',
+                    time: '1 months ago',
+                    avatar: 'https://via.placeholder.com/50',
                   })
                 }
               >
-                <LinearGradient
-                  colors={['#B71C1C', '#7B0D0D']}
-                  style={styles.menuItem}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                >
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Ionicons
-                      name="videocam-outline"
-                      size={28}
-                      color="#fff"
-                      style={{ marginRight: 10 }}
-                    />
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.menuTitle}>{item.judul}</Text>
-                      <Text style={styles.menuDesc}>{item.tipe_materi}</Text>
-                    </View>
+                <View style={styles.thumbnailWrapper}>
+                  <Image
+                    source={{
+                      uri: 'https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg',
+                    }} // bisa diganti thumbnail asli
+                    style={styles.thumbnail}
+                  />
+                </View>
+                <View style={styles.videoInfoRow}>
+                  <Image
+                    source={{ uri: 'https://via.placeholder.com/50' }}
+                    style={styles.channelAvatar}
+                  />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.videoTitle} numberOfLines={2}>
+                      {item.judul}
+                    </Text>
+                    <Text style={styles.videoMeta}>
+                      UKAI • 90K views • 1 months ago
+                    </Text>
                   </View>
-                </LinearGradient>
+                  <Ionicons name="ellipsis-vertical" size={18} color="#555" />
+                </View>
               </TouchableOpacity>
             ))}
           </View>
         </View>
       </ScrollView>
+
+      {/* Scroll to Top */}
+      <Animated.View style={[styles.scrollTopBtn, { opacity: fadeAnim }]}>
+        <TouchableOpacity onPress={scrollToTop}>
+          <Ionicons name="arrow-up" size={22} color="#fff" />
+        </TouchableOpacity>
+      </Animated.View>
     </LinearGradient>
   );
 };
@@ -225,11 +259,7 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
     marginLeft: -80,
   },
-  userInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
+  userInfo: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   avatarInitial: {
     width: 35,
     height: 35,
@@ -249,22 +279,14 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderRadius: 12,
   },
-  paketText: {
-    fontSize: 12,
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  greetingBox: {
-    marginTop: -5,
-    paddingHorizontal: 20,
-  },
+  paketText: { fontSize: 12, color: '#fff', fontWeight: 'bold' },
+  greetingBox: { marginTop: -5, paddingHorizontal: 20 },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 10,
     color: '#fff',
   },
-
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -272,18 +294,13 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     paddingHorizontal: 10,
   },
-  searchInput: {
-    flex: 1,
-    height: 40,
-    color: '#000',
-  },
+  searchInput: { flex: 1, height: 40, color: '#000' },
   mainContent: {
     backgroundColor: 'white',
     paddingVertical: 20,
     paddingHorizontal: 20,
     marginTop: 30,
     minHeight: height - 200,
-    height: '100%',
   },
   filterContainer: {
     flexDirection: 'row',
@@ -295,9 +312,8 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#000',
-    marginRight: 10, // jarak ke tombol filter
+    marginRight: 10,
   },
-
   filterButton: {
     paddingVertical: 6,
     paddingHorizontal: 12,
@@ -305,35 +321,39 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#000000ff',
   },
-  filterText: {
-    color: '#000000ff',
-    fontSize: 12,
+  filterText: { color: '#000000ff', fontSize: 12 },
+  filterActive: { backgroundColor: '#000000ff' },
+  filterTextActive: { color: '#fff' },
+  videoList: { flexDirection: 'column', gap: 20 },
+  thumbnailWrapper: { position: 'relative' },
+  thumbnail: {
+    width: '100%',
+    height: 200,
+    borderRadius: 8,
+    backgroundColor: '#ccc',
   },
-  filterActive: {
-    backgroundColor: '#000000ff',
+  videoInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingTop: 8,
+    gap: 8,
   },
-  filterTextActive: {
-    color: '#fff',
+  channelAvatar: {
+    width: 35,
+    height: 35,
+    borderRadius: 50,
+    backgroundColor: '#ddd',
   },
-  menuGrid: {
-    flexDirection: 'column',
-    gap: 10,
-  },
-  menuItem: {
-    borderRadius: 15,
-    padding: 15,
-  },
-  menuTitle: {
-    fontWeight: 'bold',
-    fontSize: 16,
-    color: '#fff',
-    textTransform: 'capitalize',
-  },
-  menuDesc: {
-    fontSize: 12,
-    color: '#fff',
-    marginTop: 2,
-    textTransform: 'capitalize',
+  videoTitle: { fontSize: 15, fontWeight: '600', color: '#000' },
+  videoMeta: { fontSize: 12, color: '#555', marginTop: 2 },
+  scrollTopBtn: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    backgroundColor: '#000',
+    padding: 12,
+    borderRadius: 50,
+    elevation: 5,
   },
 });
 
