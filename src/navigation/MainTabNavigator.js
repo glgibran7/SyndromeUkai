@@ -7,6 +7,7 @@ import TryOutScreen from '../screens/TryOutScreen';
 import HasilTryOut from '../screens/HasilTryOut';
 import MateriStackNavigator from './MateriStackNavigator';
 import VideoStackNavigator from './VideoStackNavigator';
+import TryOuttackNavigator from './TryOutStackNavigator'; // Pastikan ini sesuai dengan nama file yang benar
 
 const Tab = createBottomTabNavigator();
 
@@ -52,7 +53,7 @@ const MainTabNavigator = () => {
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Materi" component={MateriStackNavigator} />
       <Tab.Screen name="Video" component={VideoStackNavigator} />
-      <Tab.Screen name="TryOut" component={TryOutScreen} />
+      <Tab.Screen name="TryOut" component={TryOuttackNavigator} />
       <Tab.Screen name="Hasil" component={HasilTryOut} />
     </Tab.Navigator>
   );

@@ -8,48 +8,42 @@ import {
   StyleSheet,
   Dimensions,
   StatusBar,
+  TextInput,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Ionicons from '@react-native-vector-icons/ionicons';
 
-const { width } = Dimensions.get('window');
+const { height, width } = Dimensions.get('window');
 
-const videoList = [
-  {
-    title: 'Bahan Bakar',
-    desc: 'dan Kimfar',
-    icon: require('../../src/img/icon_folder.png'),
-    backgroundColor: '#FFF8E3',
-    wave: require('../../src/img/wave1.png'),
-  },
-  {
-    title: 'CPOB',
-    desc: '',
-    icon: require('../../src/img/icon_folder.png'),
-    backgroundColor: '#FFF8E3',
-    wave: require('../../src/img/wave2.png'),
-  },
-  {
-    title: 'Ilmu Resep',
-    desc: '',
-    icon: require('../../src/img/icon_folder.png'),
-    backgroundColor: '#FFF8E3',
-    wave: require('../../src/img/wave3.png'),
-  },
-  {
-    title: 'Infeksi',
-    desc: '',
-    icon: require('../../src/img/icon_folder.png'),
-    backgroundColor: '#FFF8E3',
-    wave: require('../../src/img/wave4.png'),
-  },
-];
-
-const TryOutScreen = () => {
+const TryoutScreen = ({ navigation }) => {
+  const [tryoutList, setTryoutList] = useState([]);
+  const [filteredList, setFilteredList] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterType, setFilterType] = useState('Semua');
   const [user, setUser] = useState({
     name: 'Peserta',
     paket: 'Premium',
   });
+
+  // Dummy data
+  const dummyTryouts = [
+    {
+      id: 1,
+      nama: 'Tryout UKAI 1',
+      soal: 200,
+      waktu: 120,
+      kategori: 'Farmasi',
+    },
+    { id: 2, nama: 'Tryout UKAI 2', soal: 150, waktu: 90, kategori: 'Farmasi' },
+    {
+      id: 3,
+      nama: 'Simulasi UKAI',
+      soal: 180,
+      waktu: 100,
+      kategori: 'Simulasi',
+    },
+  ];
 
   useEffect(() => {
     const getUserData = async () => {
@@ -68,7 +62,28 @@ const TryOutScreen = () => {
     };
 
     getUserData();
+    setTryoutList(dummyTryouts);
+    setFilteredList(dummyTryouts);
   }, []);
+
+  // Search & filter
+  useEffect(() => {
+    let data = tryoutList;
+
+    if (searchQuery) {
+      data = data.filter(item =>
+        item.nama.toLowerCase().includes(searchQuery.toLowerCase()),
+      );
+    }
+
+    if (filterType === 'Farmasi') {
+      data = data.filter(item => item.kategori === 'Farmasi');
+    } else if (filterType === 'Simulasi') {
+      data = data.filter(item => item.kategori === 'Simulasi');
+    }
+
+    setFilteredList(data);
+  }, [searchQuery, filterType, tryoutList]);
 
   return (
     <LinearGradient
@@ -81,12 +96,10 @@ const TryOutScreen = () => {
       <ScrollView style={{ flex: 1 }}>
         {/* Header */}
         <View style={styles.header}>
-          <View style={{ flex: 1 }}>
-            <Image
-              source={require('../../src/img/logo_putih.png')}
-              style={styles.logo}
-            />
-          </View>
+          <Image
+            source={require('../../src/img/logo_putih.png')}
+            style={styles.logo}
+          />
 
           <View style={styles.userInfo}>
             <View style={styles.paketBadge}>
@@ -100,31 +113,121 @@ const TryOutScreen = () => {
           </View>
         </View>
 
-        {/* Title */}
+        {/* Title & Search */}
         <View style={styles.greetingBox}>
-          <Text style={styles.greeting}>Ini TryOut</Text>
-          <Text style={styles.subtext}>Kumpulan materi berupa video</Text>
+          <Text style={styles.sectionTitle}>Tryout</Text>
+          <View style={styles.searchContainer}>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search Tryout..."
+              placeholderTextColor="#fff"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+            <Ionicons name="search-outline" size={18} color="#fff" />
+          </View>
         </View>
 
-        {/* Grid */}
+        {/* Main Content */}
         <View style={styles.mainContent}>
-          <Text style={styles.sectionTitle}>Daftar Video</Text>
-          <View style={styles.menuGrid}>
-            {videoList.map((item, index) => (
-              <TouchableOpacity
-                key={index}
+          {/* Filter */}
+          <View style={styles.filterContainer}>
+            <Text style={styles.sectionTitle2}>Daftar Tryout</Text>
+
+            <TouchableOpacity
+              style={[
+                styles.filterButton,
+                filterType === 'Semua' && styles.filterActive,
+              ]}
+              onPress={() => setFilterType('Semua')}
+            >
+              <Text
                 style={[
-                  styles.menuItem,
-                  { backgroundColor: item.backgroundColor },
+                  styles.filterText,
+                  filterType === 'Semua' && styles.filterTextActive,
                 ]}
               >
-                <Text style={styles.menuTitle}>{item.title}</Text>
-                <Text style={styles.menuDesc}>{item.desc}</Text>
+                Semua
+              </Text>
+            </TouchableOpacity>
 
-                <View style={styles.menuIconContainer}>
-                  <Image source={item.icon} style={styles.menuIcon} />
-                </View>
-                <Image source={item.wave} style={styles.waveImage} />
+            <TouchableOpacity
+              style={[
+                styles.filterButton,
+                filterType === 'Farmasi' && styles.filterActive,
+              ]}
+              onPress={() => setFilterType('Farmasi')}
+            >
+              <Text
+                style={[
+                  styles.filterText,
+                  filterType === 'Farmasi' && styles.filterTextActive,
+                ]}
+              >
+                Farmasi
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.filterButton,
+                filterType === 'Simulasi' && styles.filterActive,
+              ]}
+              onPress={() => setFilterType('Simulasi')}
+            >
+              <Text
+                style={[
+                  styles.filterText,
+                  filterType === 'Simulasi' && styles.filterTextActive,
+                ]}
+              >
+                Simulasi
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* List Card */}
+          <View style={styles.menuGrid}>
+            {filteredList.map(item => (
+              <TouchableOpacity
+                key={item.id}
+                activeOpacity={0.8}
+                onPress={() =>
+                  navigation.navigate('TryOutDetailScreen', {
+                    tryout: {
+                      nama: item.nama,
+                      waktuMulai: '16:00',
+                      waktuSelesai: '18:00',
+                      mentor: 'Mentor A',
+                      deskripsi:
+                        'Tes try out adalah uji coba atau simulasi ujian yang dibuat menyerupai ujian sebenarnya, baik dari segi materi, format, maupun aturan waktu pelaksanaan...',
+                    },
+                  })
+                }
+              >
+                <LinearGradient
+                  colors={['#B71C1C', '#7B0D0D']}
+                  style={styles.menuItem}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    {/* Icon Kiri */}
+                    <Ionicons
+                      name="document-text-outline"
+                      size={28}
+                      color="#fff"
+                      style={{ marginRight: 12 }}
+                    />
+
+                    {/* Info Tryout */}
+                    <View>
+                      <Text style={styles.menuTitle}>{item.nama}</Text>
+                      <Text style={styles.menuDesc}>📝 {item.soal} Soal</Text>
+                      <Text style={styles.menuDesc}>⏳ {item.waktu} Menit</Text>
+                    </View>
+                  </View>
+                </LinearGradient>
               </TouchableOpacity>
             ))}
           </View>
@@ -140,11 +243,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingTop: 20,
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
   logo: {
-    width: width * 0.3,
-    height: width * 0.3,
+    width: width * 0.25,
+    height: width * 0.25,
     resizeMode: 'contain',
+    marginLeft: 10,
   },
   userInfo: {
     flexDirection: 'row',
@@ -179,72 +284,79 @@ const styles = StyleSheet.create({
     marginTop: -5,
     paddingHorizontal: 20,
   },
-  greeting: {
-    fontSize: 22,
-    color: '#fff',
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  subtext: {
-    fontSize: 13,
-    color: '#fff',
-    marginTop: 5,
-    textAlign: 'center',
-  },
-  mainContent: {
-    backgroundColor: 'white',
-    paddingVertical: 25,
-    paddingHorizontal: 20,
-    marginTop: 30,
-  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 15,
+    marginBottom: 10,
+    color: '#fff',
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0b1',
+    borderRadius: 15,
+    paddingHorizontal: 10,
+  },
+  searchInput: {
+    flex: 1,
+    height: 40,
     color: '#000',
   },
-  menuGrid: {
+  mainContent: {
+    backgroundColor: 'white',
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+    marginTop: 30,
+    minHeight: height - 200,
+  },
+  filterContainer: {
     flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+    gap: 10,
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
+  },
+  sectionTitle2: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#000',
+  },
+  filterButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#000000ff',
+  },
+  filterText: {
+    color: '#000000ff',
+    fontSize: 12,
+  },
+  filterActive: {
+    backgroundColor: '#000000ff',
+  },
+  filterTextActive: {
+    color: '#fff',
+  },
+  menuGrid: {
+    flexDirection: 'column',
+    gap: 10,
   },
   menuItem: {
-    width: width * 0.42,
     borderRadius: 15,
     padding: 15,
-    marginBottom: 20,
-    overflow: 'hidden',
-    position: 'relative',
   },
   menuTitle: {
     fontWeight: 'bold',
     fontSize: 16,
-    color: '#700101',
+    color: '#fff',
+    textTransform: 'capitalize',
   },
   menuDesc: {
-    fontSize: 13,
-    color: '#555',
-    marginTop: 5,
-  },
-  menuIcon: {
-    width: 50,
-    height: 50,
-    resizeMode: 'contain',
-    alignSelf: 'flex-end',
-    marginTop: 10,
-  },
-  waveImage: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    width: 'auto',
-    height: 80,
-    resizeMode: 'cover',
-    borderBottomLeftRadius: 15,
-    borderBottomRightRadius: 15,
-    zIndex: -1,
+    fontSize: 12,
+    color: '#fff',
+    marginTop: 2,
   },
 });
 
-export default TryOutScreen;
+export default TryoutScreen;
