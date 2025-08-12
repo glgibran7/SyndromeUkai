@@ -204,6 +204,7 @@ const ExamScreen = () => {
                   >
                     {idx + 1}
                   </Text>
+                  <View style={styles.emptySpace} />
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -370,25 +371,32 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   numberButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 50,
+    height: 60,
     borderWidth: 1,
-    borderColor: '#9D2828',
-    justifyContent: 'center',
-    alignItems: 'center',
+    borderColor: '#000',
+    borderRadius: 6,
     margin: 5,
     backgroundColor: '#fff',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingTop: 5,
   },
   numberButtonActive: {
-    backgroundColor: '#9D2828',
+    backgroundColor: '#ecececff',
   },
   numberText: {
-    color: '#9D2828',
+    color: '#000000',
     fontWeight: 'bold',
+    fontSize: 16,
   },
   numberTextActive: {
-    color: '#fff',
+    color: '#000',
+  },
+  emptySpace: {
+    flex: 1,
+    width: '100%',
   },
 });
 
