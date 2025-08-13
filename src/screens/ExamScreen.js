@@ -7,7 +7,6 @@ import {
   ScrollView,
   StatusBar,
   Modal,
-  TextInput,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
@@ -18,7 +17,6 @@ const ExamScreen = () => {
   const [showCalc, setShowCalc] = useState(false);
   const [selectedOption, setSelectedOption] = useState(null);
   const [markDoubt, setMarkDoubt] = useState(false);
-  // Tambahan state untuk daftar soal
   const [listVisible, setListVisible] = useState(false);
 
   const questions = [
@@ -50,10 +48,26 @@ const ExamScreen = () => {
   ];
 
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-
   const currentQuestion = questions[currentQuestionIndex];
 
-  // Timer
+  const [answersStatus, setAnswersStatus] = useState(
+    Array(questions.length).fill({ answered: false, doubt: false }),
+  );
+
+  useEffect(() => {
+    setMarkDoubt(answersStatus[currentQuestionIndex]?.doubt || false);
+    setSelectedOption(null); // reset pilihan saat berpindah soal
+  }, [currentQuestionIndex]);
+
+  useEffect(() => {
+    const newStatus = [...answersStatus];
+    newStatus[currentQuestionIndex] = {
+      ...newStatus[currentQuestionIndex],
+      doubt: markDoubt,
+    };
+    setAnswersStatus(newStatus);
+  }, [markDoubt]);
+
   const [timeLeft, setTimeLeft] = useState(7200); // 2 jam
   useEffect(() => {
     if (timeLeft <= 0) return;
@@ -70,14 +84,12 @@ const ExamScreen = () => {
       .padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
-  // Kalkulator
   const [calcVisible, setCalcVisible] = useState(false);
 
   return (
     <LinearGradient colors={['#9D2828', '#191919']} style={{ flex: 1 }}>
       <StatusBar barStyle="light-content" backgroundColor="#9D2828" />
 
-      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>Try Out 1</Text>
         <View style={styles.timerBox}>
@@ -86,7 +98,6 @@ const ExamScreen = () => {
       </View>
 
       <ScrollView style={styles.container}>
-        {/* Judul Soal */}
         <View style={styles.questionHeader}>
           <Text style={styles.questionTitle}>
             Soal Nomor {currentQuestionIndex + 1}
@@ -108,10 +119,8 @@ const ExamScreen = () => {
           </View>
         </View>
 
-        {/* Teks Soal */}
         <Text style={styles.questionText}>{currentQuestion.text}</Text>
 
-        {/* Pilihan Jawaban */}
         {currentQuestion.options.map((opt, idx) => (
           <TouchableOpacity
             key={idx}
@@ -119,7 +128,16 @@ const ExamScreen = () => {
               styles.optionBox,
               selectedOption === idx && styles.optionSelected,
             ]}
-            onPress={() => setSelectedOption(idx)}
+            onPress={() => {
+              setSelectedOption(idx);
+
+              const newStatus = [...answersStatus];
+              newStatus[currentQuestionIndex] = {
+                ...newStatus[currentQuestionIndex],
+                answered: true,
+              };
+              setAnswersStatus(newStatus);
+            }}
           >
             <View style={styles.radioCircle}>
               {selectedOption === idx && <View style={styles.radioDot} />}
@@ -128,7 +146,6 @@ const ExamScreen = () => {
           </TouchableOpacity>
         ))}
 
-        {/* Tandai Ragu */}
         <View style={styles.doubtRow}>
           <CheckBox
             value={markDoubt}
@@ -138,13 +155,11 @@ const ExamScreen = () => {
           <Text style={styles.doubtText}>Tandai Ragu-ragu</Text>
         </View>
 
-        {/* Info soal */}
         <Text style={styles.questionCount}>
           {currentQuestionIndex + 1} – {questions.length} Soal
         </Text>
       </ScrollView>
 
-      {/* Tombol Navigasi */}
       <View style={styles.footer}>
         <TouchableOpacity
           style={styles.backButton}
@@ -162,11 +177,11 @@ const ExamScreen = () => {
         </TouchableOpacity>
       </View>
 
-      {/* Modal Kalkulator */}
       <CalculatorModal
         visible={calcVisible}
         onClose={() => setCalcVisible(false)}
-      ></CalculatorModal>
+      />
+
       {/* Modal Daftar Soal */}
       <Modal
         visible={listVisible}
@@ -184,29 +199,34 @@ const ExamScreen = () => {
             <ScrollView
               contentContainerStyle={{ flexDirection: 'row', flexWrap: 'wrap' }}
             >
-              {questions.map((q, idx) => (
-                <TouchableOpacity
-                  key={idx}
-                  style={[
-                    styles.numberButton,
-                    idx === currentQuestionIndex && styles.numberButtonActive,
-                  ]}
-                  onPress={() => {
-                    setCurrentQuestionIndex(idx);
-                    setListVisible(false);
-                  }}
-                >
-                  <Text
+              {questions.map((q, idx) => {
+                const status = answersStatus[idx];
+                let bgColor = '#fff';
+                if (status.doubt) {
+                  bgColor = '#FFF9C4'; // kuning
+                } else if (status.answered) {
+                  bgColor = '#C8E6C9'; // hijau
+                } else {
+                  bgColor = '#fff';
+                }
+
+                return (
+                  <TouchableOpacity
+                    key={idx}
                     style={[
-                      styles.numberText,
-                      idx === currentQuestionIndex && styles.numberTextActive,
+                      styles.numberButton,
+                      { backgroundColor: bgColor },
+                      idx === currentQuestionIndex && styles.numberButtonActive,
                     ]}
+                    onPress={() => {
+                      setCurrentQuestionIndex(idx);
+                      setListVisible(false);
+                    }}
                   >
-                    {idx + 1}
-                  </Text>
-                  <View style={styles.emptySpace} />
-                </TouchableOpacity>
-              ))}
+                    <Text style={styles.numberText}>{idx + 1}</Text>
+                  </TouchableOpacity>
+                );
+              })}
             </ScrollView>
             <TouchableOpacity
               style={styles.closeButton}
@@ -350,19 +370,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     elevation: 5,
   },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 8,
-    marginBottom: 10,
-  },
-  calcBtn: {
-    backgroundColor: '#4CAF50',
-    padding: 10,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
   closeButton: {
     backgroundColor: '#B71C1C',
     padding: 10,
@@ -371,32 +378,22 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   numberButton: {
-    width: 50,
-    height: 60,
+    width: 40,
+    height: 40,
     borderWidth: 1,
     borderColor: '#000',
     borderRadius: 6,
     margin: 5,
-    backgroundColor: '#fff',
-    flexDirection: 'column',
     alignItems: 'center',
-    justifyContent: 'flex-start',
-    paddingTop: 5,
+    justifyContent: 'center',
   },
   numberButtonActive: {
-    backgroundColor: '#ecececff',
+    borderWidth: 2,
+    borderColor: '#000',
   },
   numberText: {
-    color: '#000000',
+    fontSize: 12,
     fontWeight: 'bold',
-    fontSize: 16,
-  },
-  numberTextActive: {
-    color: '#000',
-  },
-  emptySpace: {
-    flex: 1,
-    width: '100%',
   },
 });
 
