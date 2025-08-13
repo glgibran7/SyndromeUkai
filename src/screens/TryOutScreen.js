@@ -223,8 +223,8 @@ const TryoutScreen = ({ navigation }) => {
                     {/* Info Tryout */}
                     <View>
                       <Text style={styles.menuTitle}>{item.nama}</Text>
-                      <Text style={styles.menuDesc}>📝 {item.soal} Soal</Text>
-                      <Text style={styles.menuDesc}>⏳ {item.waktu} Menit</Text>
+                      <Text style={styles.menuDesc}>{item.soal} Soal</Text>
+                      <Text style={styles.menuDesc}>{item.waktu} Menit</Text>
                     </View>
                   </View>
                 </LinearGradient>

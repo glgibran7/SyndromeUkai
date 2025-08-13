@@ -1,13 +1,14 @@
 // src/navigation/MainTabNavigator.js
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import Ionicons from '@react-native-vector-icons/ionicons';
+
 import HomeScreen from '../screens/HomeScreen';
-import TryOutScreen from '../screens/TryOutScreen';
+import TryOuttackNavigator from './TryOutStackNavigator';
 import HasilTryOut from '../screens/HasilTryOut';
 import MateriStackNavigator from './MateriStackNavigator';
 import VideoStackNavigator from './VideoStackNavigator';
-import TryOuttackNavigator from './TryOutStackNavigator'; // Pastikan ini sesuai dengan nama file yang benar
 
 const Tab = createBottomTabNavigator();
 
@@ -15,32 +16,38 @@ const MainTabNavigator = () => {
   return (
     <Tab.Navigator
       screenOptions={({ route, navigation }) => {
-        const isHome =
-          navigation?.getState()?.routes[navigation.getState().index]?.name ===
-          'Home';
+        const currentRouteName =
+          navigation?.getState()?.routes[navigation.getState().index]?.name;
 
         return {
           headerShown: false,
-          tabBarStyle: isHome
-            ? { display: 'none' } // ✅ Sembunyikan tab menu saat di Home
-            : { backgroundColor: '#9D2828', height: 60 },
-
+          tabBarStyle:
+            currentRouteName === 'Home'
+              ? { display: 'none' }
+              : { backgroundColor: '#9D2828', height: 60 },
           tabBarLabelStyle: { fontSize: 12 },
           tabBarIcon: ({ focused, color, size }) => {
             let iconName;
-
-            if (route.name === 'Home') {
-              iconName = focused ? 'home' : 'home-outline';
-            } else if (route.name === 'Materi') {
-              iconName = focused ? 'document' : 'document-outline';
-            } else if (route.name === 'Video') {
-              iconName = focused ? 'play-circle' : 'play-circle-outline';
-            } else if (route.name === 'TryOut') {
-              iconName = focused ? 'pencil' : 'pencil-outline';
-            } else if (route.name === 'Hasil') {
-              iconName = focused
-                ? 'document-attach'
-                : 'document-attach-outline';
+            switch (route.name) {
+              case 'Home':
+                iconName = focused ? 'home' : 'home-outline';
+                break;
+              case 'Materi':
+                iconName = focused ? 'document' : 'document-outline';
+                break;
+              case 'Video':
+                iconName = focused ? 'play-circle' : 'play-circle-outline';
+                break;
+              case 'TryOut':
+                iconName = focused ? 'pencil' : 'pencil-outline';
+                break;
+              case 'Hasil':
+                iconName = focused
+                  ? 'document-attach'
+                  : 'document-attach-outline';
+                break;
+              default:
+                iconName = 'help-circle-outline';
             }
 
             return <Ionicons name={iconName} size={size} color={color} />;
@@ -51,9 +58,27 @@ const MainTabNavigator = () => {
       }}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
+
       <Tab.Screen name="Materi" component={MateriStackNavigator} />
+
       <Tab.Screen name="Video" component={VideoStackNavigator} />
-      <Tab.Screen name="TryOut" component={TryOuttackNavigator} />
+
+      <Tab.Screen
+        name="TryOut"
+        component={TryOuttackNavigator}
+        options={({ route }) => {
+          const routeName =
+            getFocusedRouteNameFromRoute(route) ?? 'TryOutScreen';
+          const isExamScreen = routeName === 'ExamScreen';
+
+          return {
+            tabBarStyle: isExamScreen
+              ? { display: 'none' }
+              : { backgroundColor: '#9D2828', height: 60 },
+          };
+        }}
+      />
+
       <Tab.Screen name="Hasil" component={HasilTryOut} />
     </Tab.Navigator>
   );

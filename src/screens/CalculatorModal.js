@@ -7,9 +7,23 @@ const CalculatorModal = ({ visible, onClose }) => {
   const handlePress = value => {
     if (value === 'C') {
       setInput('');
+    } else if (value === '⌫') {
+      setInput(input.slice(0, -1));
     } else if (value === '=') {
       try {
-        setInput(eval(input).toString());
+        let expression = input
+          .replace(/π/g, Math.PI)
+          .replace(/e/g, Math.E)
+          .replace(/√/g, 'Math.sqrt')
+          .replace(/sin/g, 'Math.sin')
+          .replace(/cos/g, 'Math.cos')
+          .replace(/tan/g, 'Math.tan')
+          .replace(/log/g, 'Math.log10')
+          .replace(/ln/g, 'Math.log')
+          .replace(/\^/g, '**')
+          .replace(/×/g, '*')
+          .replace(/÷/g, '/');
+        setInput(eval(expression).toString());
       } catch {
         setInput('Error');
       }
@@ -19,11 +33,14 @@ const CalculatorModal = ({ visible, onClose }) => {
   };
 
   const buttons = [
-    ['7', '8', '9', '/'],
-    ['4', '5', '6', '*'],
+    ['sin', 'cos', 'tan', 'π'],
+    ['log', 'ln', '√', 'e'],
+    ['(', ')', '^', '%'],
+    ['7', '8', '9', '÷'],
+    ['4', '5', '6', '×'],
     ['1', '2', '3', '-'],
     ['0', '.', 'C', '+'],
-    ['='],
+    ['⌫', '='],
   ];
 
   return (
@@ -40,6 +57,7 @@ const CalculatorModal = ({ visible, onClose }) => {
                     styles.button,
                     btn === '=' && styles.equalButton,
                     btn === 'C' && styles.clearButton,
+                    btn === '⌫' && styles.backspaceButton,
                   ]}
                   onPress={() => handlePress(btn)}
                 >
@@ -69,7 +87,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#222',
     borderRadius: 15,
     padding: 20,
-    width: '85%',
+    width: '90%',
   },
   display: {
     backgroundColor: '#000',
@@ -79,6 +97,7 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     marginBottom: 10,
     borderRadius: 8,
+    minHeight: 50,
   },
   row: {
     flexDirection: 'row',
@@ -95,7 +114,7 @@ const styles = StyleSheet.create({
   },
   btnText: {
     color: '#fff',
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
   },
   equalButton: {
@@ -103,6 +122,9 @@ const styles = StyleSheet.create({
   },
   clearButton: {
     backgroundColor: '#dc3545',
+  },
+  backspaceButton: {
+    backgroundColor: '#ff9800',
   },
   closeButton: {
     marginTop: 10,

@@ -13,37 +13,50 @@ import Ionicons from '@react-native-vector-icons/ionicons';
 import CheckBox from '@react-native-community/checkbox';
 import CalculatorModal from './CalculatorModal';
 
-const ExamScreen = () => {
+const ExamScreen = ({ navigation }) => {
   const [showCalc, setShowCalc] = useState(false);
-  const [selectedOption, setSelectedOption] = useState(null);
   const [markDoubt, setMarkDoubt] = useState(false);
   const [listVisible, setListVisible] = useState(false);
+  const [calcVisible, setCalcVisible] = useState(false);
+  const [reviewMode, setReviewMode] = useState(false);
 
   const questions = [
     {
       id: 1,
       text: 'Seorang ibu membeli 3 kg apel dan 2 kg jeruk. Harga apel Rp20.000/kg, jeruk Rp15.000/kg. Berapa total biaya?',
-      options: ['Rp.60.000', 'Rp.120.000', 'Rp.40.000', 'Rp.30.000'],
+      options: ['Rp.90.000', 'Rp.120.000', 'Rp.40.000', 'Rp.30.000'],
+      correct: 0,
+      explanation:
+        'Total biaya = (3 × 20.000) + (2 × 15.000) = 60.000 + 30.000 = Rp90.000.',
     },
     {
       id: 2,
       text: 'Sebuah kereta berangkat pukul 08.30 dan tiba pukul 11.15. Berapa lama perjalanan?',
       options: ['2 jam 45 menit', '3 jam', '2 jam 15 menit', '2 jam 30 menit'],
+      correct: 0,
+      explanation: '11:15 - 08:30 = 2 jam 45 menit.',
     },
     {
       id: 3,
       text: 'Jika 5x = 25, maka nilai x adalah?',
       options: ['5', '10', '15', '20'],
+      correct: 0,
+      explanation: '5x = 25 ⇒ x = 25 ÷ 5 = 5.',
     },
     {
       id: 4,
       text: 'Hasil dari 12 × 8 adalah?',
       options: ['96', '88', '108', '86'],
+      correct: 0,
+      explanation: '12 × 8 = 96.',
     },
     {
       id: 5,
       text: 'Sebuah toko memberi diskon 20% dari harga Rp150.000. Berapa harga setelah diskon?',
       options: ['Rp.120.000', 'Rp.130.000', 'Rp.125.000', 'Rp.140.000'],
+      correct: 0,
+      explanation:
+        'Diskon = 20% × 150.000 = 30.000, harga akhir = 150.000 - 30.000 = Rp120.000.',
     },
   ];
 
@@ -51,29 +64,22 @@ const ExamScreen = () => {
   const currentQuestion = questions[currentQuestionIndex];
 
   const [answersStatus, setAnswersStatus] = useState(
-    Array(questions.length).fill({ answered: false, doubt: false }),
+    questions.map(() => ({
+      answered: false,
+      doubt: false,
+      selectedOption: null,
+    })),
   );
 
-  useEffect(() => {
-    setMarkDoubt(answersStatus[currentQuestionIndex]?.doubt || false);
-    setSelectedOption(null); // reset pilihan saat berpindah soal
-  }, [currentQuestionIndex]);
+  const [scoreVisible, setScoreVisible] = useState(false);
+  const [score, setScore] = useState(0);
 
+  const [timeLeft, setTimeLeft] = useState(7200);
   useEffect(() => {
-    const newStatus = [...answersStatus];
-    newStatus[currentQuestionIndex] = {
-      ...newStatus[currentQuestionIndex],
-      doubt: markDoubt,
-    };
-    setAnswersStatus(newStatus);
-  }, [markDoubt]);
-
-  const [timeLeft, setTimeLeft] = useState(7200); // 2 jam
-  useEffect(() => {
-    if (timeLeft <= 0) return;
+    if (timeLeft <= 0 || reviewMode) return;
     const timer = setInterval(() => setTimeLeft(t => t - 1), 1000);
     return () => clearInterval(timer);
-  }, [timeLeft]);
+  }, [timeLeft, reviewMode]);
 
   const formatTime = sec => {
     const h = Math.floor(sec / 3600);
@@ -84,17 +90,57 @@ const ExamScreen = () => {
       .padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
-  const [calcVisible, setCalcVisible] = useState(false);
+  useEffect(() => {
+    if (!reviewMode) {
+      setMarkDoubt(answersStatus[currentQuestionIndex]?.doubt || false);
+    }
+  }, [currentQuestionIndex, reviewMode]);
+
+  useEffect(() => {
+    if (!reviewMode) {
+      const newStatus = [...answersStatus];
+      newStatus[currentQuestionIndex] = {
+        ...newStatus[currentQuestionIndex],
+        doubt: markDoubt,
+      };
+      setAnswersStatus(newStatus);
+    }
+  }, [markDoubt]);
+
+  const selectOption = idx => {
+    const newStatus = [...answersStatus];
+    newStatus[currentQuestionIndex] = {
+      ...newStatus[currentQuestionIndex],
+      answered: true,
+      selectedOption: idx,
+    };
+    setAnswersStatus(newStatus);
+  };
+
+  const calculateScore = () => {
+    let s = 0;
+    answersStatus.forEach((status, idx) => {
+      if (status.selectedOption === questions[idx].correct) {
+        s += 1;
+      }
+    });
+    setScore(s);
+    setScoreVisible(true);
+  };
 
   return (
     <LinearGradient colors={['#9D2828', '#191919']} style={{ flex: 1 }}>
       <StatusBar barStyle="light-content" backgroundColor="#9D2828" />
 
       <View style={styles.header}>
-        <Text style={styles.title}>Try Out 1</Text>
-        <View style={styles.timerBox}>
-          <Text style={styles.timerText}>{formatTime(timeLeft)}</Text>
-        </View>
+        <Text style={styles.title}>
+          {reviewMode ? 'Pembahasan' : 'Try Out 1'}
+        </Text>
+        {!reviewMode && (
+          <View style={styles.timerBox}>
+            <Text style={styles.timerText}>{formatTime(timeLeft)}</Text>
+          </View>
+        )}
       </View>
 
       <ScrollView style={styles.container}>
@@ -103,13 +149,15 @@ const ExamScreen = () => {
             Soal Nomor {currentQuestionIndex + 1}
           </Text>
           <View style={styles.buttonsRow}>
-            <TouchableOpacity
-              style={styles.calcButton}
-              onPress={() => setCalcVisible(true)}
-            >
-              <Ionicons name="calculator-outline" size={16} color="#2E7D32" />
-              <Text style={styles.calcText}>Kalkulator</Text>
-            </TouchableOpacity>
+            {!reviewMode && (
+              <TouchableOpacity
+                style={styles.calcButton}
+                onPress={() => setCalcVisible(true)}
+              >
+                <Ionicons name="calculator-outline" size={16} color="#2E7D32" />
+                <Text style={styles.calcText}>Kalkulator</Text>
+              </TouchableOpacity>
+            )}
             <TouchableOpacity
               style={styles.listButton}
               onPress={() => setListVisible(true)}
@@ -121,43 +169,76 @@ const ExamScreen = () => {
 
         <Text style={styles.questionText}>{currentQuestion.text}</Text>
 
-        {currentQuestion.options.map((opt, idx) => (
-          <TouchableOpacity
-            key={idx}
-            style={[
-              styles.optionBox,
-              selectedOption === idx && styles.optionSelected,
-            ]}
-            onPress={() => {
-              setSelectedOption(idx);
+        {currentQuestion.options.map((opt, idx) => {
+          const userAnswer = answersStatus[currentQuestionIndex].selectedOption;
+          const correctAnswer = currentQuestion.correct;
+          let optionStyle = styles.optionBox;
 
-              const newStatus = [...answersStatus];
-              newStatus[currentQuestionIndex] = {
-                ...newStatus[currentQuestionIndex],
-                answered: true,
-              };
-              setAnswersStatus(newStatus);
+          if (reviewMode) {
+            if (idx === correctAnswer) {
+              optionStyle = [
+                styles.optionBox,
+                { backgroundColor: '#C8E6C9', borderColor: '#2E7D32' },
+              ];
+            }
+            if (userAnswer === idx && idx !== correctAnswer) {
+              optionStyle = [
+                styles.optionBox,
+                { backgroundColor: '#FFCDD2', borderColor: '#C62828' },
+              ];
+            }
+          } else {
+            if (userAnswer === idx) {
+              optionStyle = [styles.optionBox, styles.optionSelected];
+            }
+          }
+
+          return (
+            <TouchableOpacity
+              key={idx}
+              disabled={reviewMode}
+              style={optionStyle}
+              onPress={() => selectOption(idx)}
+            >
+              <View style={styles.radioCircle}>
+                {userAnswer === idx && <View style={styles.radioDot} />}
+              </View>
+              <Text style={styles.optionText}>{opt}</Text>
+            </TouchableOpacity>
+          );
+        })}
+
+        {reviewMode && (
+          <View
+            style={{
+              backgroundColor: '#FFF9C4',
+              marginHorizontal: 16,
+              padding: 12,
+              borderRadius: 8,
+              borderWidth: 1,
+              borderColor: '#FBC02D',
+              marginTop: 10,
             }}
           >
-            <View style={styles.radioCircle}>
-              {selectedOption === idx && <View style={styles.radioDot} />}
-            </View>
-            <Text style={styles.optionText}>{opt}</Text>
-          </TouchableOpacity>
-        ))}
+            <Text style={{ fontWeight: 'bold', marginBottom: 4 }}>
+              Pembahasan:
+            </Text>
+            <Text style={{ fontSize: 13, lineHeight: 18 }}>
+              {currentQuestion.explanation}
+            </Text>
+          </View>
+        )}
 
-        <View style={styles.doubtRow}>
-          <CheckBox
-            value={markDoubt}
-            onValueChange={setMarkDoubt}
-            tintColors={{ true: '#FFA000', false: '#FFA000' }}
-          />
-          <Text style={styles.doubtText}>Tandai Ragu-ragu</Text>
-        </View>
-
-        <Text style={styles.questionCount}>
-          {currentQuestionIndex + 1} – {questions.length} Soal
-        </Text>
+        {!reviewMode && (
+          <View style={styles.doubtRow}>
+            <CheckBox
+              value={markDoubt}
+              onValueChange={setMarkDoubt}
+              tintColors={{ true: '#FFA000', false: '#FFA000' }}
+            />
+            <Text style={styles.doubtText}>Tandai Ragu-ragu</Text>
+          </View>
+        )}
       </ScrollView>
 
       <View style={styles.footer}>
@@ -165,15 +246,30 @@ const ExamScreen = () => {
           style={styles.backButton}
           onPress={() => setCurrentQuestionIndex(i => Math.max(0, i - 1))}
         >
-          <Text style={styles.backText}>Sebelumnya</Text>
+          <Text style={styles.backText}>Soal Sebelumnya</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.nextButton}
-          onPress={() =>
-            setCurrentQuestionIndex(i => Math.min(questions.length - 1, i + 1))
-          }
+          onPress={() => {
+            if (currentQuestionIndex < questions.length - 1) {
+              setCurrentQuestionIndex(i => i + 1);
+            } else if (!reviewMode) {
+              calculateScore();
+            } else {
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'TryOutScreen' }],
+              });
+            }
+          }}
         >
-          <Text style={styles.nextText}>Soal Selanjutnya</Text>
+          <Text style={styles.nextText}>
+            {currentQuestionIndex < questions.length - 1
+              ? 'Soal Selanjutnya'
+              : reviewMode
+              ? 'Selesai Pembahasan'
+              : 'Selesai'}
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -202,12 +298,11 @@ const ExamScreen = () => {
               {questions.map((q, idx) => {
                 const status = answersStatus[idx];
                 let bgColor = '#fff';
-                if (status.doubt) {
-                  bgColor = '#FFF9C4'; // kuning
-                } else if (status.answered) {
-                  bgColor = '#C8E6C9'; // hijau
+                if (reviewMode) {
+                  bgColor = idx === q.correct ? '#C8E6C9' : '#fff';
                 } else {
-                  bgColor = '#fff';
+                  if (status.doubt) bgColor = '#FFF9C4';
+                  else if (status.answered) bgColor = '#C8E6C9';
                 }
 
                 return (
@@ -237,10 +332,56 @@ const ExamScreen = () => {
           </View>
         </View>
       </Modal>
+
+      {/* Modal Skor */}
+      <Modal
+        visible={scoreVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setScoreVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text
+              style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 12 }}
+            >
+              Skor Anda
+            </Text>
+            <Text style={{ fontSize: 16, marginBottom: 16 }}>
+              Anda mendapatkan {score} / {questions.length} poin
+            </Text>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => {
+                setScoreVisible(false);
+                setReviewMode(true);
+                setCurrentQuestionIndex(0);
+              }}
+            >
+              <Text style={{ color: '#fff', fontWeight: 'bold' }}>
+                Lihat Pembahasan
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.closeButton, { backgroundColor: '#9E9E9E' }]}
+              onPress={() => {
+                setScoreVisible(false);
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: 'TryOutScreen' }],
+                });
+              }}
+            >
+              <Text style={{ color: '#fff', fontWeight: 'bold' }}>Tutup</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </LinearGradient>
   );
 };
 
+// Styles tetap sama seperti di kode kamu sebelumnya
 const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
@@ -332,12 +473,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   doubtText: { color: '#FFA000', fontWeight: 'bold' },
-  questionCount: {
-    position: 'absolute',
-    bottom: 5,
-    right: 20,
-    fontWeight: 'bold',
-  },
   footer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -347,7 +482,7 @@ const styles = StyleSheet.create({
   backButton: {
     backgroundColor: '#9E9E9E',
     paddingVertical: 12,
-    paddingHorizontal: 50,
+    paddingHorizontal: 30,
     borderRadius: 20,
   },
   backText: { color: '#fff', fontWeight: 'bold' },
