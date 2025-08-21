@@ -45,7 +45,9 @@ const MainTabNavigator = () => {
                 iconName = focused ? 'play-circle' : 'play-circle-outline';
                 break;
               case 'TryOut':
-                iconName = focused ? 'pencil' : 'pencil-outline';
+                iconName = focused
+                  ? 'file-tray-full'
+                  : 'file-tray-full-outline';
                 break;
               case 'Hasil':
                 iconName = focused

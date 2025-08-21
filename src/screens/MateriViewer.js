@@ -84,7 +84,7 @@ const MateriViewer = ({ route, navigation }) => {
   };
 
   // ===== Watermark teks (tidak menghalangi sentuhan, hanya overlay) =====
-  const watermarkText = `${user.name}`;
+  const watermarkText = `${user.name}•${user.name}`;
   const watermarks = Array.from({ length: 10 }, (_, i) => (
     <Text key={i} style={styles.watermarkText}>
       {watermarkText}
@@ -217,10 +217,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-evenly',
     transform: [{ rotate: '-20deg' }],
-    opacity: 0.05, // cukup terlihat tapi tidak ganggu
+    opacity: 0.1,
   },
   watermarkText: {
-    fontSize: 28,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#000',
     textTransform: 'capitalize',
