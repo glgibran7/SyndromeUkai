@@ -103,9 +103,9 @@ const MateriListScreen = ({ route, navigation }) => {
           />
 
           <View style={styles.userInfo}>
-            <View style={styles.paketBadge}>
+            {/* <View style={styles.paketBadge}>
               <Text style={styles.paketText}>🥇 {user.paket}</Text>
-            </View>
+            </View> */}
             <View style={styles.avatarInitial}>
               <Text style={styles.avatarText}>
                 {user.name.split(' ')[0][0]}
@@ -223,7 +223,7 @@ const styles = StyleSheet.create({
     width: width * 0.25,
     height: width * 0.25,
     resizeMode: 'contain',
-    marginLeft: -80,
+    marginLeft: -180,
   },
   userInfo: {
     flexDirection: 'row',

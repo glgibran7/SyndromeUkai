@@ -8,17 +8,21 @@ import {
   StyleSheet,
   Dimensions,
   StatusBar,
+  ActivityIndicator,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { FlatList } from 'react-native';
 import MentorList from '../components/MentorList';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Api from '../utils/Api';
 
 const { width } = Dimensions.get('window');
 
 const Home = ({ navigation }) => {
   const flatListRef = useRef(null);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -30,7 +34,7 @@ const Home = ({ navigation }) => {
       });
 
       setCurrentIndex(nextIndex);
-    }, 3000); // setiap 3 detik
+    }, 3000);
 
     return () => clearInterval(interval);
   }, [currentIndex]);
@@ -48,7 +52,7 @@ const Home = ({ navigation }) => {
           const parsedUser = JSON.parse(storedUser);
           setUser({
             name: parsedUser.nama || 'Peserta',
-            paket: 'Premium', // atau bisa diambil dari backend jika tersedia
+            paket: 'Premium',
           });
         }
       } catch (error) {
@@ -58,6 +62,26 @@ const Home = ({ navigation }) => {
 
     getUserData();
   }, []);
+
+  const handleLogout = async () => {
+    try {
+      setIsLoggingOut(true);
+
+      // panggil API logout
+      await Api.post('/auth/logout');
+
+      // hapus data user di AsyncStorage
+      await AsyncStorage.removeItem('user');
+
+      // redirect ke halaman login
+      navigation.replace('Login');
+    } catch (error) {
+      console.error('Gagal logout:', error);
+      alert('Logout gagal, coba lagi.');
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
 
   const menus = [
     {
@@ -113,15 +137,52 @@ const Home = ({ navigation }) => {
           </View>
 
           <View style={styles.userInfo}>
-            <View style={styles.paketBadge}>
-              <Text style={styles.paketText}>👑 {user.paket}</Text>
-            </View>
-            <View style={styles.avatarInitial}>
-              <Text style={styles.avatarText}>
-                {user.name.split(' ')[0][0]}
-                {/* {user.name.split(' ')[1]?.[0]} */}
-              </Text>
-            </View>
+            {/* Avatar */}
+            <TouchableOpacity onPress={() => setMenuVisible(!menuVisible)}>
+              <View style={styles.avatarInitial}>
+                <Text style={styles.avatarText}>
+                  {user.name.split(' ')[0][0]}
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            {menuVisible && (
+              <View style={styles.dropdownMenu}>
+                <TouchableOpacity
+                  style={styles.dropdownItem}
+                  onPress={() => {
+                    setMenuVisible(false);
+                    navigation.navigate('Profile');
+                  }}
+                >
+                  <Text style={styles.dropdownText}>Profil</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.dropdownItem}
+                  onPress={handleLogout}
+                  disabled={isLoggingOut}
+                >
+                  {isLoggingOut ? (
+                    <View
+                      style={{ flexDirection: 'row', alignItems: 'center' }}
+                    >
+                      <ActivityIndicator size="small" color="#700101" />
+                      <Text
+                        style={[
+                          styles.dropdownText,
+                          { marginLeft: 8, color: 'gray' },
+                        ]}
+                      >
+                        Logging out...
+                      </Text>
+                    </View>
+                  ) : (
+                    <Text style={styles.dropdownText}>Logout</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
         </View>
 
@@ -150,13 +211,9 @@ const Home = ({ navigation }) => {
               >
                 <Text style={styles.menuTitle}>{item.title}</Text>
                 <Text style={styles.menuDesc}>{item.desc}</Text>
-
-                {/* Icon di atas wave */}
                 <View style={styles.menuIconContainer}>
                   <Image source={item.icon} style={styles.menuIcon} />
                 </View>
-
-                {/* Wave PNG di bagian bawah card */}
                 <Image source={item.wave} style={styles.waveImage} />
               </TouchableOpacity>
             ))}
@@ -202,11 +259,8 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
   },
   userInfo: {
-    flexDirection: 'row', // sejajar horizontal
-    alignItems: 'center',
-    gap: 8, // jarak antara avatar dan badge
+    position: 'relative',
   },
-
   avatarInitial: {
     width: 35,
     height: 35,
@@ -215,29 +269,34 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-
   avatarText: {
     color: '#fff',
     fontWeight: 'bold',
     textTransform: 'capitalize',
   },
-
-  avatar: {
-    width: 35,
-    height: 35,
-    borderRadius: 999,
-    marginBottom: 4,
+  dropdownMenu: {
+    position: 'absolute',
+    top: 45,
+    right: 0,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    zIndex: 999,
+    width: 160, // Lebar dropdown
   },
-  paketBadge: {
-    backgroundColor: '#feb600',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 12,
+  dropdownItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
   },
-  paketText: {
-    fontSize: 12,
-    color: '#fff',
-    fontWeight: 'bold',
+  dropdownText: {
+    fontSize: 15,
+    color: '#000',
   },
   greetingBox: {
     marginTop: -5,
@@ -278,8 +337,8 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     padding: 15,
     marginBottom: 20,
-    overflow: 'hidden', // agar wave tidak keluar dari card
-    position: 'relative', // penting agar wave absolute mengacu ke card
+    overflow: 'hidden',
+    position: 'relative',
   },
   menuTitle: {
     fontWeight: 'bold',
@@ -298,18 +357,17 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end',
     marginTop: 10,
   },
-
   waveImage: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
     width: 'auto',
-    height: 80, // atur sesuai ukuran wave.png
+    height: 80,
     resizeMode: 'cover',
     borderBottomLeftRadius: 15,
     borderBottomRightRadius: 15,
-    zIndex: -1, // pastikan wave berada di belakang konten card
+    zIndex: -1,
   },
 });
 

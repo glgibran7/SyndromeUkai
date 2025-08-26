@@ -135,8 +135,8 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   icon: {
-    width: 50,
-    height: 50,
+    width: 70,
+    height: 70,
     resizeMode: 'contain',
     marginRight: 15,
   },
