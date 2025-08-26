@@ -201,8 +201,8 @@ const Home = ({ navigation }) => {
         <View style={styles.greetingBox}>
           <Text style={styles.greeting}>Hi, {user.name}</Text>
           <Text style={styles.subtext}>
-            Platform penyedia layanan pendidikan farmasi{'\n'}
-            <Text style={{ fontWeight: 'bold' }}>terbaik dan ter-murah</Text>
+            Langkah kecil hari ini, lompatan besar esok.
+            {/* <Text style={{ fontWeight: 'bold' }}>terbaik dan ter-murah</Text> */}
           </Text>
         </View>
 

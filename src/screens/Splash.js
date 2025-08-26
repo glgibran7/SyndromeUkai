@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
   },
   logo: {
     width: 200,
-    height: 75,
+    height: 80,
     marginBottom: 30,
     borderRadius: 30,
     shadowColor: '#000',
