@@ -424,7 +424,20 @@ const VideoViewer = ({ route, navigation }) => {
       <StatusBar barStyle="light-content" backgroundColor="#a10505" />
       {/* Header same as VideoListScreen */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <TouchableOpacity
+          onPress={() => {
+            try {
+              if (navigation?.canGoBack?.()) {
+                navigation.goBack();
+              } else if (navigation?.navigate) {
+                navigation.navigate('Home');
+              }
+            } catch (e) {
+              // fallback terakhir: reset ke Home
+              navigation?.reset?.({ index: 0, routes: [{ name: 'Home' }] });
+            }
+          }}
+        >
           <Ionicons name="arrow-back" size={26} color="#fff" />
         </TouchableOpacity>
 
@@ -451,6 +464,31 @@ const VideoViewer = ({ route, navigation }) => {
             allowsFullscreenVideo
             mediaPlaybackRequiresUserAction={false}
           />
+          {/* Watermark overlay */}
+          <View
+            pointerEvents="none"
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            <Text
+              style={{
+                color: 'rgba(255,0,0,0.18)',
+                fontSize: 32,
+                fontWeight: 'bold',
+                transform: [{ rotate: '-20deg' }],
+                textAlign: 'center',
+              }}
+            >
+              {user.nama}
+            </Text>
+          </View>
         </View>
 
         {/* Info */}
