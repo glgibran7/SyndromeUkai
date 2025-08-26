@@ -8,7 +8,8 @@ import {
   StyleSheet,
   Dimensions,
   StatusBar,
-  Navigation,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -18,29 +19,12 @@ const { width } = Dimensions.get('window');
 
 const VideoScreen = ({ navigation }) => {
   const [modulList, setmodulList] = useState([]);
+  const [dropdownVisible, setDropdownVisible] = useState(false);
   const [user, setUser] = useState({
     name: 'Peserta',
     paket: 'Premium',
   });
 
-  useEffect(() => {
-    const getUserData = async () => {
-      try {
-        const storedUser = await AsyncStorage.getItem('user');
-        if (storedUser) {
-          const parsedUser = JSON.parse(storedUser);
-          setUser({
-            name: parsedUser.nama || 'Peserta',
-            paket: 'Premium',
-          });
-        }
-      } catch (error) {
-        console.error('Gagal mengambil data user:', error);
-      }
-    };
-
-    getUserData();
-  }, []);
   useEffect(() => {
     const getUserData = async () => {
       try {
@@ -80,71 +64,103 @@ const VideoScreen = ({ navigation }) => {
     getModul();
   }, []);
 
+  const handleLogout = async () => {
+    await AsyncStorage.removeItem('user');
+    navigation.replace('Login');
+  };
+
   return (
-    <LinearGradient
-      colors={['#9D2828', '#191919']}
-      style={{ flex: 1 }}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
+    <TouchableWithoutFeedback
+      onPress={() => {
+        if (dropdownVisible) setDropdownVisible(false);
+        Keyboard.dismiss();
+      }}
     >
-      <StatusBar barStyle="light-content" backgroundColor="#a10505" />
-      <ScrollView style={{ flex: 1 }}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={{ flex: 1 }}>
-            <Image
-              source={require('../../src/img/logo_putih.png')}
-              style={styles.logo}
-            />
-          </View>
-
-          <View style={styles.userInfo}>
-            <View style={styles.paketBadge}>
-              <Text style={styles.paketText}>🥇 {user.paket}</Text>
+      <LinearGradient
+        colors={['#9D2828', '#191919']}
+        style={{ flex: 1 }}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        <StatusBar barStyle="light-content" backgroundColor="#a10505" />
+        <ScrollView style={{ flex: 1 }}>
+          {/* Header */}
+          <View style={styles.header}>
+            <View style={{ flex: 1 }}>
+              <Image
+                source={require('../../src/img/logo_putih.png')}
+                style={styles.logo}
+              />
             </View>
-            <View style={styles.avatarInitial}>
-              <Text style={styles.avatarText}>
-                {user.name.split(' ')[0][0]}
-              </Text>
-            </View>
-          </View>
-        </View>
 
-        {/* Title */}
-        <View style={styles.greetingBox}>
-          <Text style={styles.greeting}>Video</Text>
-          <Text style={styles.subtext}>Kumpulan materi video lengkap</Text>
-        </View>
-
-        {/* Grid */}
-        <View style={styles.mainContent}>
-          <Text style={styles.sectionTitle}>Daftar Modul</Text>
-          <View style={styles.menuGrid}>
-            {modulList.map((item, index) => (
+            <View style={styles.userInfo}>
               <TouchableOpacity
-                key={index}
-                style={[
-                  styles.menuItem,
-                  { backgroundColor: item.backgroundColor },
-                ]}
-                onPress={() =>
-                  navigation.navigate('VideoListScreen', {
-                    id_modul: item.id_modul,
-                  })
-                }
+                style={styles.avatarInitial}
+                onPress={() => setDropdownVisible(!dropdownVisible)}
               >
-                <Text style={styles.menuTitle}>{item.title}</Text>
-                <Text style={styles.menuDesc}>{item.desc}</Text>
-                <View style={styles.menuIconContainer}>
-                  <Image source={item.icon} style={styles.menuIcon} />
-                </View>
-                <Image source={item.wave} style={styles.waveImage} />
+                <Text style={styles.avatarText}>
+                  {user.name.split(' ')[0][0]}
+                </Text>
               </TouchableOpacity>
-            ))}
+
+              {dropdownVisible && (
+                <View style={styles.dropdown}>
+                  <TouchableOpacity
+                    style={styles.dropdownItem}
+                    onPress={() => {
+                      setDropdownVisible(false);
+                      navigation.navigate('Profile');
+                    }}
+                  >
+                    <Text style={styles.dropdownText}>Profile</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.dropdownItem}
+                    onPress={handleLogout}
+                  >
+                    <Text style={styles.dropdownText}>Logout</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
           </View>
-        </View>
-      </ScrollView>
-    </LinearGradient>
+
+          {/* Title */}
+          <View style={styles.greetingBox}>
+            <Text style={styles.greeting}>Video</Text>
+            <Text style={styles.subtext}>Kumpulan materi video lengkap</Text>
+          </View>
+
+          {/* Grid */}
+          <View style={styles.mainContent}>
+            <Text style={styles.sectionTitle}>Daftar Modul</Text>
+            <View style={styles.menuGrid}>
+              {modulList.map((item, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={[
+                    styles.menuItem,
+                    { backgroundColor: item.backgroundColor },
+                  ]}
+                  onPress={() =>
+                    navigation.navigate('VideoListScreen', {
+                      id_modul: item.id_modul,
+                    })
+                  }
+                >
+                  <Text style={styles.menuTitle}>{item.title}</Text>
+                  <Text style={styles.menuDesc}>{item.desc}</Text>
+                  <View style={styles.menuIconContainer}>
+                    <Image source={item.icon} style={styles.menuIcon} />
+                  </View>
+                  <Image source={item.wave} style={styles.waveImage} />
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </ScrollView>
+      </LinearGradient>
+    </TouchableWithoutFeedback>
   );
 };
 
@@ -161,9 +177,9 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
   },
   userInfo: {
+    position: 'relative',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
   },
   avatarInitial: {
     width: 35,
@@ -178,16 +194,29 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textTransform: 'capitalize',
   },
-  paketBadge: {
-    backgroundColor: '#feb600',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 12,
+  dropdown: {
+    position: 'absolute',
+    top: 45,
+    right: 0,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    zIndex: 999,
+    width: 160,
   },
-  paketText: {
-    fontSize: 12,
-    color: '#fff',
-    fontWeight: 'bold',
+  dropdownItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  dropdownText: {
+    fontSize: 15,
+    color: '#000',
   },
   greetingBox: {
     marginTop: -5,

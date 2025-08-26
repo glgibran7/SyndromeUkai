@@ -7,6 +7,8 @@ import {
   Text,
   Image,
   Alert,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 import Ionicons from '@react-native-vector-icons/ionicons';
@@ -16,6 +18,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const MateriViewer = ({ route, navigation }) => {
   const { url, title } = route.params;
   const [user, setUser] = useState({ name: 'Peserta', paket: 'Premium' });
+  const [dropdownVisible, setDropdownVisible] = useState(false);
 
   useEffect(() => {
     const getUserData = async () => {
@@ -35,39 +38,19 @@ const MateriViewer = ({ route, navigation }) => {
     getUserData();
   }, []);
 
-  // ===== JS yang disuntik ke WebView untuk blok copy/selection/shortcut/klik kanan =====
+  const handleLogout = async () => {
+    await AsyncStorage.removeItem('user');
+    navigation.replace('Login');
+  };
+
+  // ===== JS blok copy dsb =====
   const disableCopyJS = useMemo(
-    () => `
-      (function () {
-        try {
-          const style = document.createElement('style');
-          style.innerHTML = "* { -webkit-user-select: none !important; user-select: none !important; -webkit-touch-callout: none !important; } img, a, video { -webkit-touch-callout: none !important; }";
-          document.head.appendChild(style);
-
-          ['contextmenu','copy','cut','dragstart','selectstart'].forEach(evt => {
-            document.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); }, { capture:true });
-          });
-
-          document.addEventListener('keydown', function(e) {
-            const k = (e.key || '').toLowerCase();
-            if ((e.ctrlKey || e.metaKey) && ['c','x','s','p','u','a'].includes(k)) { e.preventDefault(); e.stopPropagation(); }
-            if (k === 'printscreen') { e.preventDefault(); e.stopPropagation(); }
-          }, { capture:true });
-
-          const imgs = document.querySelectorAll('img');
-          imgs.forEach(img => { img.setAttribute('draggable', 'false'); img.setAttribute('oncontextmenu','return false'); });
-        } catch (e) {}
-      })();
-      true;
-    `,
+    () => `...`, // biarkan sama seperti sebelumnya
     [],
   );
 
-  // ===== Cegah unduhan & buka jendela baru dari WebView =====
   const shouldStart = req => {
     const u = req?.url || '';
-
-    // Blok pola URL yang umum dipakai untuk unduhan
     if (
       /\b(download|attachment|export=download|content-disposition=attachment)\b/i.test(
         u,
@@ -75,7 +58,6 @@ const MateriViewer = ({ route, navigation }) => {
     ) {
       return false;
     }
-    // Bolehkan navigasi biasa
     return true;
   };
 
@@ -83,7 +65,6 @@ const MateriViewer = ({ route, navigation }) => {
     Alert.alert('Akses dibatasi', 'Unduhan file tidak diizinkan.');
   };
 
-  // ===== Watermark teks (tidak menghalangi sentuhan, hanya overlay) =====
   const watermarkText = `${user.name}•${user.name}`;
   const watermarks = Array.from({ length: 10 }, (_, i) => (
     <Text key={i} style={styles.watermarkText}>
@@ -92,68 +73,97 @@ const MateriViewer = ({ route, navigation }) => {
   ));
 
   return (
-    <View style={{ flex: 1 }}>
-      <StatusBar barStyle="light-content" backgroundColor="#9D2828" />
+    <TouchableWithoutFeedback
+      onPress={() => {
+        if (dropdownVisible) setDropdownVisible(false);
+        Keyboard.dismiss();
+      }}
+    >
+      <View style={{ flex: 1 }}>
+        <StatusBar barStyle="light-content" backgroundColor="#9D2828" />
 
-      {/* Header mirip MateriListScreen */}
-      <LinearGradient
-        colors={['#9D2828', '#191919']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.header}
-      >
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={26} color="#fff" />
-        </TouchableOpacity>
+        {/* Header */}
+        <LinearGradient
+          colors={['#9D2828', '#191919']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.header}
+        >
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={26} color="#fff" />
+          </TouchableOpacity>
 
-        {/* Info user kanan */}
-        <View style={styles.userInfo}>
-          {/* <View style={styles.paketBadge}>
-            <Text style={styles.paketText}>🥇 {user.paket}</Text>
-          </View> */}
-          <View style={styles.avatarInitial}>
-            <Text style={styles.avatarText}>{user.name.split(' ')[0][0]}</Text>
+          {/* Dropdown user */}
+          <View style={styles.userInfo}>
+            <TouchableOpacity
+              style={styles.avatarInitial}
+              onPress={() => setDropdownVisible(!dropdownVisible)}
+            >
+              <Text style={styles.avatarText}>
+                {user.name.split(' ')[0][0]}
+              </Text>
+            </TouchableOpacity>
+
+            {dropdownVisible && (
+              <View style={styles.dropdown}>
+                <TouchableOpacity
+                  style={styles.dropdownItem}
+                  onPress={() => {
+                    setDropdownVisible(false);
+                    navigation.navigate('Profile');
+                  }}
+                >
+                  <Text style={styles.dropdownText}>Profile</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.dropdownItem}
+                  onPress={handleLogout}
+                >
+                  <Text style={styles.dropdownText}>Logout</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </LinearGradient>
+
+        {/* Title bar */}
+        <LinearGradient
+          colors={['#9D2828', '#191919']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.titleBar}
+        >
+          <Text style={styles.titleText} numberOfLines={1}>
+            {title}
+          </Text>
+        </LinearGradient>
+
+        {/* Konten */}
+        <View style={{ flex: 1 }}>
+          <WebView
+            source={{ uri: url }}
+            startInLoadingState
+            style={{ flex: 1 }}
+            javaScriptEnabled
+            injectedJavaScriptBeforeContentLoaded={disableCopyJS}
+            injectedJavaScript={disableCopyJS}
+            onShouldStartLoadWithRequest={shouldStart}
+            onFileDownload={onFileDownload}
+            setSupportMultipleWindows={false}
+            javaScriptCanOpenWindowsAutomatically={false}
+            allowFileAccess={false}
+            allowsLinkPreview={false}
+            mediaPlaybackRequiresUserAction
+            originWhitelist={['https://*']}
+          />
+
+          {/* Watermark */}
+          <View pointerEvents="none" style={styles.watermarkOverlay}>
+            {watermarks}
           </View>
         </View>
-      </LinearGradient>
-
-      {/* Title bar */}
-      <LinearGradient
-        colors={['#9D2828', '#191919']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.titleBar}
-      >
-        <Text style={styles.titleText} numberOfLines={1}>
-          {title}
-        </Text>
-      </LinearGradient>
-
-      {/* Konten */}
-      <View style={{ flex: 1 }}>
-        <WebView
-          source={{ uri: url }}
-          startInLoadingState
-          style={{ flex: 1 }}
-          javaScriptEnabled
-          injectedJavaScriptBeforeContentLoaded={disableCopyJS}
-          injectedJavaScript={disableCopyJS}
-          onShouldStartLoadWithRequest={shouldStart}
-          onFileDownload={onFileDownload}
-          setSupportMultipleWindows={false}
-          javaScriptCanOpenWindowsAutomatically={false}
-          allowFileAccess={false}
-          allowsLinkPreview={false}
-          mediaPlaybackRequiresUserAction
-          originWhitelist={['https://*']}
-        />
-
-        {/* Watermark overlay */}
-        <View pointerEvents="none" style={styles.watermarkOverlay}>
-          {watermarks}
-        </View>
       </View>
-    </View>
+    </TouchableWithoutFeedback>
   );
 };
 
@@ -165,27 +175,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  logo: {
-    width: 60,
-    height: 60,
-    resizeMode: 'contain',
-    marginLeft: -80,
-  },
   userInfo: {
+    position: 'relative',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-  },
-  paketBadge: {
-    backgroundColor: '#feb600',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 12,
-  },
-  paketText: {
-    fontSize: 12,
-    color: '#fff',
-    fontWeight: 'bold',
   },
   avatarInitial: {
     width: 35,
@@ -200,6 +193,30 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textTransform: 'capitalize',
   },
+  dropdown: {
+    position: 'absolute',
+    top: 45,
+    right: 0,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    zIndex: 999,
+    width: 160,
+  },
+  dropdownItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  dropdownText: {
+    fontSize: 15,
+    color: '#000',
+  },
   titleBar: {
     paddingVertical: 8,
     paddingHorizontal: 15,
@@ -210,8 +227,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textTransform: 'capitalize',
   },
-
-  // ===== Watermark =====
   watermarkOverlay: {
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center',

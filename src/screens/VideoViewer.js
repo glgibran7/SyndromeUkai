@@ -14,15 +14,16 @@ import {
   ActivityIndicator,
   Alert,
   Keyboard,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import { WebView } from 'react-native-webview';
-import Api from '../utils/Api'; // pastikan ini axios instance yang benar
+import Api from '../utils/Api';
 
 const { width, height } = Dimensions.get('window');
 const FIVE_MIN_MS = 5 * 60 * 1000;
-const ROOT_PAGE_SIZE = 8; // root comments per load
+const ROOT_PAGE_SIZE = 8;
 
 const getDrivePreview = url => {
   if (!url) return url;
@@ -56,9 +57,8 @@ const VideoViewer = ({ route, navigation }) => {
     url_file,
     title = '',
     channel = 'UKAI',
-    views = '0',
-    time = '',
-    avatar = null,
+    // views = '0',
+    // time = '',
   } = params;
 
   const [user, setUser] = useState({
@@ -66,9 +66,10 @@ const VideoViewer = ({ route, navigation }) => {
     nama: 'Peserta',
     paket: 'Premium',
   });
+  const [dropdownVisible, setDropdownVisible] = useState(false);
 
-  const [rawComments, setRawComments] = useState([]); // flat from API
-  const [rootComments, setRootComments] = useState([]); // nested roots
+  const [rawComments, setRawComments] = useState([]);
+  const [rootComments, setRootComments] = useState([]);
   const [displayedRoots, setDisplayedRoots] = useState([]);
   const [rootPage, setRootPage] = useState(1);
   const [hasMoreRoots, setHasMoreRoots] = useState(false);
@@ -77,11 +78,9 @@ const VideoViewer = ({ route, navigation }) => {
   const [sending, setSending] = useState(false);
 
   const [composeText, setComposeText] = useState('');
-  const [replyingTo, setReplyingTo] = useState(null); // object of comment
-  const [editingComment, setEditingComment] = useState(null); // object of comment
-
-  const [expandedReplies, setExpandedReplies] = useState({}); // map id -> bool
-
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [editingComment, setEditingComment] = useState(null);
+  const [expandedReplies, setExpandedReplies] = useState({});
   const inputRef = useRef(null);
 
   useEffect(() => {
@@ -108,49 +107,44 @@ const VideoViewer = ({ route, navigation }) => {
   }, [id_materi]);
 
   useEffect(() => {
-    // update displayed roots for current page
     const start = 0;
     const end = rootPage * ROOT_PAGE_SIZE;
     setDisplayedRoots(rootComments.slice(start, end));
     setHasMoreRoots(rootComments.length > end);
   }, [rootComments, rootPage]);
 
-  // ---------- API actions ----------
+  const handleLogout = async () => {
+    await AsyncStorage.removeItem('user');
+    navigation.replace('Login');
+  };
+
+  // ---------- API ----------
   const fetchComments = async () => {
     setLoading(true);
     try {
       const res = await Api.get(`/komentar/${id_materi}/komentar`);
       if (res?.data?.status === 'success') {
-        // sort raw so newest roots show on top. We'll build nested after sorting.
         const data = Array.isArray(res.data.data) ? res.data.data : [];
-        // Build map and nested. Important: We want roots sorted DESC by created_at (newest first)
-        // Replies will be sorted ASC (oldest first).
-        // First, create map objects
         const map = {};
         data.forEach(c => {
           map[c.id_komentarmateri] = { ...c, replies: [] };
         });
         const roots = [];
         data.forEach(c => {
-          if (c.parent_id === null || c.parent_id === undefined) {
+          if (!c.parent_id) {
             roots.push(map[c.id_komentarmateri]);
           } else if (map[c.parent_id]) {
             map[c.parent_id].replies.push(map[c.id_komentarmateri]);
           } else {
-            // fallback: treat as root
             roots.push(map[c.id_komentarmateri]);
           }
         });
-
-        // sort roots newest first
         roots.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-        // sort replies oldest first
         roots.forEach(r =>
           r.replies.sort(
             (a, b) => new Date(a.created_at) - new Date(b.created_at),
           ),
         );
-
         setRawComments(data);
         setRootComments(roots);
         setRootPage(1);
@@ -204,7 +198,7 @@ const VideoViewer = ({ route, navigation }) => {
     setSending(true);
     try {
       const res = await Api.put(
-        `/komentar/${editingComment.id_komentarmateri}`,
+        `/komentar/${id_materi}/komentar/${editingComment.id_komentarmateri}`,
         {
           isi_komentar: text,
         },
@@ -235,7 +229,13 @@ const VideoViewer = ({ route, navigation }) => {
             const res = await Api.delete(
               `/komentar/${comment.id_komentarmateri}`,
             );
-            if (res?.data?.status === 'success') {
+
+            // sukses kalau 200/204 atau ada status success
+            if (
+              res?.status === 200 ||
+              res?.status === 204 ||
+              res?.data?.status === 'success'
+            ) {
               await fetchComments();
             } else {
               Alert.alert('Gagal', 'Server menolak penghapusan.');
@@ -249,7 +249,6 @@ const VideoViewer = ({ route, navigation }) => {
     ]);
   };
 
-  // ---------- helpers ----------
   const canEdit = createdAt => {
     if (!createdAt) return false;
     return Date.now() - new Date(createdAt).getTime() <= FIVE_MIN_MS;
@@ -280,59 +279,51 @@ const VideoViewer = ({ route, navigation }) => {
     setExpandedReplies(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const loadMoreRoots = () => {
-    if (hasMoreRoots) setRootPage(p => p + 1);
-  };
-
-  // ---------- render UI components ----------
-  const renderReply = (r, depth = 1) => {
-    return (
-      <View
-        key={`reply-${r.id_komentarmateri}`}
-        style={[styles.commentRow, { marginLeft: depth * 52, marginTop: 8 }]}
-      >
-        <Avatar name={r.nama} size={28} />
-        <View style={{ flex: 1, marginLeft: 10 }}>
-          <View style={styles.rowSpace}>
-            <Text style={styles.commentName}>{r.nama}</Text>
-            <Text style={styles.commentTime}>
-              {new Date(r.created_at).toLocaleString()}
-            </Text>
-          </View>
-          <Text
-            style={[styles.commentText, r.is_deleted && styles.commentDeleted]}
-          >
-            {r.is_deleted
-              ? r.deleted_by_mentor
-                ? 'Komentar telah dihapus oleh mentor'
-                : 'Komentar telah dihapus'
-              : r.isi_komentar}
+  const renderReply = (r, depth = 1) => (
+    <View
+      key={`reply-${r.id_komentarmateri}`}
+      style={[styles.commentRow, { marginLeft: depth * 52, marginTop: 8 }]}
+    >
+      <Avatar name={r.nama} size={28} />
+      <View style={{ flex: 1, marginLeft: 10 }}>
+        <View style={styles.rowSpace}>
+          <Text style={styles.commentName}>{r.nama}</Text>
+          <Text style={styles.commentTime}>
+            {new Date(r.created_at).toLocaleString()}
           </Text>
-
-          <View style={styles.actionRow}>
-            {!r.is_deleted && (
-              <TouchableOpacity onPress={() => onReply(r)}>
-                <Text style={styles.actionText}>Balas</Text>
+        </View>
+        <Text
+          style={[styles.commentText, r.is_deleted && styles.commentDeleted]}
+        >
+          {r.is_deleted
+            ? r.deleted_by_mentor
+              ? 'Komentar telah dihapus oleh mentor'
+              : 'Komentar telah dihapus'
+            : r.isi_komentar}
+        </Text>
+        <View style={styles.actionRow}>
+          {!r.is_deleted && (
+            <TouchableOpacity onPress={() => onReply(r)}>
+              <Text style={styles.actionText}>Balas</Text>
+            </TouchableOpacity>
+          )}
+          {user.id_user &&
+            r.id_user === user.id_user &&
+            !r.is_deleted &&
+            canEdit(r.created_at) && (
+              <TouchableOpacity onPress={() => onEdit(r)}>
+                <Text style={styles.actionText}>Edit</Text>
               </TouchableOpacity>
             )}
-            {user.id_user &&
-              r.id_user === user.id_user &&
-              !r.is_deleted &&
-              canEdit(r.created_at) && (
-                <TouchableOpacity onPress={() => onEdit(r)}>
-                  <Text style={styles.actionText}>Edit</Text>
-                </TouchableOpacity>
-              )}
-            {user.id_user && r.id_user === user.id_user && !r.is_deleted && (
-              <TouchableOpacity onPress={() => doDeleteComment(r)}>
-                <Text style={[styles.actionText, { color: 'red' }]}>Hapus</Text>
-              </TouchableOpacity>
-            )}
-          </View>
+          {user.id_user && r.id_user === user.id_user && !r.is_deleted && (
+            <TouchableOpacity onPress={() => doDeleteComment(r)}>
+              <Text style={[styles.actionText, { color: 'red' }]}>Hapus</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
-    );
-  };
+    </View>
+  );
 
   const renderRoot = ({ item }) => {
     const repliesCount = item.replies?.length || 0;
@@ -348,7 +339,6 @@ const VideoViewer = ({ route, navigation }) => {
                 {new Date(item.created_at).toLocaleString()}
               </Text>
             </View>
-
             <Text
               style={[
                 styles.commentText,
@@ -361,7 +351,6 @@ const VideoViewer = ({ route, navigation }) => {
                   : 'Komentar telah dihapus'
                 : item.isi_komentar}
             </Text>
-
             <View style={styles.actionRow}>
               {!item.is_deleted && (
                 <TouchableOpacity onPress={() => onReply(item)}>
@@ -388,7 +377,6 @@ const VideoViewer = ({ route, navigation }) => {
             </View>
           </View>
         </View>
-
         {repliesCount > 0 && (
           <TouchableOpacity
             style={styles.viewRepliesBtn}
@@ -401,152 +389,171 @@ const VideoViewer = ({ route, navigation }) => {
             </Text>
           </TouchableOpacity>
         )}
-
         {expanded && item.replies.map(r => renderReply(r))}
       </View>
     );
   };
 
-  // compute hasMoreRoots from rootComments array and rootPage
-  const endIndex = rootPage * ROOT_PAGE_SIZE;
-  const totalRoots = rootComments.length;
-  useEffect(() => {
-    setHasMoreRoots(totalRoots > endIndex);
-  }, [rootComments, rootPage, totalRoots]);
-
   return (
-    <View style={{ flex: 1 }}>
-      <StatusBar barStyle="light-content" backgroundColor="#a10505" />
-      {/* Header same as VideoListScreen */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={26} color="#fff" />
-        </TouchableOpacity>
+    <TouchableWithoutFeedback
+      onPress={() => {
+        if (dropdownVisible) setDropdownVisible(false);
+        Keyboard.dismiss();
+      }}
+    >
+      <View style={{ flex: 1 }}>
+        <StatusBar barStyle="light-content" backgroundColor="#a10505" />
 
-        <Image
-          source={require('../../src/img/logo_putih.png')}
-          style={styles.logo}
-        />
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={26} color="#fff" />
+          </TouchableOpacity>
 
-        <View style={styles.userInfo}>
-          <View style={styles.paketBadge}>
-            <Text style={styles.paketText}>🥇 {user.paket}</Text>
-          </View>
-          <View style={styles.avatarInitial}>
-            <Text style={styles.avatarText}>{(user.nama || 'P')[0]}</Text>
-          </View>
-        </View>
-      </View>
-
-      <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
-        {/* Video player */}
-        <View style={{ height: height * 0.33, backgroundColor: '#000' }}>
-          <WebView
-            source={{ uri: getDrivePreview(url_file) }}
-            style={{ flex: 1 }}
-            javaScriptEnabled
-            allowsFullscreenVideo
-            mediaPlaybackRequiresUserAction={false}
+          <Image
+            source={require('../../src/img/logo_putih.png')}
+            style={styles.logo}
           />
-        </View>
 
-        {/* Info */}
-        <View style={styles.infoBox}>
-          <Text style={styles.videoTitle}>{title}</Text>
-          <Text style={styles.videoMeta}>
-            {channel} • {views} views • {time}
-          </Text>
-        </View>
-
-        {/* Comments input (YouTube style) */}
-        <View style={styles.commentComposer}>
-          <Avatar name={user.nama} size={40} />
-          <View style={{ flex: 1, marginLeft: 12 }}>
-            <TextInput
-              ref={inputRef}
-              style={styles.composeInput}
-              placeholder={
-                editingComment
-                  ? 'Edit komentar...'
-                  : replyingTo
-                  ? `Balas ke ${replyingTo.nama}`
-                  : 'Tambahkan komentar...'
-              }
-              placeholderTextColor="#999"
-              value={composeText}
-              onChangeText={setComposeText}
-              multiline
-            />
-            <View
-              style={{
-                flexDirection: 'row',
-                marginTop: 8,
-                alignItems: 'center',
-              }}
+          <View style={styles.userInfo}>
+            <TouchableOpacity
+              style={styles.avatarInitial}
+              onPress={() => setDropdownVisible(!dropdownVisible)}
             >
-              {(replyingTo || editingComment) && (
+              <Text style={styles.avatarText}>{(user.nama || 'P')[0]}</Text>
+            </TouchableOpacity>
+
+            {dropdownVisible && (
+              <View style={styles.dropdown}>
                 <TouchableOpacity
-                  onPress={onCancelCompose}
-                  style={{ marginRight: 12 }}
+                  style={styles.dropdownItem}
+                  onPress={() => {
+                    setDropdownVisible(false);
+                    navigation.navigate('Profile');
+                  }}
                 >
-                  <Text style={{ color: '#666' }}>Batal</Text>
+                  <Text style={styles.dropdownText}>Profile</Text>
                 </TouchableOpacity>
-              )}
-              <TouchableOpacity
-                onPress={() => {
-                  if (editingComment) putEditComment();
-                  else postComment();
-                }}
-                style={[styles.sendButton, sending && { opacity: 0.6 }]}
-                disabled={sending}
-              >
-                <Text style={{ color: '#fff', fontWeight: '700' }}>
-                  {sending ? '...' : 'Kirim'}
-                </Text>
-              </TouchableOpacity>
-            </View>
+                <TouchableOpacity
+                  style={styles.dropdownItem}
+                  onPress={handleLogout}
+                >
+                  <Text style={styles.dropdownText}>Logout</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
         </View>
 
-        {/* Comments list */}
-        <View style={styles.commentsSection}>
-          <View style={styles.commentsHeader}>
-            <Text style={styles.commentsTitle}>Komentar</Text>
-            <Text style={styles.commentsCount}>{rawComments.length}</Text>
+        {/* Video & komentar */}
+        <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
+          <View style={{ height: height * 0.33, backgroundColor: '#000' }}>
+            <WebView
+              source={{ uri: getDrivePreview(url_file) }}
+              style={{ flex: 1 }}
+              javaScriptEnabled
+              allowsFullscreenVideo
+              mediaPlaybackRequiresUserAction={false}
+            />
           </View>
 
-          {loading ? (
-            <ActivityIndicator style={{ marginVertical: 20 }} />
-          ) : (
-            <>
-              {displayedRoots.length === 0 ? (
-                <Text style={{ color: '#666', paddingVertical: 12 }}>
-                  Belum ada komentar.
-                </Text>
-              ) : (
-                <FlatList
-                  data={displayedRoots}
-                  keyExtractor={it => String(it.id_komentarmateri)}
-                  renderItem={renderRoot}
-                  scrollEnabled={false} // parent scroll handles
-                />
-              )}
+          <View style={styles.infoBox}>
+            <Text style={styles.videoTitle}>{title}</Text>
+            <Text style={styles.videoMeta}>
+              {channel}
+              {/* {channel} • {views} views • {time} */}
+            </Text>
+          </View>
 
-              {hasMoreRoots && (
+          {/* composer komentar */}
+          <View style={styles.commentComposer}>
+            <Avatar name={user.nama} size={40} />
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              <TextInput
+                ref={inputRef}
+                style={styles.composeInput}
+                placeholder={
+                  editingComment
+                    ? 'Edit komentar...'
+                    : replyingTo
+                    ? `Balas ke ${replyingTo.nama}`
+                    : 'Tambahkan komentar...'
+                }
+                placeholderTextColor="#999"
+                value={composeText}
+                onChangeText={setComposeText}
+                multiline
+              />
+              <View
+                style={{
+                  flexDirection: 'row',
+                  marginTop: 8,
+                  alignItems: 'center',
+                }}
+              >
+                {(replyingTo || editingComment) && (
+                  <TouchableOpacity
+                    onPress={onCancelCompose}
+                    style={{ marginRight: 12 }}
+                  >
+                    <Text style={{ color: '#666' }}>Batal</Text>
+                  </TouchableOpacity>
+                )}
                 <TouchableOpacity
-                  style={styles.loadMoreBtn}
-                  onPress={() => setRootPage(p => p + 1)}
+                  onPress={() => {
+                    if (editingComment) putEditComment();
+                    else postComment();
+                  }}
+                  style={[styles.sendButton, sending && { opacity: 0.6 }]}
+                  disabled={sending}
                 >
-                  <Text style={styles.loadMoreText}>
-                    Muat lebih banyak komentar
+                  <Text style={{ color: '#fff', fontWeight: '700' }}>
+                    {sending ? '...' : 'Kirim'}
                   </Text>
                 </TouchableOpacity>
-              )}
-            </>
-          )}
-        </View>
-      </ScrollView>
-    </View>
+              </View>
+            </View>
+          </View>
+
+          {/* list komentar */}
+          <View style={styles.commentsSection}>
+            <View style={styles.commentsHeader}>
+              <Text style={styles.commentsTitle}>Komentar</Text>
+              <Text style={styles.commentsCount}>{rawComments.length}</Text>
+            </View>
+
+            {loading ? (
+              <ActivityIndicator style={{ marginVertical: 20 }} />
+            ) : (
+              <>
+                {displayedRoots.length === 0 ? (
+                  <Text style={{ color: '#666', paddingVertical: 12 }}>
+                    Belum ada komentar.
+                  </Text>
+                ) : (
+                  <FlatList
+                    data={displayedRoots}
+                    keyExtractor={it => String(it.id_komentarmateri)}
+                    renderItem={renderRoot}
+                    scrollEnabled={false}
+                  />
+                )}
+                {hasMoreRoots && (
+                  <TouchableOpacity
+                    style={styles.loadMoreBtn}
+                    onPress={() => setRootPage(p => p + 1)}
+                  >
+                    <Text style={styles.loadMoreText}>
+                      Muat lebih banyak komentar
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </>
+            )}
+          </View>
+        </ScrollView>
+      </View>
+    </TouchableWithoutFeedback>
   );
 };
 
@@ -563,16 +570,13 @@ const styles = StyleSheet.create({
     width: width * 0.25,
     height: width * 0.25,
     resizeMode: 'contain',
-    marginLeft: -80,
+    marginLeft: -180,
   },
-  userInfo: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  paketBadge: {
-    backgroundColor: '#feb600',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 12,
+  userInfo: {
+    position: 'relative',
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  paketText: { fontSize: 12, color: '#fff', fontWeight: 'bold' },
   avatarInitial: {
     width: 35,
     height: 35,
@@ -586,7 +590,27 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textTransform: 'capitalize',
   },
-
+  dropdown: {
+    position: 'absolute',
+    top: 45,
+    right: 0,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    zIndex: 999,
+    width: 160,
+  },
+  dropdownItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  dropdownText: { fontSize: 15, color: '#000' },
   infoBox: {
     backgroundColor: '#fff',
     padding: 12,
@@ -600,7 +624,6 @@ const styles = StyleSheet.create({
     textTransform: 'capitalize',
   },
   videoMeta: { fontSize: 12, color: '#666', marginTop: 6 },
-
   commentComposer: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -624,7 +647,6 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 20,
   },
-
   commentsSection: {
     padding: 12,
     backgroundColor: '#fff',
@@ -639,7 +661,6 @@ const styles = StyleSheet.create({
   },
   commentsTitle: { fontSize: 16, fontWeight: '700' },
   commentsCount: { color: '#666' },
-
   rootBox: {
     paddingVertical: 8,
     borderBottomWidth: 1,
@@ -655,13 +676,10 @@ const styles = StyleSheet.create({
   commentTime: { fontSize: 11, color: '#777', marginLeft: 8 },
   commentText: { marginTop: 6, color: '#222', fontSize: 14 },
   commentDeleted: { fontStyle: 'italic', color: '#999' },
-
   actionRow: { flexDirection: 'row', marginTop: 8 },
   actionText: { color: '#1976D2', marginRight: 16, fontWeight: '600' },
-
   viewRepliesBtn: { marginTop: 6 },
   viewRepliesText: { color: '#1f7af7' },
-
   loadMoreBtn: {
     marginTop: 12,
     alignItems: 'center',
@@ -670,8 +688,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   loadMoreText: { color: '#1976D2', fontWeight: '700' },
-
-  // small avatar component uses inline styles above
 });
 
 export default VideoViewer;
