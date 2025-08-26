@@ -11,6 +11,7 @@ import Splash from './src/screens/Splash';
 import Paket from './src/screens/Paket';
 import PaketDetail from './src/screens/PaketDetail';
 import MainTabNavigator from './src/navigation/MainTabNavigator';
+import Profile from './src/screens/Profile';
 
 const Stack = createNativeStackNavigator();
 
@@ -28,6 +29,7 @@ function App() {
         <Stack.Screen name="Paket" component={Paket} />
         <Stack.Screen name="PaketDetail" component={PaketDetail} />
         <Stack.Screen name="Main" component={MainTabNavigator} />
+        <Stack.Screen name="Profile" component={Profile} />
 
         {/* Add other screens here as needed */}
       </Stack.Navigator>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -10,16 +10,19 @@ import {
   Dimensions,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width } = Dimensions.get('window');
 
 const Paket = ({ navigation }) => {
+  const [namaKelas, setNamaKelas] = useState(null);
+
   const packages = [
     {
       id: 1,
       title: 'Paket Premium 70X',
       detail: '12x Intensif, 4–5 jam\n60x Online',
-      icon: require('../../src/img/premium.png'), // ganti sesuai kebutuhan
+      icon: require('../../src/img/premium.png'),
     },
     {
       id: 2,
@@ -41,6 +44,21 @@ const Paket = ({ navigation }) => {
     },
   ];
 
+  useEffect(() => {
+    const getUser = async () => {
+      try {
+        const userData = await AsyncStorage.getItem('user');
+        if (userData) {
+          const parsedUser = JSON.parse(userData);
+          setNamaKelas(parsedUser.nama_kelas || null); // ⬅️ ambil nama_kelas
+        }
+      } catch (err) {
+        console.error('Gagal ambil user dari storage:', err);
+      }
+    };
+    getUser();
+  }, []);
+
   return (
     <LinearGradient
       colors={['#a10505', '#ff00004d']}
@@ -54,7 +72,7 @@ const Paket = ({ navigation }) => {
         {/* Logo / Header */}
         <View style={styles.headerContainer}>
           <Image
-            source={require('../../src/img/logo_putih.png')} // ganti jika perlu
+            source={require('../../src/img/logo_putih.png')}
             style={styles.headerImage}
           />
           <Text style={styles.subtitle}>
@@ -83,12 +101,15 @@ const Paket = ({ navigation }) => {
             </TouchableOpacity>
           ))}
 
-          <TouchableOpacity
-            style={styles.button}
-            onPress={() => navigation.navigate('Main')} // ganti route jika perlu
-          >
-            <Text style={styles.buttonText}>Kelas Saya</Text>
-          </TouchableOpacity>
+          {/* Tombol Kelas Saya hanya muncul jika nama_kelas ada */}
+          {namaKelas && (
+            <TouchableOpacity
+              style={styles.button}
+              onPress={() => navigation.navigate('Main')}
+            >
+              <Text style={styles.buttonText}>Kelas Saya ({namaKelas})</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </ScrollView>
     </LinearGradient>

@@ -8,24 +8,27 @@ import {
   TextInput,
   ScrollView,
   StyleSheet,
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+  Modal,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
-
 import FontAwesome6 from '@react-native-vector-icons/fontawesome';
-
-import { Dimensions } from 'react-native';
-const { width } = Dimensions.get('window');
 import Api from '../utils/Api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Alert } from 'react-native';
+
+const { width } = Dimensions.get('window');
 
 const Login = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [secureText, setSecureText] = useState(true);
+  const [loading, setLoading] = useState(false); // 🔥 state loading
 
   const handleLogin = async () => {
+    setLoading(true); // mulai loading
     try {
       const response = await Api.post('/auth/login', { email, password });
 
@@ -35,34 +38,31 @@ const Login = ({ navigation }) => {
         nama,
         email: userEmail,
         role,
+        nama_kelas,
       } = response.data;
 
       await AsyncStorage.setItem('token', access_token);
       await AsyncStorage.setItem(
         'user',
-        JSON.stringify({ id_user, nama, email: userEmail, role }),
+        JSON.stringify({ id_user, nama, email: userEmail, role, nama_kelas }),
       );
 
-      // Reset navigasi agar halaman login tidak bisa kembali
-      if (role === 'admin') {
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'Home' }],
-        });
-      } else if (role === 'mentor') {
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'Home' }],
-        });
+      if (role === 'admin' || role === 'mentor') {
+        navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
+      } else if (role === 'peserta') {
+        if (nama_kelas) {
+          navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
+        } else {
+          navigation.reset({ index: 0, routes: [{ name: 'Paket' }] });
+        }
       } else {
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'Paket' }],
-        });
+        Alert.alert('Login Gagal', 'Role tidak dikenali!');
       }
     } catch (error) {
       console.error('Login gagal:', error);
       Alert.alert('Login Gagal', 'Email atau password salah!');
+    } finally {
+      setLoading(false); // selesai loading
     }
   };
 
@@ -94,7 +94,7 @@ const Login = ({ navigation }) => {
             </Text>
           </Text>
 
-          {/* Input Email dengan Icon */}
+          {/* Input Email */}
           <View style={styles.inputWrapper}>
             <Ionicons name="mail" size={18} color="gray" style={styles.icon} />
             <TextInput
@@ -108,7 +108,7 @@ const Login = ({ navigation }) => {
             />
           </View>
 
-          {/* Input Password dengan Icon dan View Button */}
+          {/* Input Password */}
           <View style={styles.inputWrapper}>
             <FontAwesome6
               name="lock"
@@ -144,7 +144,11 @@ const Login = ({ navigation }) => {
 
           {/* Tombol Login */}
           <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.tombol} onPress={handleLogin}>
+            <TouchableOpacity
+              style={styles.tombol}
+              onPress={handleLogin}
+              disabled={loading} // disable saat loading
+            >
               <Text style={styles.loginButtonText}>Login</Text>
             </TouchableOpacity>
           </View>
@@ -154,12 +158,23 @@ const Login = ({ navigation }) => {
             <TouchableOpacity
               style={styles.tombolSignUp}
               onPress={() => navigation.navigate('SignUp')}
+              disabled={loading}
             >
               <Text style={styles.loginButtonText}>Sign Up</Text>
             </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
+
+      {/* 🔥 Overlay Loading */}
+      <Modal visible={loading} transparent animationType="fade">
+        <View style={styles.overlay}>
+          <ActivityIndicator size="large" color="#fff" />
+          <Text style={{ color: '#fff', marginTop: 10, fontSize: 16 }}>
+            Sedang masuk...
+          </Text>
+        </View>
+      </Modal>
     </LinearGradient>
   );
 };
@@ -257,6 +272,12 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   buttonContainerSignUp: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'center',
     alignItems: 'center',
   },

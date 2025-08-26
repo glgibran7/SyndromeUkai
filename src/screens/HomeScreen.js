@@ -66,15 +66,26 @@ const Home = ({ navigation }) => {
   const handleLogout = async () => {
     try {
       setIsLoggingOut(true);
+      setMenuVisible(false); // tutup menu biar gak nyangkut
 
-      // panggil API logout
-      await Api.post('/auth/logout');
+      // Coba panggil API logout, tapi kalau gagal tetap lanjut clear storage
+      try {
+        await Api.post('/auth/logout');
+      } catch (err) {
+        console.warn(
+          'Logout API gagal, lanjut hapus data lokal:',
+          err?.message,
+        );
+      }
 
-      // hapus data user di AsyncStorage
-      await AsyncStorage.removeItem('user');
+      // Hapus semua data storage (lebih aman daripada removeItem satu-satu)
+      await AsyncStorage.clear();
 
-      // redirect ke halaman login
-      navigation.replace('Login');
+      // Redirect ke login
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      });
     } catch (error) {
       console.error('Gagal logout:', error);
       alert('Logout gagal, coba lagi.');
