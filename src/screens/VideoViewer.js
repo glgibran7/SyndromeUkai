@@ -24,6 +24,12 @@ const { width, height } = Dimensions.get('window');
 const FIVE_MIN_MS = 5 * 60 * 1000;
 const ROOT_PAGE_SIZE = 8; // root comments per load
 
+const safeFocus = () => {
+  if (inputRef.current && typeof inputRef.current.focus === 'function') {
+    inputRef.current.focus();
+  }
+};
+
 const getDrivePreview = url => {
   if (!url) return url;
   const m = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
@@ -264,14 +270,14 @@ const VideoViewer = ({ route, navigation }) => {
     setReplyingTo(c);
     setEditingComment(null);
     setComposeText('');
-    setTimeout(() => inputRef.current?.focus?.(), 200);
+    setTimeout(safeFocus, 200);
   };
 
   const onEdit = c => {
     setEditingComment(c);
     setReplyingTo(null);
     setComposeText(c.isi_komentar || '');
-    setTimeout(() => inputRef.current?.focus?.(), 200);
+    setTimeout(safeFocus, 200);
   };
 
   const onCancelCompose = () => {
@@ -454,7 +460,12 @@ const VideoViewer = ({ route, navigation }) => {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
+      <ScrollView
+        contentContainerStyle={{
+          paddingBottom: 120,
+          keyboardShouldPersistTaps: 'handled',
+        }}
+      >
         {/* Video player */}
         <View style={{ height: height * 0.33, backgroundColor: '#000' }}>
           <WebView
