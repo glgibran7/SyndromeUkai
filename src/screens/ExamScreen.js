@@ -248,6 +248,8 @@ const ExamScreen = ({ navigation }) => {
         >
           <Text style={styles.backText}>Soal Sebelumnya</Text>
         </TouchableOpacity>
+        <View style={{ width: 16 }} />{' '}
+        {/* Spacer agar tombol tidak bertabrakan */}
         <TouchableOpacity
           style={styles.nextButton}
           onPress={() => {
@@ -478,6 +480,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 16,
     backgroundColor: '#fff',
+    paddingBottom: 60, // Tambahkan padding bawah agar tidak tertimpa navigation bar
   },
   backButton: {
     backgroundColor: '#9E9E9E',

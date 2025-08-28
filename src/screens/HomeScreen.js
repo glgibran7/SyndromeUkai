@@ -138,6 +138,21 @@ const Home = ({ navigation }) => {
     >
       <StatusBar barStyle="light-content" backgroundColor="#a10505" />
       <ScrollView style={{ flex: 1 }}>
+        {/* Overlay untuk menutup dropdown saat klik di luar area */}
+        {menuVisible && (
+          <TouchableOpacity
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 998,
+            }}
+            activeOpacity={1}
+            onPress={() => setMenuVisible(false)}
+          />
+        )}
         {/* Header */}
         <View style={styles.header}>
           <View style={{ flex: 1 }}>

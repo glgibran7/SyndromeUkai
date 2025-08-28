@@ -102,9 +102,9 @@ const TryoutScreen = ({ navigation }) => {
           />
 
           <View style={styles.userInfo}>
-            <View style={styles.paketBadge}>
+            {/* <View style={styles.paketBadge}>
               <Text style={styles.paketText}>🥇 {user.paket}</Text>
-            </View>
+            </View> */}
             <View style={styles.avatarInitial}>
               <Text style={styles.avatarText}>
                 {user.name.split(' ')[0][0]}

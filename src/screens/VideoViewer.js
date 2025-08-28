@@ -90,6 +90,13 @@ const VideoViewer = ({ route, navigation }) => {
 
   const inputRef = useRef(null);
 
+  const [dropdownVisible, setDropdownVisible] = useState(false);
+
+  const handleLogout = async () => {
+    await AsyncStorage.removeItem('user');
+    navigation.replace('Login');
+  };
+
   useEffect(() => {
     (async () => {
       try {
@@ -439,7 +446,6 @@ const VideoViewer = ({ route, navigation }) => {
                 navigation.navigate('Home');
               }
             } catch (e) {
-              // fallback terakhir: reset ke Home
               navigation?.reset?.({ index: 0, routes: [{ name: 'Home' }] });
             }
           }}
@@ -453,10 +459,32 @@ const VideoViewer = ({ route, navigation }) => {
         />
 
         <View style={styles.userInfo}>
-          {/* QAAZZZ */}
-          <View style={styles.avatarInitial}>
+          <TouchableOpacity
+            style={styles.avatarInitial}
+            onPress={() => setDropdownVisible(!dropdownVisible)}
+          >
             <Text style={styles.avatarText}>{(user.nama || 'P')[0]}</Text>
-          </View>
+          </TouchableOpacity>
+
+          {dropdownVisible && (
+            <View style={styles.dropdown}>
+              <TouchableOpacity
+                style={styles.dropdownItem}
+                onPress={() => {
+                  setDropdownVisible(false);
+                  navigation.navigate('Profile');
+                }}
+              >
+                <Text style={styles.dropdownText}>Profile</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.dropdownItem}
+                onPress={handleLogout}
+              >
+                <Text style={styles.dropdownText}>Logout</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       </View>
 
@@ -506,7 +534,8 @@ const VideoViewer = ({ route, navigation }) => {
         <View style={styles.infoBox}>
           <Text style={styles.videoTitle}>{title}</Text>
           <Text style={styles.videoMeta}>
-            {channel} • {views} views • {time}
+            {channel}
+            {/* {channel} • {views} views • {time} */}
           </Text>
         </View>
 
@@ -615,7 +644,7 @@ const styles = StyleSheet.create({
     width: width * 0.25,
     height: width * 0.25,
     resizeMode: 'contain',
-    marginLeft: -80,
+    marginLeft: -180,
   },
   userInfo: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   paketBadge: {
@@ -723,7 +752,27 @@ const styles = StyleSheet.create({
   },
   loadMoreText: { color: '#1976D2', fontWeight: '700' },
 
-  // small avatar component uses inline styles above
+  dropdown: {
+    position: 'absolute',
+    top: 45,
+    right: 0,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    zIndex: 999,
+    width: 160,
+  },
+  dropdownItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  dropdownText: { fontSize: 15, color: '#000' },
 });
 
 export default VideoViewer;
