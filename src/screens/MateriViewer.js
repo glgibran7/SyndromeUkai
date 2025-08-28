@@ -9,16 +9,19 @@ import {
   Alert,
   TouchableWithoutFeedback,
   Keyboard,
+  SafeAreaView,
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const MateriViewer = ({ route, navigation }) => {
   const { url, title } = route.params;
   const [user, setUser] = useState({ name: 'Peserta', paket: 'Premium' });
   const [dropdownVisible, setDropdownVisible] = useState(false);
+  const insets = useSafeAreaInsets(); // ambil nilai safe area
 
   useEffect(() => {
     const getUserData = async () => {
@@ -73,105 +76,109 @@ const MateriViewer = ({ route, navigation }) => {
   ));
 
   return (
-    <TouchableWithoutFeedback
-      onPress={() => {
-        if (dropdownVisible) setDropdownVisible(false);
-        Keyboard.dismiss();
-      }}
-    >
-      <View style={{ flex: 1 }}>
-        <StatusBar barStyle="light-content" backgroundColor="#9D2828" />
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#9D2828' }}>
+      <TouchableWithoutFeedback
+        onPress={() => {
+          if (dropdownVisible) setDropdownVisible(false);
+          Keyboard.dismiss();
+        }}
+      >
+        <View style={{ flex: 1 }}>
+          <StatusBar barStyle="light-content" backgroundColor="#9D2828" />
 
-        {/* Header */}
-        <LinearGradient
-          colors={['#9D2828', '#191919']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.header}
-        >
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={26} color="#fff" />
-          </TouchableOpacity>
-
-          {/* Dropdown user */}
-          <View style={styles.userInfo}>
-            <TouchableOpacity
-              style={styles.avatarInitial}
-              onPress={() => setDropdownVisible(!dropdownVisible)}
-            >
-              <Text style={styles.avatarText}>
-                {user.name.split(' ')[0][0]}
-              </Text>
+          {/* Header */}
+          <LinearGradient
+            colors={['#9D2828', '#191919']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[
+              styles.header,
+              { paddingTop: insets.top }, // tambahkan paddingTop sesuai status bar
+            ]}
+          >
+            <TouchableOpacity onPress={() => navigation.goBack()}>
+              <Ionicons name="arrow-back" size={26} color="#fff" />
             </TouchableOpacity>
 
-            {dropdownVisible && (
-              <View style={styles.dropdown}>
-                <TouchableOpacity
-                  style={styles.dropdownItem}
-                  onPress={() => {
-                    setDropdownVisible(false);
-                    navigation.navigate('Profile');
-                  }}
-                >
-                  <Text style={styles.dropdownText}>Profile</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.dropdownItem}
-                  onPress={handleLogout}
-                >
-                  <Text style={styles.dropdownText}>Logout</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-        </LinearGradient>
+            {/* Dropdown user */}
+            <View style={styles.userInfo}>
+              <TouchableOpacity
+                style={styles.avatarInitial}
+                onPress={() => setDropdownVisible(!dropdownVisible)}
+              >
+                <Text style={styles.avatarText}>
+                  {user.name.split(' ')[0][0]}
+                </Text>
+              </TouchableOpacity>
 
-        {/* Title bar */}
-        <LinearGradient
-          colors={['#9D2828', '#191919']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.titleBar}
-        >
-          <Text style={styles.titleText} numberOfLines={1}>
-            {title}
-          </Text>
-        </LinearGradient>
+              {dropdownVisible && (
+                <View style={styles.dropdown}>
+                  <TouchableOpacity
+                    style={styles.dropdownItem}
+                    onPress={() => {
+                      setDropdownVisible(false);
+                      navigation.navigate('Profile');
+                    }}
+                  >
+                    <Text style={styles.dropdownText}>Profile</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.dropdownItem}
+                    onPress={handleLogout}
+                  >
+                    <Text style={styles.dropdownText}>Logout</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          </LinearGradient>
 
-        {/* Konten */}
-        <View style={{ flex: 1 }}>
-          <WebView
-            source={{ uri: url }}
-            startInLoadingState
-            style={{ flex: 1 }}
-            javaScriptEnabled
-            injectedJavaScriptBeforeContentLoaded={disableCopyJS}
-            injectedJavaScript={disableCopyJS}
-            onShouldStartLoadWithRequest={shouldStart}
-            onFileDownload={onFileDownload}
-            setSupportMultipleWindows={false}
-            javaScriptCanOpenWindowsAutomatically={false}
-            allowFileAccess={false}
-            allowsLinkPreview={false}
-            mediaPlaybackRequiresUserAction
-            originWhitelist={['https://*']}
-          />
+          {/* Title bar */}
+          <LinearGradient
+            colors={['#9D2828', '#191919']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.titleBar}
+          >
+            <Text style={styles.titleText} numberOfLines={1}>
+              {title}
+            </Text>
+          </LinearGradient>
 
-          {/* Watermark */}
-          <View pointerEvents="none" style={styles.watermarkOverlay}>
-            {watermarks}
+          {/* Konten */}
+          <View style={{ flex: 1 }}>
+            <WebView
+              source={{ uri: url }}
+              startInLoadingState
+              style={{ flex: 1 }}
+              javaScriptEnabled
+              injectedJavaScriptBeforeContentLoaded={disableCopyJS}
+              injectedJavaScript={disableCopyJS}
+              onShouldStartLoadWithRequest={shouldStart}
+              onFileDownload={onFileDownload}
+              setSupportMultipleWindows={false}
+              javaScriptCanOpenWindowsAutomatically={false}
+              allowFileAccess={false}
+              allowsLinkPreview={false}
+              mediaPlaybackRequiresUserAction
+              originWhitelist={['https://*']}
+            />
+
+            {/* Watermark */}
+            <View pointerEvents="none" style={styles.watermarkOverlay}>
+              {watermarks}
+            </View>
           </View>
         </View>
-      </View>
-    </TouchableWithoutFeedback>
+      </TouchableWithoutFeedback>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
-    paddingHorizontal: 10,
-    paddingTop: 40,
+    paddingHorizontal: 20,
     alignItems: 'center',
     justifyContent: 'space-between',
   },

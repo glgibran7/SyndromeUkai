@@ -249,7 +249,15 @@
 
 // export default HasilTryOut;
 import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  TouchableOpacity,
+  SafeAreaView,
+  StatusBar,
+} from 'react-native';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import { useNavigation } from '@react-navigation/native';
 
@@ -257,21 +265,25 @@ const HasilTryOut = () => {
   const navigation = useNavigation();
 
   return (
-    <View style={styles.container}>
-      {/* Tombol Back */}
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => navigation.goBack()}
-      >
-        <Ionicons name="arrow-back" size={24} color="#000" />
-      </TouchableOpacity>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+      {/* <StatusBar barStyle={'dark-content'} backgroundColor="#000" /> */}
 
-      <Image source={require('../img/img_login.png')} style={styles.image} />
-      <Text style={styles.title}>Sedang Dalam Pengembangan</Text>
-      <Text style={styles.subtitle}>
-        Fitur Hasil akan segera hadir di update berikutnya
-      </Text>
-    </View>
+      <View style={styles.container}>
+        {/* Tombol Back */}
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="arrow-back" size={24} color="#000" />
+        </TouchableOpacity>
+
+        <Image source={require('../img/img_login.png')} style={styles.image} />
+        <Text style={styles.title}>Sedang Dalam Pengembangan</Text>
+        <Text style={styles.subtitle}>
+          Fitur Hasil akan segera hadir di update berikutnya
+        </Text>
+      </View>
+    </SafeAreaView>
   );
 };
 

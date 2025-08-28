@@ -1,5 +1,12 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  TouchableOpacity,
+  SafeAreaView,
+} from 'react-native';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import { useNavigation } from '@react-navigation/native';
 
@@ -7,21 +14,23 @@ const ForgotPassword = () => {
   const navigation = useNavigation();
 
   return (
-    <View style={styles.container}>
-      {/* Tombol Back */}
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => navigation.goBack()}
-      >
-        <Ionicons name="arrow-back" size={24} color="#000" />
-      </TouchableOpacity>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+      <View style={styles.container}>
+        {/* Tombol Back */}
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="arrow-back" size={24} color="#000" />
+        </TouchableOpacity>
 
-      <Image source={require('../img/img_login.png')} style={styles.image} />
-      <Text style={styles.title}>Sedang Dalam Pengembangan</Text>
-      <Text style={styles.subtitle}>
-        Fitur lupa password akan segera hadir di update berikutnya
-      </Text>
-    </View>
+        <Image source={require('../img/img_login.png')} style={styles.image} />
+        <Text style={styles.title}>Sedang Dalam Pengembangan</Text>
+        <Text style={styles.subtitle}>
+          Fitur lupa password akan segera hadir di update berikutnya
+        </Text>
+      </View>
+    </SafeAreaView>
   );
 };
 

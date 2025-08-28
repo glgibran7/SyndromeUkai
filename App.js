@@ -32,7 +32,6 @@ function App() {
         <Stack.Screen name="Main" component={MainTabNavigator} />
         <Stack.Screen name="Profile" component={Profile} />
         <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
-
         {/* Add other screens here as needed */}
       </Stack.Navigator>
     </NavigationContainer>

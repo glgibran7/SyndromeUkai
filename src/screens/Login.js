@@ -12,6 +12,7 @@ import {
   Alert,
   Dimensions,
   Modal,
+  SafeAreaView,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
@@ -67,115 +68,122 @@ const Login = ({ navigation }) => {
   };
 
   return (
-    <LinearGradient
-      colors={['#ffffff', 'rgba(255,0,0,0.18)']}
-      style={{ flex: 1 }}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-    >
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-        <StatusBar barStyle={'dark-content'} />
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+      <LinearGradient
+        colors={['#ffffff', 'rgba(255,0,0,0.18)']}
+        style={{ flex: 1 }}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+          <StatusBar barStyle={'dark-content'} />
 
-        {/* Gambar */}
-        <View style={styles.imageContainer}>
-          <Image
-            source={require('../../src/img/img_login.png')}
-            style={styles.image}
-          />
-        </View>
+          {/* Gambar */}
+          <View style={styles.imageContainer}>
+            <Image
+              source={require('../../src/img/img_login.png')}
+              style={styles.image}
+            />
+          </View>
 
-        {/* Konten */}
-        <View style={styles.content}>
-          <Text style={styles.loginTitle}>SELAMAT DATANG</Text>
-          <Text style={styles.label}>
-            Platform penyedia layanan Pendidikan Farmasi berbasis teknologi{' '}
-            <Text style={[styles.label, { fontWeight: 'bold' }]}>
-              terbaik dan termurah
+          {/* Konten */}
+          <View style={styles.content}>
+            <Text style={styles.loginTitle}>SELAMAT DATANG</Text>
+            <Text style={styles.label}>
+              Platform penyedia layanan Pendidikan Farmasi berbasis teknologi{' '}
+              <Text style={[styles.label, { fontWeight: 'bold' }]}>
+                terbaik dan termurah
+              </Text>
             </Text>
-          </Text>
 
-          {/* Input Email */}
-          <View style={styles.inputWrapper}>
-            <Ionicons name="mail" size={18} color="gray" style={styles.icon} />
-            <TextInput
-              value={email}
-              style={styles.inputtext}
-              placeholder="Masukkan Email"
-              placeholderTextColor="gray"
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-          </View>
-
-          {/* Input Password */}
-          <View style={styles.inputWrapper}>
-            <FontAwesome6
-              name="lock"
-              size={21}
-              color="gray"
-              style={styles.iconPassword}
-            />
-
-            <TextInput
-              value={password}
-              style={styles.inputtext}
-              placeholder="Masukkan Password"
-              placeholderTextColor="gray"
-              onChangeText={setPassword}
-              secureTextEntry={secureText}
-            />
-            <TouchableOpacity onPress={() => setSecureText(!secureText)}>
-              <FontAwesome6
-                name={secureText ? 'eye-slash' : 'eye'}
-                size={20}
+            {/* Input Email */}
+            <View style={styles.inputWrapper}>
+              <Ionicons
+                name="mail"
+                size={18}
                 color="gray"
-                style={styles.iconRight}
+                style={styles.icon}
               />
-            </TouchableOpacity>
-          </View>
+              <TextInput
+                value={email}
+                style={styles.inputtext}
+                placeholder="Masukkan Email"
+                placeholderTextColor="gray"
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+            </View>
 
-          {/* Lupa Password */}
-          <TouchableOpacity
-            onPress={() => navigation.navigate('ForgotPassword')}
-          >
-            <Text style={styles.forgotPassword}>Lupa Password?</Text>
-          </TouchableOpacity>
+            {/* Input Password */}
+            <View style={styles.inputWrapper}>
+              <FontAwesome6
+                name="lock"
+                size={21}
+                color="gray"
+                style={styles.iconPassword}
+              />
 
-          {/* Tombol Login */}
-          <View style={styles.buttonContainer}>
+              <TextInput
+                value={password}
+                style={styles.inputtext}
+                placeholder="Masukkan Password"
+                placeholderTextColor="gray"
+                onChangeText={setPassword}
+                secureTextEntry={secureText}
+              />
+              <TouchableOpacity onPress={() => setSecureText(!secureText)}>
+                <FontAwesome6
+                  name={secureText ? 'eye-slash' : 'eye'}
+                  size={20}
+                  color="gray"
+                  style={styles.iconRight}
+                />
+              </TouchableOpacity>
+            </View>
+
+            {/* Lupa Password */}
             <TouchableOpacity
-              style={styles.tombol}
-              onPress={handleLogin}
-              disabled={loading} // disable saat loading
+              onPress={() => navigation.navigate('ForgotPassword')}
             >
-              <Text style={styles.loginButtonText}>Login</Text>
+              <Text style={styles.forgotPassword}>Lupa Password?</Text>
             </TouchableOpacity>
-          </View>
 
-          {/* Tombol Sign Up */}
-          <View style={styles.buttonContainerSignUp}>
-            <TouchableOpacity
-              style={styles.tombolSignUp}
-              onPress={() => navigation.navigate('SignUp')}
-              disabled={loading}
-            >
-              <Text style={styles.loginButtonText}>Sign Up</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </ScrollView>
+            {/* Tombol Login */}
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity
+                style={styles.tombol}
+                onPress={handleLogin}
+                disabled={loading} // disable saat loading
+              >
+                <Text style={styles.loginButtonText}>Login</Text>
+              </TouchableOpacity>
+            </View>
 
-      {/* 🔥 Overlay Loading */}
-      <Modal visible={loading} transparent animationType="fade">
-        <View style={styles.overlay}>
-          <ActivityIndicator size="large" color="#fff" />
-          <Text style={{ color: '#fff', marginTop: 10, fontSize: 16 }}>
-            Sedang masuk...
-          </Text>
-        </View>
-      </Modal>
-    </LinearGradient>
+            {/* Tombol Sign Up */}
+            <View style={styles.buttonContainerSignUp}>
+              <TouchableOpacity
+                style={styles.tombolSignUp}
+                onPress={() => navigation.navigate('SignUp')}
+                disabled={loading}
+              >
+                <Text style={styles.loginButtonText}>Sign Up</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </ScrollView>
+
+        {/* 🔥 Overlay Loading */}
+        <Modal visible={loading} transparent animationType="fade">
+          <View style={styles.overlay}>
+            <ActivityIndicator size="large" color="#fff" />
+            <Text style={{ color: '#fff', marginTop: 10, fontSize: 16 }}>
+              Sedang masuk...
+            </Text>
+          </View>
+        </Modal>
+      </LinearGradient>
+    </SafeAreaView>
   );
 };
 

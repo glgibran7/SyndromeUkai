@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Dimensions,
+  SafeAreaView,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -60,59 +61,61 @@ const Paket = ({ navigation }) => {
   }, []);
 
   return (
-    <LinearGradient
-      colors={['#a10505', '#ff00004d']}
-      style={{ flex: 1 }}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-    >
-      <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 30 }}>
-        <StatusBar barStyle="light-content" backgroundColor="#a10505" />
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#9D2828' }}>
+      <LinearGradient
+        colors={['#a10505', '#ff00004d']}
+        style={{ flex: 1 }}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 30 }}>
+          <StatusBar barStyle="light-content" backgroundColor="#a10505" />
 
-        {/* Logo / Header */}
-        <View style={styles.headerContainer}>
-          <Image
-            source={require('../../src/img/logo_putih.png')}
-            style={styles.headerImage}
-          />
-          <Text style={styles.subtitle}>
-            Platform penyedia layanan pendidikan farmasi
-            {'\n'}
-            <Text style={{ fontWeight: 'bold' }}>terbaik dan ter-murah</Text>
-          </Text>
-        </View>
+          {/* Logo / Header */}
+          <View style={styles.headerContainer}>
+            <Image
+              source={require('../../src/img/logo_putih.png')}
+              style={styles.headerImage}
+            />
+            <Text style={styles.subtitle}>
+              Platform penyedia layanan pendidikan farmasi
+              {'\n'}
+              <Text style={{ fontWeight: 'bold' }}>terbaik dan ter-murah</Text>
+            </Text>
+          </View>
 
-        <View style={styles.content}>
-          <Text style={styles.title}>Pilih Paket</Text>
+          <View style={styles.content}>
+            <Text style={styles.title}>Pilih Paket</Text>
 
-          {packages.map(pkg => (
-            <TouchableOpacity
-              key={pkg.id}
-              style={styles.packageCard}
-              onPress={() =>
-                navigation.navigate('PaketDetail', { paketId: pkg.id })
-              }
-            >
-              <Image source={pkg.icon} style={styles.icon} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.packageTitle}>{pkg.title}</Text>
-                <Text style={styles.packageDescription}>{pkg.detail}</Text>
-              </View>
-            </TouchableOpacity>
-          ))}
+            {packages.map(pkg => (
+              <TouchableOpacity
+                key={pkg.id}
+                style={styles.packageCard}
+                onPress={() =>
+                  navigation.navigate('PaketDetail', { paketId: pkg.id })
+                }
+              >
+                <Image source={pkg.icon} style={styles.icon} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.packageTitle}>{pkg.title}</Text>
+                  <Text style={styles.packageDescription}>{pkg.detail}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
 
-          {/* Tombol Kelas Saya hanya muncul jika nama_kelas ada */}
-          {namaKelas && (
-            <TouchableOpacity
-              style={styles.button}
-              onPress={() => navigation.navigate('Main')}
-            >
-              <Text style={styles.buttonText}>Kelas Saya ({namaKelas})</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      </ScrollView>
-    </LinearGradient>
+            {/* Tombol Kelas Saya hanya muncul jika nama_kelas ada */}
+            {namaKelas && (
+              <TouchableOpacity
+                style={styles.button}
+                onPress={() => navigation.navigate('Main')}
+              >
+                <Text style={styles.buttonText}>Kelas Saya ({namaKelas})</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </ScrollView>
+      </LinearGradient>
+    </SafeAreaView>
   );
 };
 

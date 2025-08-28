@@ -12,6 +12,7 @@ import {
   Animated,
   TouchableWithoutFeedback,
   Keyboard,
+  SafeAreaView,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -138,184 +139,191 @@ const VideoListScreen = ({ route, navigation }) => {
   };
 
   return (
-    <TouchableWithoutFeedback
-      onPress={() => {
-        if (dropdownVisible) setDropdownVisible(false);
-        Keyboard.dismiss();
-      }}
-    >
-      <LinearGradient colors={['#9D2828', '#191919']} style={{ flex: 1 }}>
-        <StatusBar barStyle="light-content" backgroundColor="#a10505" />
-        <ScrollView
-          ref={scrollRef}
-          onScroll={handleScroll}
-          scrollEventThrottle={16}
-          contentContainerStyle={{ paddingBottom: 50 }}
-        >
-          {/* Header */}
-          <View style={styles.header}>
-            <TouchableOpacity onPress={() => navigation.goBack()}>
-              <Ionicons name="arrow-back" size={26} color="#fff" />
-            </TouchableOpacity>
-            <Image
-              source={require('../../src/img/logo_putih.png')}
-              style={styles.logo}
-            />
-            <View style={styles.userInfo}>
-              <TouchableOpacity
-                style={styles.avatarInitial}
-                onPress={() => setDropdownVisible(!dropdownVisible)}
-              >
-                <Text style={styles.avatarText}>
-                  {user.name.split(' ')[0][0]}
-                </Text>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#9D2828' }}>
+      <TouchableWithoutFeedback
+        onPress={() => {
+          if (dropdownVisible) setDropdownVisible(false);
+          Keyboard.dismiss();
+        }}
+      >
+        <LinearGradient colors={['#9D2828', '#191919']} style={{ flex: 1 }}>
+          <StatusBar barStyle="light-content" backgroundColor="#a10505" />
+          <ScrollView
+            ref={scrollRef}
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
+            contentContainerStyle={{ paddingBottom: 50 }}
+          >
+            {/* Header */}
+            <View style={styles.header}>
+              <TouchableOpacity onPress={() => navigation.goBack()}>
+                <Ionicons name="arrow-back" size={26} color="#fff" />
               </TouchableOpacity>
-
-              {dropdownVisible && (
-                <View style={styles.dropdown}>
-                  <TouchableOpacity
-                    style={styles.dropdownItem}
-                    onPress={() => {
-                      setDropdownVisible(false);
-                      navigation.navigate('Profile');
-                    }}
-                  >
-                    <Text style={styles.dropdownText}>Profile</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.dropdownItem}
-                    onPress={handleLogout}
-                  >
-                    <Text style={styles.dropdownText}>Logout</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-            </View>
-          </View>
-
-          {/* Title & Search */}
-          <View style={styles.greetingBox}>
-            <Text style={styles.sectionTitle}>Video</Text>
-            <View style={styles.searchContainer}>
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Search"
-                placeholderTextColor="#fff"
-                value={searchQuery}
-                onChangeText={setSearchQuery}
+              <Image
+                source={require('../../src/img/logo_putih.png')}
+                style={styles.logo}
               />
-              <Ionicons name="search-outline" size={18} color="#fff" />
-            </View>
-          </View>
-
-          {/* Filter */}
-          <View style={styles.mainContent}>
-            <View style={styles.filterContainer}>
-              <Text style={styles.sectionTitle2}>Daftar Materi</Text>
-              <TouchableOpacity
-                style={[
-                  styles.filterButton,
-                  filterType === 'Semua' && styles.filterActive,
-                ]}
-                onPress={() => setFilterType('Semua')}
-              >
-                <Text
-                  style={[
-                    styles.filterText,
-                    filterType === 'Semua' && styles.filterTextActive,
-                  ]}
-                >
-                  Semua
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.filterButton,
-                  filterType === 'Baru' && styles.filterActive,
-                ]}
-                onPress={() => setFilterType('Baru')}
-              >
-                <Text
-                  style={[
-                    styles.filterText,
-                    filterType === 'Baru' && styles.filterTextActive,
-                  ]}
-                >
-                  Baru di Tonton
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Video List */}
-            <View style={styles.videoList}>
-              {filteredList.map(item => (
+              <View style={styles.userInfo}>
                 <TouchableOpacity
-                  key={item.id_materi}
-                  onPress={() =>
-                    navigation.navigate('VideoViewer', {
-                      id_materi: item.id_materi,
-                      title: item.judul,
-                      url_file: item.url_file,
-                      channel: 'UKAI SYNDROME',
-                      // views: '90K',
-                      // time: '1 months ago',
-                      // avatar: 'https://via.placeholder.com/50',
-                    })
-                  }
+                  style={styles.avatarInitial}
+                  onPress={() => setDropdownVisible(!dropdownVisible)}
                 >
-                  <View style={styles.thumbnailWrapper}>
-                    <Image
-                      source={{
-                        uri:
-                          getDriveThumbnail(item.url_file) ||
-                          'https://via.placeholder.com/400x200?text=No+Thumbnail',
-                      }}
-                      style={styles.thumbnail}
-                    />
-                  </View>
-                  <View style={styles.videoInfoRow}>
-                    <Avatar size={35} initial="U" />
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.videoTitle} numberOfLines={2}>
-                        {item.judul}
-                      </Text>
-                      <Text style={styles.videoMeta}>UKAI SYNDROME {'  '}</Text>
-                    </View>
-                    <Ionicons name="ellipsis-vertical" size={18} color="#555" />
-                  </View>
+                  <Text style={styles.avatarText}>
+                    {user.name.split(' ')[0][0]}
+                  </Text>
                 </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        </ScrollView>
 
-        {/* Scroll to Top */}
-        <Animated.View style={[styles.scrollTopBtn, { opacity: fadeAnim }]}>
-          <TouchableOpacity onPress={scrollToTop}>
-            <Ionicons name="arrow-up" size={22} color="#fff" />
-          </TouchableOpacity>
-        </Animated.View>
-      </LinearGradient>
-    </TouchableWithoutFeedback>
+                {dropdownVisible && (
+                  <View style={styles.dropdown}>
+                    <TouchableOpacity
+                      style={styles.dropdownItem}
+                      onPress={() => {
+                        setDropdownVisible(false);
+                        navigation.navigate('Profile');
+                      }}
+                    >
+                      <Text style={styles.dropdownText}>Profile</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.dropdownItem}
+                      onPress={handleLogout}
+                    >
+                      <Text style={styles.dropdownText}>Logout</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+            </View>
+
+            {/* Title & Search */}
+            <View style={styles.greetingBox}>
+              <Text style={styles.sectionTitle}>Video</Text>
+              <View style={styles.searchContainer}>
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Search"
+                  placeholderTextColor="#fff"
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                />
+                <Ionicons name="search-outline" size={18} color="#fff" />
+              </View>
+            </View>
+
+            {/* Filter */}
+            <View style={styles.mainContent}>
+              <View style={styles.filterContainer}>
+                <Text style={styles.sectionTitle2}>Daftar Materi</Text>
+                <TouchableOpacity
+                  style={[
+                    styles.filterButton,
+                    filterType === 'Semua' && styles.filterActive,
+                  ]}
+                  onPress={() => setFilterType('Semua')}
+                >
+                  <Text
+                    style={[
+                      styles.filterText,
+                      filterType === 'Semua' && styles.filterTextActive,
+                    ]}
+                  >
+                    Semua
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.filterButton,
+                    filterType === 'Baru' && styles.filterActive,
+                  ]}
+                  onPress={() => setFilterType('Baru')}
+                >
+                  <Text
+                    style={[
+                      styles.filterText,
+                      filterType === 'Baru' && styles.filterTextActive,
+                    ]}
+                  >
+                    Baru di Tonton
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Video List */}
+              <View style={styles.videoList}>
+                {filteredList.map(item => (
+                  <TouchableOpacity
+                    key={item.id_materi}
+                    onPress={() =>
+                      navigation.navigate('VideoViewer', {
+                        id_materi: item.id_materi,
+                        title: item.judul,
+                        url_file: item.url_file,
+                        channel: 'UKAI SYNDROME',
+                        // views: '90K',
+                        // time: '1 months ago',
+                        // avatar: 'https://via.placeholder.com/50',
+                      })
+                    }
+                  >
+                    <View style={styles.thumbnailWrapper}>
+                      <Image
+                        source={{
+                          uri:
+                            getDriveThumbnail(item.url_file) ||
+                            'https://via.placeholder.com/400x200?text=No+Thumbnail',
+                        }}
+                        style={styles.thumbnail}
+                      />
+                    </View>
+                    <View style={styles.videoInfoRow}>
+                      <Avatar size={35} initial="U" />
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.videoTitle} numberOfLines={2}>
+                          {item.judul}
+                        </Text>
+                        <Text style={styles.videoMeta}>
+                          UKAI SYNDROME {'  '}
+                        </Text>
+                      </View>
+                      <Ionicons
+                        name="ellipsis-vertical"
+                        size={18}
+                        color="#555"
+                      />
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          </ScrollView>
+
+          {/* Scroll to Top */}
+          <Animated.View style={[styles.scrollTopBtn, { opacity: fadeAnim }]}>
+            <TouchableOpacity onPress={scrollToTop}>
+              <Ionicons name="arrow-up" size={22} color="#fff" />
+            </TouchableOpacity>
+          </Animated.View>
+        </LinearGradient>
+      </TouchableWithoutFeedback>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
-    paddingHorizontal: 10,
-    paddingTop: 20,
+    paddingHorizontal: 20,
     alignItems: 'center',
-    justifyContent: 'space-between',
+    //justifyContent: 'space-between',
   },
   logo: {
-    width: width * 0.25,
-    height: width * 0.25,
+    width: width * 0.3,
+    height: width * 0.3,
     resizeMode: 'contain',
-    marginLeft: -180,
   },
   userInfo: {
-    position: 'relative',
+    position: 'absolute',
+    right: 20,
     flexDirection: 'row',
     alignItems: 'center',
   },

@@ -10,6 +10,7 @@ import {
   StatusBar,
   TouchableWithoutFeedback,
   Keyboard,
+  SafeAreaView,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -70,105 +71,106 @@ const MateriScreen = ({ navigation }) => {
   };
 
   return (
-    <TouchableWithoutFeedback
-      onPress={() => {
-        if (dropdownVisible) setDropdownVisible(false);
-        Keyboard.dismiss();
-      }}
-    >
-      <LinearGradient
-        colors={['#9D2828', '#191919']}
-        style={{ flex: 1 }}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#9D2828' }}>
+      <TouchableWithoutFeedback
+        onPress={() => {
+          if (dropdownVisible) setDropdownVisible(false);
+          Keyboard.dismiss();
+        }}
       >
-        <StatusBar barStyle="light-content" backgroundColor="#a10505" />
-        <ScrollView style={{ flex: 1 }}>
-          {/* Header */}
-          <View style={styles.header}>
-            <View style={{ flex: 1 }}>
-              <Image
-                source={require('../../src/img/logo_putih.png')}
-                style={styles.logo}
-              />
-            </View>
+        <LinearGradient
+          colors={['#9D2828', '#191919']}
+          style={{ flex: 1 }}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <StatusBar barStyle="light-content" backgroundColor="#a10505" />
+          <ScrollView style={{ flex: 1 }}>
+            {/* Header */}
+            <View style={styles.header}>
+              <View style={{ flex: 1 }}>
+                <Image
+                  source={require('../../src/img/logo_putih.png')}
+                  style={styles.logo}
+                />
+              </View>
 
-            <View style={styles.userInfo}>
-              <TouchableOpacity
-                style={styles.avatarInitial}
-                onPress={() => setDropdownVisible(!dropdownVisible)}
-              >
-                <Text style={styles.avatarText}>
-                  {user.name.split(' ')[0][0]}
-                </Text>
-              </TouchableOpacity>
-
-              {dropdownVisible && (
-                <View style={styles.dropdown}>
-                  <TouchableOpacity
-                    style={styles.dropdownItem}
-                    onPress={() => {
-                      setDropdownVisible(false);
-                      navigation.navigate('Profile');
-                    }}
-                  >
-                    <Text style={styles.dropdownText}>Profile</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.dropdownItem}
-                    onPress={handleLogout}
-                  >
-                    <Text style={styles.dropdownText}>Logout</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-            </View>
-          </View>
-
-          {/* Title */}
-          <View style={styles.greetingBox}>
-            <Text style={styles.greeting}>Materi</Text>
-            <Text style={styles.subtext}>Kumpulan materi bacaan lengkap</Text>
-          </View>
-
-          {/* Grid */}
-          <View style={styles.mainContent}>
-            <Text style={styles.sectionTitle}>Daftar Materi</Text>
-            <View style={styles.menuGrid}>
-              {modulList.map((item, index) => (
+              <View style={styles.userInfo}>
                 <TouchableOpacity
-                  key={index}
-                  style={[
-                    styles.menuItem,
-                    { backgroundColor: item.backgroundColor },
-                  ]}
-                  onPress={() =>
-                    navigation.navigate('MateriList', {
-                      id_modul: item.id_modul,
-                    })
-                  }
+                  style={styles.avatarInitial}
+                  onPress={() => setDropdownVisible(!dropdownVisible)}
                 >
-                  <Text style={styles.menuTitle}>{item.title}</Text>
-                  <Text style={styles.menuDesc}>{item.desc}</Text>
-                  <View style={styles.menuIconContainer}>
-                    <Image source={item.icon} style={styles.menuIcon} />
-                  </View>
-                  <Image source={item.wave} style={styles.waveImage} />
+                  <Text style={styles.avatarText}>
+                    {user.name.split(' ')[0][0]}
+                  </Text>
                 </TouchableOpacity>
-              ))}
+
+                {dropdownVisible && (
+                  <View style={styles.dropdown}>
+                    <TouchableOpacity
+                      style={styles.dropdownItem}
+                      onPress={() => {
+                        setDropdownVisible(false);
+                        navigation.navigate('Profile');
+                      }}
+                    >
+                      <Text style={styles.dropdownText}>Profile</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.dropdownItem}
+                      onPress={handleLogout}
+                    >
+                      <Text style={styles.dropdownText}>Logout</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
             </View>
-          </View>
-        </ScrollView>
-      </LinearGradient>
-    </TouchableWithoutFeedback>
+
+            {/* Title */}
+            <View style={styles.greetingBox}>
+              <Text style={styles.greeting}>Materi</Text>
+              <Text style={styles.subtext}>Kumpulan materi bacaan lengkap</Text>
+            </View>
+
+            {/* Grid */}
+            <View style={styles.mainContent}>
+              <Text style={styles.sectionTitle}>Daftar Materi</Text>
+              <View style={styles.menuGrid}>
+                {modulList.map((item, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={[
+                      styles.menuItem,
+                      { backgroundColor: item.backgroundColor },
+                    ]}
+                    onPress={() =>
+                      navigation.navigate('MateriList', {
+                        id_modul: item.id_modul,
+                      })
+                    }
+                  >
+                    <Text style={styles.menuTitle}>{item.title}</Text>
+                    <Text style={styles.menuDesc}>{item.desc}</Text>
+                    <View style={styles.menuIconContainer}>
+                      <Image source={item.icon} style={styles.menuIcon} />
+                    </View>
+                    <Image source={item.wave} style={styles.waveImage} />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          </ScrollView>
+        </LinearGradient>
+      </TouchableWithoutFeedback>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
-    paddingHorizontal: 10,
-    paddingTop: 20,
+    paddingHorizontal: 20,
     alignItems: 'center',
   },
   logo: {

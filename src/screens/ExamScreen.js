@@ -7,6 +7,7 @@ import {
   ScrollView,
   StatusBar,
   Modal,
+  SafeAreaView,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
@@ -129,257 +130,268 @@ const ExamScreen = ({ navigation }) => {
   };
 
   return (
-    <LinearGradient colors={['#9D2828', '#191919']} style={{ flex: 1 }}>
-      <StatusBar barStyle="light-content" backgroundColor="#9D2828" />
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#9D2828' }}>
+      <LinearGradient colors={['#9D2828', '#191919']} style={{ flex: 1 }}>
+        <StatusBar barStyle="light-content" backgroundColor="#9D2828" />
 
-      <View style={styles.header}>
-        <Text style={styles.title}>
-          {reviewMode ? 'Pembahasan' : 'Try Out 1'}
-        </Text>
-        {!reviewMode && (
-          <View style={styles.timerBox}>
-            <Text style={styles.timerText}>{formatTime(timeLeft)}</Text>
-          </View>
-        )}
-      </View>
-
-      <ScrollView style={styles.container}>
-        <View style={styles.questionHeader}>
-          <Text style={styles.questionTitle}>
-            Soal Nomor {currentQuestionIndex + 1}
+        <View style={styles.header}>
+          <Text style={styles.title}>
+            {reviewMode ? 'Pembahasan' : 'Try Out 1'}
           </Text>
-          <View style={styles.buttonsRow}>
-            {!reviewMode && (
+          {!reviewMode && (
+            <View style={styles.timerBox}>
+              <Text style={styles.timerText}>{formatTime(timeLeft)}</Text>
+            </View>
+          )}
+        </View>
+
+        <ScrollView style={styles.container}>
+          <View style={styles.questionHeader}>
+            <Text style={styles.questionTitle}>
+              Soal Nomor {currentQuestionIndex + 1}
+            </Text>
+            <View style={styles.buttonsRow}>
+              {!reviewMode && (
+                <TouchableOpacity
+                  style={styles.calcButton}
+                  onPress={() => setCalcVisible(true)}
+                >
+                  <Ionicons
+                    name="calculator-outline"
+                    size={16}
+                    color="#2E7D32"
+                  />
+                  <Text style={styles.calcText}>Kalkulator</Text>
+                </TouchableOpacity>
+              )}
               <TouchableOpacity
-                style={styles.calcButton}
-                onPress={() => setCalcVisible(true)}
+                style={styles.listButton}
+                onPress={() => setListVisible(true)}
               >
-                <Ionicons name="calculator-outline" size={16} color="#2E7D32" />
-                <Text style={styles.calcText}>Kalkulator</Text>
+                <Text style={styles.listText}>Daftar Soal</Text>
               </TouchableOpacity>
-            )}
-            <TouchableOpacity
-              style={styles.listButton}
-              onPress={() => setListVisible(true)}
-            >
-              <Text style={styles.listText}>Daftar Soal</Text>
-            </TouchableOpacity>
+            </View>
           </View>
-        </View>
 
-        <Text style={styles.questionText}>{currentQuestion.text}</Text>
+          <Text style={styles.questionText}>{currentQuestion.text}</Text>
 
-        {currentQuestion.options.map((opt, idx) => {
-          const userAnswer = answersStatus[currentQuestionIndex].selectedOption;
-          const correctAnswer = currentQuestion.correct;
-          let optionStyle = styles.optionBox;
+          {currentQuestion.options.map((opt, idx) => {
+            const userAnswer =
+              answersStatus[currentQuestionIndex].selectedOption;
+            const correctAnswer = currentQuestion.correct;
+            let optionStyle = styles.optionBox;
 
-          if (reviewMode) {
-            if (idx === correctAnswer) {
-              optionStyle = [
-                styles.optionBox,
-                { backgroundColor: '#C8E6C9', borderColor: '#2E7D32' },
-              ];
-            }
-            if (userAnswer === idx && idx !== correctAnswer) {
-              optionStyle = [
-                styles.optionBox,
-                { backgroundColor: '#FFCDD2', borderColor: '#C62828' },
-              ];
-            }
-          } else {
-            if (userAnswer === idx) {
-              optionStyle = [styles.optionBox, styles.optionSelected];
-            }
-          }
-
-          return (
-            <TouchableOpacity
-              key={idx}
-              disabled={reviewMode}
-              style={optionStyle}
-              onPress={() => selectOption(idx)}
-            >
-              <View style={styles.radioCircle}>
-                {userAnswer === idx && <View style={styles.radioDot} />}
-              </View>
-              <Text style={styles.optionText}>{opt}</Text>
-            </TouchableOpacity>
-          );
-        })}
-
-        {reviewMode && (
-          <View
-            style={{
-              backgroundColor: '#FFF9C4',
-              marginHorizontal: 16,
-              padding: 12,
-              borderRadius: 8,
-              borderWidth: 1,
-              borderColor: '#FBC02D',
-              marginTop: 10,
-            }}
-          >
-            <Text style={{ fontWeight: 'bold', marginBottom: 4 }}>
-              Pembahasan:
-            </Text>
-            <Text style={{ fontSize: 13, lineHeight: 18 }}>
-              {currentQuestion.explanation}
-            </Text>
-          </View>
-        )}
-
-        {!reviewMode && (
-          <View style={styles.doubtRow}>
-            <CheckBox
-              value={markDoubt}
-              onValueChange={setMarkDoubt}
-              tintColors={{ true: '#FFA000', false: '#FFA000' }}
-            />
-            <Text style={styles.doubtText}>Tandai Ragu-ragu</Text>
-          </View>
-        )}
-      </ScrollView>
-
-      <View style={styles.footer}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => setCurrentQuestionIndex(i => Math.max(0, i - 1))}
-        >
-          <Text style={styles.backText}>Soal Sebelumnya</Text>
-        </TouchableOpacity>
-        <View style={{ width: 16 }} />{' '}
-        {/* Spacer agar tombol tidak bertabrakan */}
-        <TouchableOpacity
-          style={styles.nextButton}
-          onPress={() => {
-            if (currentQuestionIndex < questions.length - 1) {
-              setCurrentQuestionIndex(i => i + 1);
-            } else if (!reviewMode) {
-              calculateScore();
+            if (reviewMode) {
+              if (idx === correctAnswer) {
+                optionStyle = [
+                  styles.optionBox,
+                  { backgroundColor: '#C8E6C9', borderColor: '#2E7D32' },
+                ];
+              }
+              if (userAnswer === idx && idx !== correctAnswer) {
+                optionStyle = [
+                  styles.optionBox,
+                  { backgroundColor: '#FFCDD2', borderColor: '#C62828' },
+                ];
+              }
             } else {
-              navigation.reset({
-                index: 0,
-                routes: [{ name: 'TryOutScreen' }],
-              });
+              if (userAnswer === idx) {
+                optionStyle = [styles.optionBox, styles.optionSelected];
+              }
             }
-          }}
-        >
-          <Text style={styles.nextText}>
-            {currentQuestionIndex < questions.length - 1
-              ? 'Soal Selanjutnya'
-              : reviewMode
-              ? 'Selesai Pembahasan'
-              : 'Selesai'}
-          </Text>
-        </TouchableOpacity>
-      </View>
 
-      <CalculatorModal
-        visible={calcVisible}
-        onClose={() => setCalcVisible(false)}
-      />
+            return (
+              <TouchableOpacity
+                key={idx}
+                disabled={reviewMode}
+                style={optionStyle}
+                onPress={() => selectOption(idx)}
+              >
+                <View style={styles.radioCircle}>
+                  {userAnswer === idx && <View style={styles.radioDot} />}
+                </View>
+                <Text style={styles.optionText}>{opt}</Text>
+              </TouchableOpacity>
+            );
+          })}
 
-      {/* Modal Daftar Soal */}
-      <Modal
-        visible={listVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setListVisible(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text
-              style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 12 }}
-            >
-              Pilih Nomor Soal
-            </Text>
-            <ScrollView
-              contentContainerStyle={{ flexDirection: 'row', flexWrap: 'wrap' }}
-            >
-              {questions.map((q, idx) => {
-                const status = answersStatus[idx];
-                let bgColor = '#fff';
-                if (reviewMode) {
-                  bgColor = idx === q.correct ? '#C8E6C9' : '#fff';
-                } else {
-                  if (status.doubt) bgColor = '#FFF9C4';
-                  else if (status.answered) bgColor = '#C8E6C9';
-                }
-
-                return (
-                  <TouchableOpacity
-                    key={idx}
-                    style={[
-                      styles.numberButton,
-                      { backgroundColor: bgColor },
-                      idx === currentQuestionIndex && styles.numberButtonActive,
-                    ]}
-                    onPress={() => {
-                      setCurrentQuestionIndex(idx);
-                      setListVisible(false);
-                    }}
-                  >
-                    <Text style={styles.numberText}>{idx + 1}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={() => setListVisible(false)}
-            >
-              <Text style={{ color: '#fff', fontWeight: 'bold' }}>Tutup</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Modal Skor */}
-      <Modal
-        visible={scoreVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setScoreVisible(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text
-              style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 12 }}
-            >
-              Skor Anda
-            </Text>
-            <Text style={{ fontSize: 16, marginBottom: 16 }}>
-              Anda mendapatkan {score} / {questions.length} poin
-            </Text>
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={() => {
-                setScoreVisible(false);
-                setReviewMode(true);
-                setCurrentQuestionIndex(0);
+          {reviewMode && (
+            <View
+              style={{
+                backgroundColor: '#FFF9C4',
+                marginHorizontal: 16,
+                padding: 12,
+                borderRadius: 8,
+                borderWidth: 1,
+                borderColor: '#FBC02D',
+                marginTop: 10,
               }}
             >
-              <Text style={{ color: '#fff', fontWeight: 'bold' }}>
-                Lihat Pembahasan
+              <Text style={{ fontWeight: 'bold', marginBottom: 4 }}>
+                Pembahasan:
               </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.closeButton, { backgroundColor: '#9E9E9E' }]}
-              onPress={() => {
-                setScoreVisible(false);
+              <Text style={{ fontSize: 13, lineHeight: 18 }}>
+                {currentQuestion.explanation}
+              </Text>
+            </View>
+          )}
+
+          {!reviewMode && (
+            <View style={styles.doubtRow}>
+              <CheckBox
+                value={markDoubt}
+                onValueChange={setMarkDoubt}
+                tintColors={{ true: '#FFA000', false: '#FFA000' }}
+              />
+              <Text style={styles.doubtText}>Tandai Ragu-ragu</Text>
+            </View>
+          )}
+        </ScrollView>
+
+        <View style={styles.footer}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => setCurrentQuestionIndex(i => Math.max(0, i - 1))}
+          >
+            <Text style={styles.backText}>Soal Sebelumnya</Text>
+          </TouchableOpacity>
+          <View style={{ width: 16 }} />{' '}
+          {/* Spacer agar tombol tidak bertabrakan */}
+          <TouchableOpacity
+            style={styles.nextButton}
+            onPress={() => {
+              if (currentQuestionIndex < questions.length - 1) {
+                setCurrentQuestionIndex(i => i + 1);
+              } else if (!reviewMode) {
+                calculateScore();
+              } else {
                 navigation.reset({
                   index: 0,
                   routes: [{ name: 'TryOutScreen' }],
                 });
-              }}
-            >
-              <Text style={{ color: '#fff', fontWeight: 'bold' }}>Tutup</Text>
-            </TouchableOpacity>
-          </View>
+              }
+            }}
+          >
+            <Text style={styles.nextText}>
+              {currentQuestionIndex < questions.length - 1
+                ? 'Soal Selanjutnya'
+                : reviewMode
+                ? 'Selesai Pembahasan'
+                : 'Selesai'}
+            </Text>
+          </TouchableOpacity>
         </View>
-      </Modal>
-    </LinearGradient>
+
+        <CalculatorModal
+          visible={calcVisible}
+          onClose={() => setCalcVisible(false)}
+        />
+
+        {/* Modal Daftar Soal */}
+        <Modal
+          visible={listVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setListVisible(false)}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text
+                style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 12 }}
+              >
+                Pilih Nomor Soal
+              </Text>
+              <ScrollView
+                contentContainerStyle={{
+                  flexDirection: 'row',
+                  flexWrap: 'wrap',
+                }}
+              >
+                {questions.map((q, idx) => {
+                  const status = answersStatus[idx];
+                  let bgColor = '#fff';
+                  if (reviewMode) {
+                    bgColor = idx === q.correct ? '#C8E6C9' : '#fff';
+                  } else {
+                    if (status.doubt) bgColor = '#FFF9C4';
+                    else if (status.answered) bgColor = '#C8E6C9';
+                  }
+
+                  return (
+                    <TouchableOpacity
+                      key={idx}
+                      style={[
+                        styles.numberButton,
+                        { backgroundColor: bgColor },
+                        idx === currentQuestionIndex &&
+                          styles.numberButtonActive,
+                      ]}
+                      onPress={() => {
+                        setCurrentQuestionIndex(idx);
+                        setListVisible(false);
+                      }}
+                    >
+                      <Text style={styles.numberText}>{idx + 1}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setListVisible(false)}
+              >
+                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Tutup</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Modal Skor */}
+        <Modal
+          visible={scoreVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setScoreVisible(false)}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text
+                style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 12 }}
+              >
+                Skor Anda
+              </Text>
+              <Text style={{ fontSize: 16, marginBottom: 16 }}>
+                Anda mendapatkan {score} / {questions.length} poin
+              </Text>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => {
+                  setScoreVisible(false);
+                  setReviewMode(true);
+                  setCurrentQuestionIndex(0);
+                }}
+              >
+                <Text style={{ color: '#fff', fontWeight: 'bold' }}>
+                  Lihat Pembahasan
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.closeButton, { backgroundColor: '#9E9E9E' }]}
+                onPress={() => {
+                  setScoreVisible(false);
+                  navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'TryOutScreen' }],
+                  });
+                }}
+              >
+                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Tutup</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      </LinearGradient>
+    </SafeAreaView>
   );
 };
 

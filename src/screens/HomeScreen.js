@@ -9,6 +9,7 @@ import {
   Dimensions,
   StatusBar,
   ActivityIndicator,
+  SafeAreaView,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { FlatList } from 'react-native';
@@ -130,153 +131,154 @@ const Home = ({ navigation }) => {
   ];
 
   return (
-    <LinearGradient
-      colors={['#9D2828', '#191919']}
-      style={{ flex: 1 }}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-    >
-      <StatusBar barStyle="light-content" backgroundColor="#a10505" />
-      <ScrollView style={{ flex: 1 }}>
-        {/* Overlay untuk menutup dropdown saat klik di luar area */}
-        {menuVisible && (
-          <TouchableOpacity
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              zIndex: 998,
-            }}
-            activeOpacity={1}
-            onPress={() => setMenuVisible(false)}
-          />
-        )}
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={{ flex: 1 }}>
-            <Image
-              source={require('../../src/img/logo_putih.png')}
-              style={styles.logo}
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#9D2828' }}>
+      <LinearGradient
+        colors={['#9D2828', '#191919']}
+        style={{ flex: 1 }}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        <StatusBar barStyle="light-content" backgroundColor="#a10505" />
+        <ScrollView style={{ flex: 1 }}>
+          {/* Overlay untuk menutup dropdown saat klik di luar area */}
+          {menuVisible && (
+            <TouchableOpacity
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                zIndex: 998,
+              }}
+              activeOpacity={1}
+              onPress={() => setMenuVisible(false)}
+            />
+          )}
+          {/* Header */}
+          <View style={styles.header}>
+            <View style={{ flex: 1 }}>
+              <Image
+                source={require('../../src/img/logo_putih.png')}
+                style={styles.logo}
+              />
+            </View>
+
+            <View style={styles.userInfo}>
+              {/* Avatar */}
+              <TouchableOpacity onPress={() => setMenuVisible(!menuVisible)}>
+                <View style={styles.avatarInitial}>
+                  <Text style={styles.avatarText}>
+                    {user.name.split(' ')[0][0]}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+
+              {menuVisible && (
+                <View style={styles.dropdownMenu}>
+                  <TouchableOpacity
+                    style={styles.dropdownItem}
+                    onPress={() => {
+                      setMenuVisible(false);
+                      navigation.navigate('Profile');
+                    }}
+                  >
+                    <Text style={styles.dropdownText}>Profil</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.dropdownItem}
+                    onPress={handleLogout}
+                    disabled={isLoggingOut}
+                  >
+                    {isLoggingOut ? (
+                      <View
+                        style={{ flexDirection: 'row', alignItems: 'center' }}
+                      >
+                        <ActivityIndicator size="small" color="#700101" />
+                        <Text
+                          style={[
+                            styles.dropdownText,
+                            { marginLeft: 8, color: 'gray' },
+                          ]}
+                        >
+                          Logging out...
+                        </Text>
+                      </View>
+                    ) : (
+                      <Text style={styles.dropdownText}>Logout</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          </View>
+
+          {/* Greeting */}
+          <View style={styles.greetingBox}>
+            <Text style={styles.greeting}>Hi, {user.name}</Text>
+            <Text style={styles.subtext}>
+              Langkah kecil hari ini, lompatan besar esok.
+              {/* <Text style={{ fontWeight: 'bold' }}>terbaik dan ter-murah</Text> */}
+            </Text>
+          </View>
+
+          {/* Content */}
+          <View style={styles.mainContent}>
+            {/* Menu */}
+            <Text style={styles.sectionTitle}>Daftar Menu</Text>
+            <View style={styles.menuGrid}>
+              {menus.map((item, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={[
+                    styles.menuItem,
+                    { backgroundColor: item.backgroundColor },
+                  ]}
+                  onPress={() => navigation.navigate(item.to)}
+                >
+                  <Text style={styles.menuTitle}>{item.title}</Text>
+                  <Text style={styles.menuDesc}>{item.desc}</Text>
+                  <View style={styles.menuIconContainer}>
+                    <Image source={item.icon} style={styles.menuIcon} />
+                  </View>
+                  <Image source={item.wave} style={styles.waveImage} />
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* Mentor */}
+            <Text style={styles.sectionTitle}>Daftar Mentor</Text>
+            <FlatList
+              ref={flatListRef}
+              data={MentorList}
+              keyExtractor={(item, index) => index.toString()}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              renderItem={({ item }) => (
+                <View style={{ marginRight: 15 }}>
+                  <Image
+                    source={item.image}
+                    style={{
+                      width: width * 0.4,
+                      height: width * 0.5,
+                      resizeMode: 'contain',
+                    }}
+                  />
+                </View>
+              )}
             />
           </View>
-
-          <View style={styles.userInfo}>
-            {/* Avatar */}
-            <TouchableOpacity onPress={() => setMenuVisible(!menuVisible)}>
-              <View style={styles.avatarInitial}>
-                <Text style={styles.avatarText}>
-                  {user.name.split(' ')[0][0]}
-                </Text>
-              </View>
-            </TouchableOpacity>
-
-            {menuVisible && (
-              <View style={styles.dropdownMenu}>
-                <TouchableOpacity
-                  style={styles.dropdownItem}
-                  onPress={() => {
-                    setMenuVisible(false);
-                    navigation.navigate('Profile');
-                  }}
-                >
-                  <Text style={styles.dropdownText}>Profil</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.dropdownItem}
-                  onPress={handleLogout}
-                  disabled={isLoggingOut}
-                >
-                  {isLoggingOut ? (
-                    <View
-                      style={{ flexDirection: 'row', alignItems: 'center' }}
-                    >
-                      <ActivityIndicator size="small" color="#700101" />
-                      <Text
-                        style={[
-                          styles.dropdownText,
-                          { marginLeft: 8, color: 'gray' },
-                        ]}
-                      >
-                        Logging out...
-                      </Text>
-                    </View>
-                  ) : (
-                    <Text style={styles.dropdownText}>Logout</Text>
-                  )}
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-        </View>
-
-        {/* Greeting */}
-        <View style={styles.greetingBox}>
-          <Text style={styles.greeting}>Hi, {user.name}</Text>
-          <Text style={styles.subtext}>
-            Langkah kecil hari ini, lompatan besar esok.
-            {/* <Text style={{ fontWeight: 'bold' }}>terbaik dan ter-murah</Text> */}
-          </Text>
-        </View>
-
-        {/* Content */}
-        <View style={styles.mainContent}>
-          {/* Menu */}
-          <Text style={styles.sectionTitle}>Daftar Menu</Text>
-          <View style={styles.menuGrid}>
-            {menus.map((item, index) => (
-              <TouchableOpacity
-                key={index}
-                style={[
-                  styles.menuItem,
-                  { backgroundColor: item.backgroundColor },
-                ]}
-                onPress={() => navigation.navigate(item.to)}
-              >
-                <Text style={styles.menuTitle}>{item.title}</Text>
-                <Text style={styles.menuDesc}>{item.desc}</Text>
-                <View style={styles.menuIconContainer}>
-                  <Image source={item.icon} style={styles.menuIcon} />
-                </View>
-                <Image source={item.wave} style={styles.waveImage} />
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {/* Mentor */}
-          <Text style={styles.sectionTitle}>Daftar Mentor</Text>
-          <FlatList
-            ref={flatListRef}
-            data={MentorList}
-            keyExtractor={(item, index) => index.toString()}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            renderItem={({ item }) => (
-              <View style={{ marginRight: 15 }}>
-                <Image
-                  source={item.image}
-                  style={{
-                    width: width * 0.4,
-                    height: width * 0.5,
-                    resizeMode: 'contain',
-                  }}
-                />
-              </View>
-            )}
-          />
-        </View>
-      </ScrollView>
-    </LinearGradient>
+        </ScrollView>
+      </LinearGradient>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
-    paddingHorizontal: 10,
-    paddingTop: 20,
+    paddingHorizontal: 20,
     alignItems: 'center',
   },
   logo: {

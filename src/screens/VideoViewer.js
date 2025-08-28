@@ -14,6 +14,7 @@ import {
   ActivityIndicator,
   Alert,
   Keyboard,
+  SafeAreaView,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Ionicons from '@react-native-vector-icons/ionicons';
@@ -433,220 +434,235 @@ const VideoViewer = ({ route, navigation }) => {
   }, [rootComments, rootPage, totalRoots]);
 
   return (
-    <View style={{ flex: 1 }}>
-      <StatusBar barStyle="light-content" backgroundColor="#a10505" />
-      {/* Header same as VideoListScreen */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => {
-            try {
-              if (navigation?.canGoBack?.()) {
-                navigation.goBack();
-              } else if (navigation?.navigate) {
-                navigation.navigate('Home');
-              }
-            } catch (e) {
-              navigation?.reset?.({ index: 0, routes: [{ name: 'Home' }] });
-            }
-          }}
-        >
-          <Ionicons name="arrow-back" size={26} color="#fff" />
-        </TouchableOpacity>
-
-        <Image
-          source={require('../../src/img/logo_putih.png')}
-          style={styles.logo}
-        />
-
-        <View style={styles.userInfo}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#9D2828' }}>
+      <View style={{ flex: 1 }}>
+        <StatusBar barStyle="light-content" backgroundColor="#a10505" />
+        {/* Header same as VideoListScreen */}
+        <View style={styles.header}>
           <TouchableOpacity
-            style={styles.avatarInitial}
-            onPress={() => setDropdownVisible(!dropdownVisible)}
-          >
-            <Text style={styles.avatarText}>{(user.nama || 'P')[0]}</Text>
-          </TouchableOpacity>
-
-          {dropdownVisible && (
-            <View style={styles.dropdown}>
-              <TouchableOpacity
-                style={styles.dropdownItem}
-                onPress={() => {
-                  setDropdownVisible(false);
-                  navigation.navigate('Profile');
-                }}
-              >
-                <Text style={styles.dropdownText}>Profile</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.dropdownItem}
-                onPress={handleLogout}
-              >
-                <Text style={styles.dropdownText}>Logout</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
-      </View>
-
-      <ScrollView
-        contentContainerStyle={{
-          paddingBottom: 120,
-          keyboardShouldPersistTaps: 'handled',
-        }}
-      >
-        {/* Video player */}
-        <View style={{ height: height * 0.33, backgroundColor: '#000' }}>
-          <WebView
-            source={{ uri: getDrivePreview(url_file) }}
-            style={{ flex: 1 }}
-            javaScriptEnabled
-            allowsFullscreenVideo
-            mediaPlaybackRequiresUserAction={false}
-          />
-          {/* Watermark overlay */}
-          <View
-            pointerEvents="none"
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              justifyContent: 'center',
-              alignItems: 'center',
+            onPress={() => {
+              try {
+                if (navigation?.canGoBack?.()) {
+                  navigation.goBack();
+                } else if (navigation?.navigate) {
+                  navigation.navigate('Home');
+                }
+              } catch (e) {
+                navigation?.reset?.({ index: 0, routes: [{ name: 'Home' }] });
+              }
             }}
           >
-            <Text
-              style={{
-                color: 'rgba(255,0,0,0.18)',
-                fontSize: 32,
-                fontWeight: 'bold',
-                transform: [{ rotate: '-20deg' }],
-                textAlign: 'center',
-              }}
+            <Ionicons name="arrow-back" size={26} color="#fff" />
+          </TouchableOpacity>
+
+          <Image
+            source={require('../../src/img/logo_putih.png')}
+            style={styles.logo}
+          />
+
+          <View style={styles.userInfo}>
+            <TouchableOpacity
+              style={styles.avatarInitial}
+              onPress={() => setDropdownVisible(!dropdownVisible)}
             >
-              {user.nama}
-            </Text>
+              <Text style={styles.avatarText}>{(user.nama || 'P')[0]}</Text>
+            </TouchableOpacity>
+
+            {dropdownVisible && (
+              <View style={styles.dropdown}>
+                <TouchableOpacity
+                  style={styles.dropdownItem}
+                  onPress={() => {
+                    setDropdownVisible(false);
+                    navigation.navigate('Profile');
+                  }}
+                >
+                  <Text style={styles.dropdownText}>Profile</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.dropdownItem}
+                  onPress={handleLogout}
+                >
+                  <Text style={styles.dropdownText}>Logout</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
         </View>
 
-        {/* Info */}
-        <View style={styles.infoBox}>
-          <Text style={styles.videoTitle}>{title}</Text>
-          <Text style={styles.videoMeta}>
-            {channel}
-            {/* {channel} • {views} views • {time} */}
-          </Text>
-        </View>
-
-        {/* Comments input (YouTube style) */}
-        <View style={styles.commentComposer}>
-          <Avatar name={user.nama} size={40} />
-          <View style={{ flex: 1, marginLeft: 12 }}>
-            <TextInput
-              ref={inputRef}
-              style={styles.composeInput}
-              placeholder={
-                editingComment
-                  ? 'Edit komentar...'
-                  : replyingTo
-                  ? `Balas ke ${replyingTo.nama}`
-                  : 'Tambahkan komentar...'
-              }
-              placeholderTextColor="#999"
-              value={composeText}
-              onChangeText={setComposeText}
-              multiline
+        <ScrollView
+          contentContainerStyle={{
+            paddingBottom: 120,
+            keyboardShouldPersistTaps: 'handled',
+          }}
+        >
+          {/* Video player */}
+          <View style={{ height: height * 0.33, backgroundColor: '#000' }}>
+            <WebView
+              source={{ uri: getDrivePreview(url_file) }}
+              style={{ flex: 1 }}
+              javaScriptEnabled
+              allowsFullscreenVideo
+              mediaPlaybackRequiresUserAction={false}
+              // Disable long press and context menu
+              injectedJavaScript={`
+              document.addEventListener('contextmenu', event => event.preventDefault());
+              document.addEventListener('copy', event => event.preventDefault());
+              document.addEventListener('dragstart', event => event.preventDefault());
+              document.body.style.userSelect = 'none';
+              document.body.style.webkitUserSelect = 'none';
+              document.body.style.msUserSelect = 'none';
+            `}
+              onMessage={() => {}}
             />
+            {/* Watermark overlay */}
             <View
+              pointerEvents="none"
               style={{
-                flexDirection: 'row',
-                marginTop: 8,
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                justifyContent: 'center',
                 alignItems: 'center',
               }}
             >
-              {(replyingTo || editingComment) && (
-                <TouchableOpacity
-                  onPress={onCancelCompose}
-                  style={{ marginRight: 12 }}
-                >
-                  <Text style={{ color: '#666' }}>Batal</Text>
-                </TouchableOpacity>
-              )}
-              <TouchableOpacity
-                onPress={() => {
-                  if (editingComment) putEditComment();
-                  else postComment();
+              <Text
+                style={{
+                  color: 'rgba(255,0,0,0.18)',
+                  fontSize: 32,
+                  fontWeight: 'bold',
+                  transform: [{ rotate: '-20deg' }],
+                  textAlign: 'center',
                 }}
-                style={[styles.sendButton, sending && { opacity: 0.6 }]}
-                disabled={sending}
               >
-                <Text style={{ color: '#fff', fontWeight: '700' }}>
-                  {sending ? '...' : 'Kirim'}
-                </Text>
-              </TouchableOpacity>
+                {user.nama}
+              </Text>
             </View>
           </View>
-        </View>
 
-        {/* Comments list */}
-        <View style={styles.commentsSection}>
-          <View style={styles.commentsHeader}>
-            <Text style={styles.commentsTitle}>Komentar</Text>
-            <Text style={styles.commentsCount}>{rawComments.length}</Text>
+          {/* Info */}
+          <View style={styles.infoBox}>
+            <Text style={styles.videoTitle}>{title}</Text>
+            <Text style={styles.videoMeta}>
+              {channel}
+              {/* {channel} • {views} views • {time} */}
+            </Text>
           </View>
 
-          {loading ? (
-            <ActivityIndicator style={{ marginVertical: 20 }} />
-          ) : (
-            <>
-              {displayedRoots.length === 0 ? (
-                <Text style={{ color: '#666', paddingVertical: 12 }}>
-                  Belum ada komentar.
-                </Text>
-              ) : (
-                <FlatList
-                  data={displayedRoots}
-                  keyExtractor={it => String(it.id_komentarmateri)}
-                  renderItem={renderRoot}
-                  scrollEnabled={false} // parent scroll handles
-                />
-              )}
-
-              {hasMoreRoots && (
+          {/* Comments input (YouTube style) */}
+          <View style={styles.commentComposer}>
+            <Avatar name={user.nama} size={40} />
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              <TextInput
+                ref={inputRef}
+                style={styles.composeInput}
+                placeholder={
+                  editingComment
+                    ? 'Edit komentar...'
+                    : replyingTo
+                    ? `Balas ke ${replyingTo.nama}`
+                    : 'Tambahkan komentar...'
+                }
+                placeholderTextColor="#999"
+                value={composeText}
+                onChangeText={setComposeText}
+                multiline
+              />
+              <View
+                style={{
+                  flexDirection: 'row',
+                  marginTop: 8,
+                  alignItems: 'center',
+                }}
+              >
+                {(replyingTo || editingComment) && (
+                  <TouchableOpacity
+                    onPress={onCancelCompose}
+                    style={{ marginRight: 12 }}
+                  >
+                    <Text style={{ color: '#666' }}>Batal</Text>
+                  </TouchableOpacity>
+                )}
                 <TouchableOpacity
-                  style={styles.loadMoreBtn}
-                  onPress={() => setRootPage(p => p + 1)}
+                  onPress={() => {
+                    if (editingComment) putEditComment();
+                    else postComment();
+                  }}
+                  style={[styles.sendButton, sending && { opacity: 0.6 }]}
+                  disabled={sending}
                 >
-                  <Text style={styles.loadMoreText}>
-                    Muat lebih banyak komentar
+                  <Text style={{ color: '#fff', fontWeight: '700' }}>
+                    {sending ? '...' : 'Kirim'}
                   </Text>
                 </TouchableOpacity>
-              )}
-            </>
-          )}
-        </View>
-      </ScrollView>
-    </View>
+              </View>
+            </View>
+          </View>
+
+          {/* Comments list */}
+          <View style={styles.commentsSection}>
+            <View style={styles.commentsHeader}>
+              <Text style={styles.commentsTitle}>Komentar</Text>
+              <Text style={styles.commentsCount}>{rawComments.length}</Text>
+            </View>
+
+            {loading ? (
+              <ActivityIndicator style={{ marginVertical: 20 }} />
+            ) : (
+              <>
+                {displayedRoots.length === 0 ? (
+                  <Text style={{ color: '#666', paddingVertical: 12 }}>
+                    Belum ada komentar.
+                  </Text>
+                ) : (
+                  <FlatList
+                    data={displayedRoots}
+                    keyExtractor={it => String(it.id_komentarmateri)}
+                    renderItem={renderRoot}
+                    scrollEnabled={false} // parent scroll handles
+                  />
+                )}
+
+                {hasMoreRoots && (
+                  <TouchableOpacity
+                    style={styles.loadMoreBtn}
+                    onPress={() => setRootPage(p => p + 1)}
+                  >
+                    <Text style={styles.loadMoreText}>
+                      Muat lebih banyak komentar
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </>
+            )}
+          </View>
+        </ScrollView>
+      </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
-    paddingHorizontal: 10,
-    paddingTop: 20,
+    paddingHorizontal: 20,
     alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#9D2828',
+    //justifyContent: 'space-between',
+    // backgroundColor: '#9D2828',
   },
   logo: {
-    width: width * 0.25,
-    height: width * 0.25,
+    width: width * 0.3,
+    height: width * 0.3,
     resizeMode: 'contain',
-    marginLeft: -180,
   },
-  userInfo: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  userInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    position: 'absolute',
+    right: 20,
+  },
   paketBadge: {
     backgroundColor: '#feb600',
     paddingHorizontal: 8,

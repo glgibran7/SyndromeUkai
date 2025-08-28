@@ -11,6 +11,7 @@ import {
   TextInput,
   TouchableWithoutFeedback,
   Keyboard,
+  SafeAreaView,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -83,179 +84,182 @@ const MateriListScreen = ({ route, navigation }) => {
   };
 
   return (
-    <TouchableWithoutFeedback
-      onPress={() => {
-        if (dropdownVisible) setDropdownVisible(false);
-        Keyboard.dismiss();
-      }}
-    >
-      <LinearGradient
-        colors={['#9D2828', '#191919']}
-        style={{ flex: 1 }}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#9D2828' }}>
+      <TouchableWithoutFeedback
+        onPress={() => {
+          if (dropdownVisible) setDropdownVisible(false);
+          Keyboard.dismiss();
+        }}
       >
-        <StatusBar barStyle="light-content" backgroundColor="#a10505" />
-        <ScrollView style={{ flex: 1 }}>
-          {/* Header */}
-          <View style={styles.header}>
-            <TouchableOpacity onPress={() => navigation.goBack()}>
-              <Ionicons name="arrow-back" size={26} color="#fff" />
-            </TouchableOpacity>
-
-            <Image
-              source={require('../../src/img/logo_putih.png')}
-              style={styles.logo}
-            />
-
-            <View style={styles.userInfo}>
-              <TouchableOpacity
-                style={styles.avatarInitial}
-                onPress={() => setDropdownVisible(!dropdownVisible)}
-              >
-                <Text style={styles.avatarText}>
-                  {user.name.split(' ')[0][0]}
-                </Text>
+        <LinearGradient
+          colors={['#9D2828', '#191919']}
+          style={{ flex: 1 }}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <StatusBar barStyle="light-content" backgroundColor="#a10505" />
+          <ScrollView style={{ flex: 1 }}>
+            {/* Header */}
+            <View style={styles.header}>
+              <TouchableOpacity onPress={() => navigation.goBack()}>
+                <Ionicons name="arrow-back" size={26} color="#fff" />
               </TouchableOpacity>
 
-              {dropdownVisible && (
-                <View style={styles.dropdown}>
-                  <TouchableOpacity
-                    style={styles.dropdownItem}
-                    onPress={() => {
-                      setDropdownVisible(false);
-                      navigation.navigate('Profile');
-                    }}
-                  >
-                    <Text style={styles.dropdownText}>Profile</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.dropdownItem}
-                    onPress={handleLogout}
-                  >
-                    <Text style={styles.dropdownText}>Logout</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-            </View>
-          </View>
-
-          {/* Title & Search */}
-          <View style={styles.greetingBox}>
-            <Text style={styles.sectionTitle}>Materi</Text>
-            <View style={styles.searchContainer}>
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Search"
-                placeholderTextColor="#fff"
-                value={searchQuery}
-                onChangeText={setSearchQuery}
+              <Image
+                source={require('../../src/img/logo_putih.png')}
+                style={styles.logo}
               />
-              <Ionicons name="search-outline" size={18} color="#fff" />
-            </View>
-          </View>
 
-          {/* Main Content */}
-          <View style={styles.mainContent}>
-            {/* Filter */}
-            <View style={styles.filterContainer}>
-              <Text style={styles.sectionTitle2}>Daftar Materi</Text>
-
-              <TouchableOpacity
-                style={[
-                  styles.filterButton,
-                  filterType === 'Semua' && styles.filterActive,
-                ]}
-                onPress={() => setFilterType('Semua')}
-              >
-                <Text
-                  style={[
-                    styles.filterText,
-                    filterType === 'Semua' && styles.filterTextActive,
-                  ]}
-                >
-                  Semua
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.filterButton,
-                  filterType === 'Baru' && styles.filterActive,
-                ]}
-                onPress={() => setFilterType('Baru')}
-              >
-                <Text
-                  style={[
-                    styles.filterText,
-                    filterType === 'Baru' && styles.filterTextActive,
-                  ]}
-                >
-                  Baru Dibaca
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* List Card */}
-            <View style={styles.menuGrid}>
-              {filteredList.map(item => (
+              <View style={styles.userInfo}>
                 <TouchableOpacity
-                  key={item.id_materi}
-                  activeOpacity={0.8}
-                  onPress={() =>
-                    navigation.navigate('MateriViewer', {
-                      url: item.url_file,
-                      title: item.judul,
-                    })
-                  }
+                  style={styles.avatarInitial}
+                  onPress={() => setDropdownVisible(!dropdownVisible)}
                 >
-                  <LinearGradient
-                    colors={['#B71C1C', '#7B0D0D']}
-                    style={styles.menuItem}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                  >
-                    <View
-                      style={{ flexDirection: 'row', alignItems: 'center' }}
-                    >
-                      <Ionicons
-                        name="document-text-outline"
-                        size={28}
-                        color="#fff"
-                        style={{ marginRight: 10 }}
-                      />
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.menuTitle}>{item.judul}</Text>
-                        <Text style={styles.menuDesc}>{item.tipe_materi}</Text>
-                      </View>
-                    </View>
-                  </LinearGradient>
+                  <Text style={styles.avatarText}>
+                    {user.name.split(' ')[0][0]}
+                  </Text>
                 </TouchableOpacity>
-              ))}
+
+                {dropdownVisible && (
+                  <View style={styles.dropdown}>
+                    <TouchableOpacity
+                      style={styles.dropdownItem}
+                      onPress={() => {
+                        setDropdownVisible(false);
+                        navigation.navigate('Profile');
+                      }}
+                    >
+                      <Text style={styles.dropdownText}>Profile</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.dropdownItem}
+                      onPress={handleLogout}
+                    >
+                      <Text style={styles.dropdownText}>Logout</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
             </View>
-          </View>
-        </ScrollView>
-      </LinearGradient>
-    </TouchableWithoutFeedback>
+
+            {/* Title & Search */}
+            <View style={styles.greetingBox}>
+              <Text style={styles.sectionTitle}>Materi</Text>
+              <View style={styles.searchContainer}>
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Search"
+                  placeholderTextColor="#fff"
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                />
+                <Ionicons name="search-outline" size={18} color="#fff" />
+              </View>
+            </View>
+
+            {/* Main Content */}
+            <View style={styles.mainContent}>
+              {/* Filter */}
+              <View style={styles.filterContainer}>
+                <Text style={styles.sectionTitle2}>Daftar Materi</Text>
+
+                <TouchableOpacity
+                  style={[
+                    styles.filterButton,
+                    filterType === 'Semua' && styles.filterActive,
+                  ]}
+                  onPress={() => setFilterType('Semua')}
+                >
+                  <Text
+                    style={[
+                      styles.filterText,
+                      filterType === 'Semua' && styles.filterTextActive,
+                    ]}
+                  >
+                    Semua
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.filterButton,
+                    filterType === 'Baru' && styles.filterActive,
+                  ]}
+                  onPress={() => setFilterType('Baru')}
+                >
+                  <Text
+                    style={[
+                      styles.filterText,
+                      filterType === 'Baru' && styles.filterTextActive,
+                    ]}
+                  >
+                    Baru Dibaca
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* List Card */}
+              <View style={styles.menuGrid}>
+                {filteredList.map(item => (
+                  <TouchableOpacity
+                    key={item.id_materi}
+                    activeOpacity={0.8}
+                    onPress={() =>
+                      navigation.navigate('MateriViewer', {
+                        url: item.url_file,
+                        title: item.judul,
+                      })
+                    }
+                  >
+                    <LinearGradient
+                      colors={['#B71C1C', '#7B0D0D']}
+                      style={styles.menuItem}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                    >
+                      <View
+                        style={{ flexDirection: 'row', alignItems: 'center' }}
+                      >
+                        <Ionicons
+                          name="document-text-outline"
+                          size={28}
+                          color="#fff"
+                          style={{ marginRight: 10 }}
+                        />
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.menuTitle}>{item.judul}</Text>
+                          <Text style={styles.menuDesc}>
+                            {item.tipe_materi}
+                          </Text>
+                        </View>
+                      </View>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          </ScrollView>
+        </LinearGradient>
+      </TouchableWithoutFeedback>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
-    paddingHorizontal: 10,
-    paddingTop: 20,
+    paddingHorizontal: 20,
     alignItems: 'center',
-    justifyContent: 'space-between',
+    // justifyContent: 'space-between',
   },
   logo: {
-    width: width * 0.25,
-    height: width * 0.25,
+    width: width * 0.3,
+    height: width * 0.3,
     resizeMode: 'contain',
-    marginLeft: -180,
   },
   userInfo: {
-    position: 'relative',
+    position: 'absolute',
+    right: 20,
     flexDirection: 'row',
     alignItems: 'center',
   },
