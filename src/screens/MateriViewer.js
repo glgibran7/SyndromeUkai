@@ -5,11 +5,11 @@ import {
   StatusBar,
   TouchableOpacity,
   Text,
-  Image,
   Alert,
   TouchableWithoutFeedback,
   Keyboard,
   SafeAreaView,
+  ActivityIndicator,
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 import Ionicons from '@react-native-vector-icons/ionicons';
@@ -21,7 +21,8 @@ const MateriViewer = ({ route, navigation }) => {
   const { url, title } = route.params;
   const [user, setUser] = useState({ name: 'Peserta', paket: 'Premium' });
   const [dropdownVisible, setDropdownVisible] = useState(false);
-  const insets = useSafeAreaInsets(); // ambil nilai safe area
+  const [loading, setLoading] = useState(true); // state loading
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     const getUserData = async () => {
@@ -46,11 +47,7 @@ const MateriViewer = ({ route, navigation }) => {
     navigation.replace('Login');
   };
 
-  // ===== JS blok copy dsb =====
-  const disableCopyJS = useMemo(
-    () => `...`, // biarkan sama seperti sebelumnya
-    [],
-  );
+  const disableCopyJS = useMemo(() => `...`, []);
 
   const shouldStart = req => {
     const u = req?.url || '';
@@ -91,10 +88,7 @@ const MateriViewer = ({ route, navigation }) => {
             colors={['#9D2828', '#191919']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={[
-              styles.header,
-              { paddingTop: insets.top }, // tambahkan paddingTop sesuai status bar
-            ]}
+            style={[styles.header, { paddingTop: insets.top }]}
           >
             <TouchableOpacity onPress={() => navigation.goBack()}>
               <Ionicons name="arrow-back" size={26} color="#fff" />
@@ -162,7 +156,17 @@ const MateriViewer = ({ route, navigation }) => {
               allowsLinkPreview={false}
               mediaPlaybackRequiresUserAction
               originWhitelist={['https://*']}
+              nestedScrollEnabled={true}
+              onLoadStart={() => setLoading(true)}
+              onLoadEnd={() => setLoading(false)}
             />
+
+            {/* Loading Spinner */}
+            {loading && (
+              <View style={styles.loadingOverlay}>
+                <ActivityIndicator size="large" color="#9D2828" />
+              </View>
+            )}
 
             {/* Watermark */}
             <View pointerEvents="none" style={styles.watermarkOverlay}>
@@ -246,6 +250,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#000',
     textTransform: 'capitalize',
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.6)',
   },
 });
 

@@ -9,6 +9,7 @@ import {
   StyleSheet,
   Dimensions,
   SafeAreaView,
+  Alert,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -60,6 +61,24 @@ const Paket = ({ navigation }) => {
     getUser();
   }, []);
 
+  const handleLogout = async () => {
+    Alert.alert('Konfirmasi', 'Apakah Anda yakin ingin logout?', [
+      { text: 'Batal', style: 'cancel' },
+      {
+        text: 'Logout',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await AsyncStorage.removeItem('user');
+            navigation.replace('Login'); // arahkan ke halaman login
+          } catch (err) {
+            console.error('Gagal logout:', err);
+          }
+        },
+      },
+    ]);
+  };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#9D2828' }}>
       <LinearGradient
@@ -103,15 +122,39 @@ const Paket = ({ navigation }) => {
               </TouchableOpacity>
             ))}
 
-            {/* Tombol Kelas Saya hanya muncul jika nama_kelas ada */}
-            {namaKelas && (
-              <TouchableOpacity
-                style={styles.button}
-                onPress={() => navigation.navigate('Main')}
-              >
-                <Text style={styles.buttonText}>Kelas Saya ({namaKelas})</Text>
-              </TouchableOpacity>
-            )}
+            <TouchableOpacity
+              style={styles.button}
+              onPress={() => {
+                if (!namaKelas) {
+                  Alert.alert(
+                    'Info',
+                    'Belum ada paket terdaftar, silahkan beli paket terlebih dahulu untuk mengakses kelas.',
+                    [
+                      {
+                        text: 'Oke',
+                        style: 'default',
+                      },
+                      {
+                        text: 'Logout',
+                        style: 'destructive',
+                        onPress: async () => {
+                          try {
+                            await AsyncStorage.removeItem('user');
+                            navigation.replace('Login');
+                          } catch (err) {
+                            console.error('Gagal logout:', err);
+                          }
+                        },
+                      },
+                    ],
+                  );
+                } else {
+                  navigation.navigate('Main');
+                }
+              }}
+            >
+              <Text style={styles.buttonText}>Kelas Saya</Text>
+            </TouchableOpacity>
           </View>
         </ScrollView>
       </LinearGradient>
@@ -122,7 +165,7 @@ const Paket = ({ navigation }) => {
 const styles = StyleSheet.create({
   headerContainer: {
     alignItems: 'center',
-    marginTop: 50,
+    marginTop: 20,
   },
   headerImage: {
     width: width * 0.7,
@@ -180,7 +223,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 25,
     alignItems: 'center',
-    marginTop: 30,
+    marginTop: 10,
   },
   buttonText: {
     color: '#FFF',
