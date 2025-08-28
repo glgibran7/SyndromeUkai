@@ -12,6 +12,7 @@ import Paket from './src/screens/Paket';
 import PaketDetail from './src/screens/PaketDetail';
 import MainTabNavigator from './src/navigation/MainTabNavigator';
 import Profile from './src/screens/Profile';
+import ForgotPassword from './src/screens/ForgotPassword';
 
 const Stack = createNativeStackNavigator();
 
@@ -30,6 +31,7 @@ function App() {
         <Stack.Screen name="PaketDetail" component={PaketDetail} />
         <Stack.Screen name="Main" component={MainTabNavigator} />
         <Stack.Screen name="Profile" component={Profile} />
+        <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
 
         {/* Add other screens here as needed */}
       </Stack.Navigator>
