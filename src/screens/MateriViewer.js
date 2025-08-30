@@ -10,6 +10,7 @@ import {
   Keyboard,
   SafeAreaView,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 import Ionicons from '@react-native-vector-icons/ionicons';
@@ -88,13 +89,17 @@ const MateriViewer = ({ route, navigation }) => {
             colors={['#9D2828', '#191919']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={[styles.header, { paddingTop: insets.top }]}
+            style={[styles.header]}
           >
             <TouchableOpacity onPress={() => navigation.goBack()}>
               <Ionicons name="arrow-back" size={26} color="#fff" />
             </TouchableOpacity>
 
-            {/* Dropdown user */}
+            <Image
+              source={require('../../src/img/logo_putih.png')}
+              style={styles.logo}
+            />
+
             <View style={styles.userInfo}>
               <TouchableOpacity
                 style={styles.avatarInitial}
@@ -185,6 +190,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  logo: {
+    width: 100,
+    height: 100,
+    resizeMode: 'contain',
   },
   userInfo: {
     position: 'relative',
