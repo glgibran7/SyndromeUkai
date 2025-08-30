@@ -146,70 +146,73 @@ const VideoListScreen = ({ route, navigation }) => {
           Keyboard.dismiss();
         }}
       >
-        <LinearGradient colors={['#9D2828', '#191919']} style={{ flex: 1 }}>
-          <StatusBar barStyle="light-content" backgroundColor="#a10505" />
+        <LinearGradient colors={['#9D2828', '#9D2828']} style={{ flex: 1 }}>
+          <StatusBar barStyle="light-content" backgroundColor="#9D2828" />
           <ScrollView
             ref={scrollRef}
             onScroll={handleScroll}
             scrollEventThrottle={16}
             contentContainerStyle={{ paddingBottom: 50 }}
+            stickyHeaderIndices={[0]} // sticky wrapper di index 0
           >
-            {/* Header */}
-            <View style={styles.header}>
-              <TouchableOpacity onPress={() => navigation.goBack()}>
-                <Ionicons name="arrow-back" size={26} color="#fff" />
-              </TouchableOpacity>
-              <Image
-                source={require('../../src/img/logo_putih.png')}
-                style={styles.logo}
-              />
-              <View style={styles.userInfo}>
-                <TouchableOpacity
-                  style={styles.avatarInitial}
-                  onPress={() => setDropdownVisible(!dropdownVisible)}
-                >
-                  <Text style={styles.avatarText}>
-                    {user.name.split(' ')[0][0]}
-                  </Text>
+            {/* Sticky Header + Search */}
+            <View style={styles.stickyHeaderWrapper}>
+              {/* Header */}
+              <View style={styles.header}>
+                <TouchableOpacity onPress={() => navigation.goBack()}>
+                  <Ionicons name="arrow-back" size={26} color="#fff" />
                 </TouchableOpacity>
-
-                {dropdownVisible && (
-                  <View style={styles.dropdown}>
-                    <TouchableOpacity
-                      style={styles.dropdownItem}
-                      onPress={() => {
-                        setDropdownVisible(false);
-                        navigation.navigate('Profile');
-                      }}
-                    >
-                      <Text style={styles.dropdownText}>Profile</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.dropdownItem}
-                      onPress={handleLogout}
-                    >
-                      <Text style={styles.dropdownText}>Logout</Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
-              </View>
-            </View>
-
-            {/* Title & Search */}
-            <View style={styles.greetingBox}>
-              <Text style={styles.sectionTitle}>Video</Text>
-              <View style={styles.searchContainer}>
-                <TextInput
-                  style={styles.searchInput}
-                  placeholder="Search"
-                  placeholderTextColor="#fff"
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
+                <Image
+                  source={require('../../src/img/logo_putih.png')}
+                  style={styles.logo}
                 />
-                <Ionicons name="search-outline" size={18} color="#fff" />
+                <View style={styles.userInfo}>
+                  <TouchableOpacity
+                    style={styles.avatarInitial}
+                    onPress={() => setDropdownVisible(!dropdownVisible)}
+                  >
+                    <Text style={styles.avatarText}>
+                      {user.name.split(' ')[0][0]}
+                    </Text>
+                  </TouchableOpacity>
+
+                  {dropdownVisible && (
+                    <View style={styles.dropdown}>
+                      <TouchableOpacity
+                        style={styles.dropdownItem}
+                        onPress={() => {
+                          setDropdownVisible(false);
+                          navigation.navigate('Profile');
+                        }}
+                      >
+                        <Text style={styles.dropdownText}>Profile</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.dropdownItem}
+                        onPress={handleLogout}
+                      >
+                        <Text style={styles.dropdownText}>Logout</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
+              </View>
+
+              {/* Search Bar */}
+              <View style={styles.greetingBox}>
+                <Text style={styles.sectionTitle}>Video</Text>
+                <View style={styles.searchContainer}>
+                  <TextInput
+                    style={styles.searchInput}
+                    placeholder="Search"
+                    placeholderTextColor="#fff"
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                  />
+                  <Ionicons name="search-outline" size={18} color="#fff" />
+                </View>
               </View>
             </View>
-
             {/* Filter */}
             <View style={styles.mainContent}>
               <View style={styles.filterContainer}>
@@ -307,8 +310,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingHorizontal: 20,
     alignItems: 'center',
-    //justifyContent: 'space-between',
+    backgroundColor: '#9D2828',
+    zIndex: 101,
   },
+
+  stickyHeaderWrapper: {
+    backgroundColor: '#9D2828', // biar solid saat sticky
+    paddingBottom: 10,
+    zIndex: 100,
+  },
+
   logo: {
     width: width * 0.3,
     height: width * 0.3,

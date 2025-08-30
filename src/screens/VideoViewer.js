@@ -27,12 +27,6 @@ const { width, height } = Dimensions.get('window');
 const FIVE_MIN_MS = 5 * 60 * 1000;
 const ROOT_PAGE_SIZE = 8; // root comments per load
 
-const safeFocus = () => {
-  if (inputRef.current && typeof inputRef.current.focus === 'function') {
-    inputRef.current.focus();
-  }
-};
-
 const getDriveDirectLink = url => {
   if (!url) return url;
   const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
@@ -62,6 +56,7 @@ const Avatar = ({ name, size = 28 }) => {
 };
 
 const VideoViewer = ({ route, navigation }) => {
+  const [dropdownVisible, setDropdownVisible] = useState(false);
   const params = route?.params || {};
   const { id_materi, url_file, title = '', channel = 'UKAI' } = params;
 
@@ -87,7 +82,11 @@ const VideoViewer = ({ route, navigation }) => {
   const [expandedReplies, setExpandedReplies] = useState({});
   const inputRef = useRef(null);
 
-  const [dropdownVisible, setDropdownVisible] = useState(false);
+  const safeFocus = () => {
+    if (inputRef.current && typeof inputRef.current.focus === 'function') {
+      inputRef.current.focus();
+    }
+  };
 
   const handleLogout = async () => {
     await AsyncStorage.removeItem('user');
@@ -281,6 +280,46 @@ const VideoViewer = ({ route, navigation }) => {
                 : 'Komentar telah dihapus'
               : r.isi_komentar}
           </Text>
+          {/* Tombol edit/hapus/balas reply */}
+          {!r.is_deleted && (
+            <View style={{ flexDirection: 'row', marginTop: 4 }}>
+              {user.id_user === r.id_user && canEdit(r.created_at) && (
+                <>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setEditingComment(r);
+                      setComposeText(r.isi_komentar);
+                      safeFocus();
+                    }}
+                    style={{ marginRight: 12 }}
+                  >
+                    <Text style={{ color: '#1976D2', fontWeight: 'bold' }}>
+                      Edit
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => doDeleteComment(r)}
+                    style={{ marginRight: 12 }}
+                  >
+                    <Text style={{ color: '#D32F2F', fontWeight: 'bold' }}>
+                      Hapus
+                    </Text>
+                  </TouchableOpacity>
+                </>
+              )}
+              <TouchableOpacity
+                onPress={() => {
+                  setReplyingTo(r);
+                  setComposeText('');
+                  safeFocus();
+                }}
+              >
+                <Text style={{ color: '#1976D2', fontWeight: 'bold' }}>
+                  Balas
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       </View>
     );
@@ -300,7 +339,6 @@ const VideoViewer = ({ route, navigation }) => {
                 {new Date(item.created_at).toLocaleString()}
               </Text>
             </View>
-
             <Text
               style={[
                 styles.commentText,
@@ -313,9 +351,48 @@ const VideoViewer = ({ route, navigation }) => {
                   : 'Komentar telah dihapus'
                 : item.isi_komentar}
             </Text>
+            {/* Tombol edit/hapus/balas root */}
+            {!item.is_deleted && (
+              <View style={{ flexDirection: 'row', marginTop: 4 }}>
+                {user.id_user === item.id_user && canEdit(item.created_at) && (
+                  <>
+                    <TouchableOpacity
+                      onPress={() => {
+                        setEditingComment(item);
+                        setComposeText(item.isi_komentar);
+                        safeFocus();
+                      }}
+                      style={{ marginRight: 12 }}
+                    >
+                      <Text style={{ color: '#1976D2', fontWeight: 'bold' }}>
+                        Edit
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => doDeleteComment(item)}
+                      style={{ marginRight: 12 }}
+                    >
+                      <Text style={{ color: '#D32F2F', fontWeight: 'bold' }}>
+                        Hapus
+                      </Text>
+                    </TouchableOpacity>
+                  </>
+                )}
+                <TouchableOpacity
+                  onPress={() => {
+                    setReplyingTo(item);
+                    setComposeText('');
+                    safeFocus();
+                  }}
+                >
+                  <Text style={{ color: '#1976D2', fontWeight: 'bold' }}>
+                    Balas
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
         </View>
-
         {repliesCount > 0 && (
           <TouchableOpacity
             style={styles.viewRepliesBtn}
@@ -333,7 +410,6 @@ const VideoViewer = ({ route, navigation }) => {
             </Text>
           </TouchableOpacity>
         )}
-
         {expanded && item.replies.map(r => renderReply(r))}
       </View>
     );
@@ -408,6 +484,76 @@ const VideoViewer = ({ route, navigation }) => {
           <View style={styles.infoBox}>
             <Text style={styles.videoTitle}>{title}</Text>
             <Text style={styles.videoMeta}>{channel}</Text>
+          </View>
+
+          {/* Komentar Input */}
+          <View
+            style={{
+              backgroundColor: '#fff',
+              padding: 12,
+              borderTopWidth: 1,
+              borderTopColor: '#eee',
+              flexDirection: 'row',
+              alignItems: 'center',
+              marginBottom: 8,
+            }}
+          >
+            <TextInput
+              ref={inputRef}
+              style={{
+                flex: 1,
+                height: 40,
+                borderRadius: 8,
+                borderWidth: 1,
+                borderColor: '#ddd',
+                paddingHorizontal: 10,
+                backgroundColor: '#f9f9f9',
+                color: '#222',
+              }}
+              placeholder={
+                editingComment
+                  ? 'Edit komentar...'
+                  : replyingTo
+                  ? `Balas ke ${replyingTo.nama}...`
+                  : 'Tulis komentar...'
+              }
+              value={composeText}
+              onChangeText={setComposeText}
+              editable={!sending}
+              returnKeyType="send"
+              onSubmitEditing={() =>
+                editingComment ? putEditComment() : postComment()
+              }
+            />
+            <TouchableOpacity
+              style={{
+                marginLeft: 10,
+                backgroundColor: '#1976D2',
+                paddingHorizontal: 18,
+                paddingVertical: 8,
+                borderRadius: 8,
+              }}
+              onPress={() =>
+                editingComment ? putEditComment() : postComment()
+              }
+              disabled={sending || !composeText.trim()}
+            >
+              <Text style={{ color: '#fff', fontWeight: 'bold' }}>
+                {editingComment ? 'Simpan' : 'Kirim'}
+              </Text>
+            </TouchableOpacity>
+            {(replyingTo || editingComment) && (
+              <TouchableOpacity
+                style={{ marginLeft: 8 }}
+                onPress={() => {
+                  setReplyingTo(null);
+                  setEditingComment(null);
+                  setComposeText('');
+                }}
+              >
+                <Ionicons name="close-circle" size={24} color="#888" />
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* Comments */}
