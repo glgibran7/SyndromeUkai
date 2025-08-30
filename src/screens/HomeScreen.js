@@ -218,7 +218,7 @@ const Home = ({ navigation }) => {
           <View style={styles.greetingBox}>
             <Text style={styles.greeting}>Hi, {user.name}</Text>
             <Text style={styles.subtext}>
-              Langkah kecil hari ini, lompatan besar hari esok.
+              Langkah kecil hari ini, lompatan besar untuk hari esok.
               {/* <Text style={{ fontWeight: 'bold' }}>terbaik dan ter-murah</Text> */}
             </Text>
           </View>

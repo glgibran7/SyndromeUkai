@@ -19,6 +19,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import { WebView } from 'react-native-webview';
+import Video from 'react-native-video';
 import Api from '../utils/Api'; // pastikan ini axios instance yang benar
 
 const { width, height } = Dimensions.get('window');
@@ -35,6 +36,15 @@ const getDrivePreview = url => {
   if (!url) return url;
   const m = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
   return m ? `https://drive.google.com/file/d/${m[1]}/preview` : url;
+};
+
+const getDriveDirectLink = url => {
+  if (!url) return url;
+  const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  if (match) {
+    return `https://drive.google.com/uc?export=download&id=${match[1]}`;
+  }
+  return url;
 };
 
 const Avatar = ({ name, size = 28 }) => {
@@ -498,22 +508,15 @@ const VideoViewer = ({ route, navigation }) => {
         >
           {/* Video player */}
           <View style={{ height: height * 0.33, backgroundColor: '#000' }}>
-            <WebView
-              source={{ uri: getDrivePreview(url_file) }}
-              style={{ flex: 1 }}
-              javaScriptEnabled
-              allowsFullscreenVideo
-              mediaPlaybackRequiresUserAction={false}
-              // Disable long press and context menu
-              injectedJavaScript={`
-              document.addEventListener('contextmenu', event => event.preventDefault());
-              document.addEventListener('copy', event => event.preventDefault());
-              document.addEventListener('dragstart', event => event.preventDefault());
-              document.body.style.userSelect = 'none';
-              document.body.style.webkitUserSelect = 'none';
-              document.body.style.msUserSelect = 'none';
-            `}
-              onMessage={() => {}}
+            {/* <WebView ... /> */}
+            <Video
+              source={{ uri: getDriveDirectLink(url_file) }}
+              style={{ width: '100%', height: '100%' }}
+              controls
+              resizeMode="contain"
+              paused={false}
+              fullscreen={false}
+              onError={e => console.log('Video error', e)}
             />
             {/* Watermark overlay */}
             <View
@@ -653,8 +656,8 @@ const styles = StyleSheet.create({
     // backgroundColor: '#9D2828',
   },
   logo: {
-    width: width * 0.3,
-    height: width * 0.3,
+    width: width * 0.2,
+    height: width * 0.2,
     resizeMode: 'contain',
   },
   userInfo: {

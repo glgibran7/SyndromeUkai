@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { get } from 'react-native/Libraries/TurboModule/TurboModuleRegistry';
 
 const { width } = Dimensions.get('window');
 
@@ -46,18 +47,19 @@ const Paket = ({ navigation }) => {
     },
   ];
 
-  useEffect(() => {
-    const getUser = async () => {
-      try {
-        const userData = await AsyncStorage.getItem('user');
-        if (userData) {
-          const parsedUser = JSON.parse(userData);
-          setNamaKelas(parsedUser.nama_kelas || null); // ⬅️ ambil nama_kelas
-        }
-      } catch (err) {
-        console.error('Gagal ambil user dari storage:', err);
+  const getUser = async () => {
+    try {
+      const userData = await AsyncStorage.getItem('user');
+      if (userData) {
+        const parsedUser = JSON.parse(userData);
+        setNamaKelas(parsedUser.nama_kelas || null);
       }
-    };
+    } catch (err) {
+      console.error('Gagal ambil user dari storage:', err);
+    }
+  };
+
+  useEffect(() => {
     getUser();
   }, []);
 
@@ -124,7 +126,8 @@ const Paket = ({ navigation }) => {
 
             <TouchableOpacity
               style={styles.button}
-              onPress={() => {
+              onPress={async () => {
+                await getUser();
                 if (!namaKelas) {
                   Alert.alert(
                     'Info',

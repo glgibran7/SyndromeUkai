@@ -30,15 +30,21 @@ const TryoutScreen = ({ navigation }) => {
   const dummyTryouts = [
     {
       id: 1,
-      nama: 'Tryout UKAI 1',
+      nama: 'Tryout UKAI 1 (Tester)',
       soal: 200,
       waktu: 120,
       kategori: 'Farmasi',
     },
-    { id: 2, nama: 'Tryout UKAI 2', soal: 150, waktu: 90, kategori: 'Farmasi' },
+    {
+      id: 2,
+      nama: 'Tryout UKAI 2 (Tester)',
+      soal: 150,
+      waktu: 90,
+      kategori: 'Farmasi',
+    },
     {
       id: 3,
-      nama: 'Simulasi UKAI',
+      nama: 'Simulasi UKAI (Tester)',
       soal: 180,
       waktu: 100,
       kategori: 'Simulasi',
@@ -115,7 +121,7 @@ const TryoutScreen = ({ navigation }) => {
 
         {/* Title & Search */}
         <View style={styles.greetingBox}>
-          <Text style={styles.sectionTitle}>Tryout</Text>
+          <Text style={styles.sectionTitle}>Tryout (Beta Tester)</Text>
           <View style={styles.searchContainer}>
             <TextInput
               style={styles.searchInput}
