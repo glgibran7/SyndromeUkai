@@ -259,19 +259,12 @@ const VideoListScreen = ({ route, navigation }) => {
                         title: item.judul,
                         url_file: item.url_file,
                         channel: 'UKAI SYNDROME',
-                        // views: '90K',
-                        // time: '1 months ago',
-                        // avatar: 'https://via.placeholder.com/50',
                       })
                     }
                   >
                     <View style={styles.thumbnailWrapper}>
                       <Image
-                        source={{
-                          uri:
-                            getDriveThumbnail(item.url_file) ||
-                            'https://via.placeholder.com/400x200?text=No+Thumbnail',
-                        }}
+                        source={require('../img/thumnail_sementara.jpg')}
                         style={styles.thumbnail}
                       />
                     </View>
