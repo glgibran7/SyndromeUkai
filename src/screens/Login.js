@@ -31,7 +31,10 @@ const Login = ({ navigation }) => {
   const handleLogin = async () => {
     setLoading(true); // mulai loading
     try {
-      const response = await Api.post('/auth/login', { email, password });
+      const response = await Api.post('/auth/login/mobile', {
+        email,
+        password,
+      });
 
       const {
         access_token,

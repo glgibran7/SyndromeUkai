@@ -2,7 +2,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Api = axios.create({
-  baseURL: 'https://api.ukaisyndrome.site',
+  baseURL: 'https://api.ukaisyndrome.id',
   headers: { 'Content-Type': 'application/json' },
 });
 
