@@ -188,12 +188,13 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     paddingHorizontal: 20,
+    paddingTop: 20,
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   logo: {
-    width: 100,
-    height: 100,
+    width: 80,
+    height: 80,
     resizeMode: 'contain',
   },
   userInfo: {

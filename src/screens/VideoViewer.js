@@ -419,13 +419,12 @@ const VideoViewer = ({ route, navigation }) => {
     <SafeAreaView style={{ flex: 1, backgroundColor: '#9D2828' }}>
       <View style={{ flex: 1 }}>
         <StatusBar barStyle="light-content" backgroundColor="#9D2828" />
-
         {/* Header */}
         <LinearGradient
           colors={['#9D2828', '#191919']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={styles.header}
+          style={[styles.header]}
         >
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Ionicons name="arrow-back" size={26} color="#fff" />
@@ -577,48 +576,16 @@ const VideoViewer = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  whiteWrapper: {
-    backgroundColor: '#fff',
-    overflow: 'hidden',
-  },
-
-  commentInput: {
-    padding: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-  },
-
-  commentTextInput: {
-    flex: 1,
-    height: 40,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    paddingHorizontal: 10,
-    backgroundColor: '#f9f9f9',
-    color: '#222',
-  },
-
-  sendBtn: {
-    marginLeft: 10,
-    backgroundColor: '#1976D2',
-    paddingHorizontal: 18,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-
   header: {
     flexDirection: 'row',
     paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingTop: 20,
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   logo: {
-    width: width * 0.2,
-    height: width * 0.2,
+    width: 80,
+    height: 80,
     resizeMode: 'contain',
   },
   userInfo: {
@@ -660,10 +627,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#eee',
   },
   dropdownText: { fontSize: 15, color: '#000' },
-  titleBar: {
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-  },
+
   titleText: {
     color: '#fff',
     fontWeight: 'bold',
@@ -727,6 +691,36 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   loadMoreText: { color: '#1976D2', fontWeight: '700' },
+  whiteWrapper: {
+    backgroundColor: '#fff',
+    overflow: 'hidden',
+  },
+
+  commentInput: {
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+  },
+
+  commentTextInput: {
+    flex: 1,
+    height: 40,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    paddingHorizontal: 10,
+    backgroundColor: '#f9f9f9',
+    color: '#222',
+  },
+  sendBtn: {
+    marginLeft: 10,
+    backgroundColor: '#1976D2',
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
 });
 
 export default VideoViewer;
