@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -10,15 +10,16 @@ import {
   Dimensions,
   SafeAreaView,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { get } from 'react-native/Libraries/TurboModule/TurboModuleRegistry';
+import Api from '../utils/Api'; // pastikan path sesuai
 
 const { width } = Dimensions.get('window');
 
 const Paket = ({ navigation }) => {
-  const [namaKelas, setNamaKelas] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const packages = [
     {
@@ -47,38 +48,45 @@ const Paket = ({ navigation }) => {
     },
   ];
 
-  const getUser = async () => {
+  // 🔹 API /auth/me
+  const fetchUserFromAPI = async () => {
     try {
-      const userData = await AsyncStorage.getItem('user');
-      if (userData) {
-        const parsedUser = JSON.parse(userData);
-        setNamaKelas(parsedUser.nama_kelas || null);
-      }
+      const res = await Api.get('/auth/me');
+      return res.data.data;
     } catch (err) {
-      console.error('Gagal ambil user dari storage:', err);
+      console.error('Error fetch /auth/me:', err);
+      return null;
     }
   };
 
-  useEffect(() => {
-    getUser();
-  }, []);
+  const handleKelasSaya = async () => {
+    setLoading(true);
+    const user = await fetchUserFromAPI();
+    setLoading(false);
 
-  const handleLogout = async () => {
-    Alert.alert('Konfirmasi', 'Apakah Anda yakin ingin logout?', [
-      { text: 'Batal', style: 'cancel' },
-      {
-        text: 'Logout',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await AsyncStorage.removeItem('user');
-            navigation.replace('Login'); // arahkan ke halaman login
-          } catch (err) {
-            console.error('Gagal logout:', err);
-          }
-        },
-      },
-    ]);
+    if (!user || user.nama_kelas === null) {
+      Alert.alert(
+        'Info',
+        'Belum ada paket terdaftar, silahkan beli paket terlebih dahulu untuk mengakses kelas.',
+        [
+          { text: 'Oke', style: 'default' },
+          {
+            text: 'Logout',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                await AsyncStorage.clear();
+                navigation.replace('Login');
+              } catch (err) {
+                console.error('Gagal logout:', err);
+              }
+            },
+          },
+        ],
+      );
+    } else {
+      navigation.navigate('Main');
+    }
   };
 
   return (
@@ -92,7 +100,7 @@ const Paket = ({ navigation }) => {
         <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 30 }}>
           <StatusBar barStyle="light-content" backgroundColor="#a10505" />
 
-          {/* Logo / Header */}
+          {/* Header */}
           <View style={styles.headerContainer}>
             <Image
               source={require('../../src/img/logo_putih.png')}
@@ -124,39 +132,17 @@ const Paket = ({ navigation }) => {
               </TouchableOpacity>
             ))}
 
+            {/* Tombol Kelas Saya */}
             <TouchableOpacity
-              style={styles.button}
-              onPress={async () => {
-                await getUser();
-                if (!namaKelas) {
-                  Alert.alert(
-                    'Info',
-                    'Belum ada paket terdaftar, silahkan beli paket terlebih dahulu untuk mengakses kelas.',
-                    [
-                      {
-                        text: 'Oke',
-                        style: 'default',
-                      },
-                      {
-                        text: 'Logout',
-                        style: 'destructive',
-                        onPress: async () => {
-                          try {
-                            await AsyncStorage.removeItem('user');
-                            navigation.replace('Login');
-                          } catch (err) {
-                            console.error('Gagal logout:', err);
-                          }
-                        },
-                      },
-                    ],
-                  );
-                } else {
-                  navigation.navigate('Main');
-                }
-              }}
+              style={[styles.button, loading && { opacity: 0.7 }]}
+              onPress={handleKelasSaya}
+              disabled={loading}
             >
-              <Text style={styles.buttonText}>Kelas Saya</Text>
+              {loading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={styles.buttonText}>Kelas Saya</Text>
+              )}
             </TouchableOpacity>
           </View>
         </ScrollView>
