@@ -480,119 +480,96 @@ const VideoViewer = ({ route, navigation }) => {
             />
           </View>
 
-          {/* Info */}
-          <View style={styles.infoBox}>
-            <Text style={styles.videoTitle}>{title}</Text>
-            <Text style={styles.videoMeta}>{channel}</Text>
-          </View>
-
-          {/* Komentar Input */}
-          <View
-            style={{
-              backgroundColor: '#fff',
-              padding: 12,
-              borderTopWidth: 1,
-              borderTopColor: '#eee',
-              flexDirection: 'row',
-              alignItems: 'center',
-              marginBottom: 8,
-            }}
-          >
-            <TextInput
-              ref={inputRef}
-              style={{
-                flex: 1,
-                height: 40,
-                borderRadius: 8,
-                borderWidth: 1,
-                borderColor: '#ddd',
-                paddingHorizontal: 10,
-                backgroundColor: '#f9f9f9',
-                color: '#222',
-              }}
-              placeholder={
-                editingComment
-                  ? 'Edit komentar...'
-                  : replyingTo
-                  ? `Balas ke ${replyingTo.nama}...`
-                  : 'Tulis komentar...'
-              }
-              value={composeText}
-              onChangeText={setComposeText}
-              editable={!sending}
-              returnKeyType="send"
-              onSubmitEditing={() =>
-                editingComment ? putEditComment() : postComment()
-              }
-            />
-            <TouchableOpacity
-              style={{
-                marginLeft: 10,
-                backgroundColor: '#1976D2',
-                paddingHorizontal: 18,
-                paddingVertical: 8,
-                borderRadius: 8,
-              }}
-              onPress={() =>
-                editingComment ? putEditComment() : postComment()
-              }
-              disabled={sending || !composeText.trim()}
-            >
-              <Text style={{ color: '#fff', fontWeight: 'bold' }}>
-                {editingComment ? 'Simpan' : 'Kirim'}
-              </Text>
-            </TouchableOpacity>
-            {(replyingTo || editingComment) && (
-              <TouchableOpacity
-                style={{ marginLeft: 8 }}
-                onPress={() => {
-                  setReplyingTo(null);
-                  setEditingComment(null);
-                  setComposeText('');
-                }}
-              >
-                <Ionicons name="close-circle" size={24} color="#888" />
-              </TouchableOpacity>
-            )}
-          </View>
-
-          {/* Comments */}
-          <View style={styles.commentsSection}>
-            <View style={styles.commentsHeader}>
-              <Text style={styles.commentsTitle}>Komentar</Text>
-              <Text style={styles.commentsCount}>{rawComments.length}</Text>
+          {/* Wrapper Putih */}
+          <View style={styles.whiteWrapper}>
+            {/* Info */}
+            <View style={styles.infoBox}>
+              <Text style={styles.videoTitle}>{title}</Text>
+              <Text style={styles.videoMeta}>{channel}</Text>
             </View>
 
-            {loading ? (
-              <ActivityIndicator style={{ marginVertical: 20 }} />
-            ) : (
-              <>
-                {displayedRoots.length === 0 ? (
-                  <Text style={{ color: '#666', paddingVertical: 12 }}>
-                    Belum ada komentar.
-                  </Text>
-                ) : (
-                  <FlatList
-                    data={displayedRoots}
-                    keyExtractor={it => String(it.id_komentarmateri)}
-                    renderItem={renderRoot}
-                    scrollEnabled={false}
-                  />
-                )}
+            {/* Komentar Input */}
+            <View style={styles.commentInput}>
+              <TextInput
+                ref={inputRef}
+                style={styles.commentTextInput}
+                placeholder={
+                  editingComment
+                    ? 'Edit komentar...'
+                    : replyingTo
+                    ? `Balas ke ${replyingTo.nama}...`
+                    : 'Tulis komentar...'
+                }
+                value={composeText}
+                onChangeText={setComposeText}
+                editable={!sending}
+                returnKeyType="send"
+                onSubmitEditing={() =>
+                  editingComment ? putEditComment() : postComment()
+                }
+              />
+              <TouchableOpacity
+                style={styles.sendBtn}
+                onPress={() =>
+                  editingComment ? putEditComment() : postComment()
+                }
+                disabled={sending || !composeText.trim()}
+              >
+                <Text style={{ color: '#fff', fontWeight: 'bold' }}>
+                  {editingComment ? 'Simpan' : 'Kirim'}
+                </Text>
+              </TouchableOpacity>
+              {(replyingTo || editingComment) && (
+                <TouchableOpacity
+                  style={{ marginLeft: 8 }}
+                  onPress={() => {
+                    setReplyingTo(null);
+                    setEditingComment(null);
+                    setComposeText('');
+                  }}
+                >
+                  <Ionicons name="close-circle" size={24} color="#888" />
+                </TouchableOpacity>
+              )}
+            </View>
 
-                {hasMoreRoots && (
-                  <TouchableOpacity
-                    style={styles.loadMoreBtn}
-                    onPress={() => setRootPage(p => p + 1)}
-                  >
-                    <Text style={styles.loadMoreText}>
-                      Muat lebih banyak komentar
+            {/* Comments */}
+            <View style={styles.commentsSection}>
+              <View style={styles.commentsHeader}>
+                <Text style={styles.commentsTitle}>Komentar</Text>
+                <Text style={styles.commentsCount}>{rawComments.length}</Text>
+              </View>
+              {loading ? (
+                <ActivityIndicator style={{ marginVertical: 20 }} />
+              ) : (
+                <>
+                  {displayedRoots.length === 0 ? (
+                    <Text style={{ color: '#666', paddingVertical: 12 }}>
+                      Belum ada komentar.
                     </Text>
-                  </TouchableOpacity>
-                )}
-              </>
-            )}
+                  ) : (
+                    <FlatList
+                      data={displayedRoots}
+                      keyExtractor={it => String(it.id_komentarmateri)}
+                      renderItem={renderRoot}
+                      scrollEnabled={false}
+                    />
+                  )}
+                  {hasMoreRoots && (
+                    <TouchableOpacity
+                      style={styles.loadMoreBtn}
+                      onPress={() => setRootPage(p => p + 1)}
+                    >
+                      <Text style={styles.loadMoreText}>
+                        Muat lebih banyak komentar
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </>
+              )}
+            </View>
           </View>
+          {/* End Wrapper Putih */}
         </ScrollView>
       </View>
     </SafeAreaView>
@@ -600,6 +577,38 @@ const VideoViewer = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
+  whiteWrapper: {
+    backgroundColor: '#fff',
+    overflow: 'hidden',
+  },
+
+  commentInput: {
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+  },
+
+  commentTextInput: {
+    flex: 1,
+    height: 40,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    paddingHorizontal: 10,
+    backgroundColor: '#f9f9f9',
+    color: '#222',
+  },
+
+  sendBtn: {
+    marginLeft: 10,
+    backgroundColor: '#1976D2',
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+
   header: {
     flexDirection: 'row',
     paddingHorizontal: 20,
