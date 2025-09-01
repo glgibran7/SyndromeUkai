@@ -94,7 +94,7 @@ const SignUp = ({ navigation }) => {
         {/* Gambar */}
         <View style={styles.imageContainer}>
           <Image
-            source={require('../../src/img/coba.png')}
+            source={require('../../src/img/dokter_mobile.png')}
             style={styles.image}
           />
         </View>
@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#000',
     textAlign: 'center',
-    marginTop: -12,
+    marginTop: -25,
   },
   label: {
     color: '#000',

@@ -24,7 +24,10 @@ const ForgotPassword = () => {
           <Ionicons name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
 
-        <Image source={require('../img/img_login.png')} style={styles.image} />
+        <Image
+          source={require('../img/dokter_mobile.png')}
+          style={styles.image}
+        />
         <Text style={styles.title}>Sedang Dalam Pengembangan</Text>
         <Text style={styles.subtitle}>
           Fitur lupa password akan segera hadir di update berikutnya
