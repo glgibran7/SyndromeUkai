@@ -16,7 +16,7 @@ const Profile = () => {
         <Ionicons name="arrow-back" size={24} color="#000" />
       </TouchableOpacity>
 
-      <Image source={require('../img/img_login.png')} style={styles.image} />
+      <Image source={require('../img/coba.png')} style={styles.image} />
       <Text style={styles.title}>Sedang Dalam Pengembangan</Text>
       <Text style={styles.subtitle}>
         Fitur profil akan segera hadir di update berikutnya
@@ -30,7 +30,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: '#FF8DA1',
     padding: 20,
   },
   backButton: {
@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 14,
-    color: '#444',
+    color: '#000',
     textAlign: 'center',
     lineHeight: 20,
   },

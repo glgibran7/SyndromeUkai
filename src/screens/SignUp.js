@@ -94,7 +94,7 @@ const SignUp = ({ navigation }) => {
         {/* Gambar */}
         <View style={styles.imageContainer}>
           <Image
-            source={require('../../src/img/img_login.png')}
+            source={require('../../src/img/coba.png')}
             style={styles.image}
           />
         </View>
@@ -355,7 +355,7 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     alignItems: 'center',
-    marginTop: 50,
+    marginTop: 40,
   },
   image: {
     width: width * 0.7,

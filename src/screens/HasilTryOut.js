@@ -265,7 +265,7 @@ const HasilTryOut = () => {
   const navigation = useNavigation();
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#FF8DA1' }}>
       {/* <StatusBar barStyle={'dark-content'} backgroundColor="#000" /> */}
 
       <View style={styles.container}>
@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: '#FF8DA1',
     padding: 20,
   },
   backButton: {
@@ -318,7 +318,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 14,
-    color: '#444',
+    color: '#000',
     textAlign: 'center',
     lineHeight: 20,
   },
