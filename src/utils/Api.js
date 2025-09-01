@@ -17,15 +17,40 @@ Api.interceptors.request.use(
   error => Promise.reject(error),
 );
 
+// Interceptor response: handle error 401
 Api.interceptors.response.use(
   response => response,
-  async error => {
+  error => {
     if (error.response?.status === 401) {
-      const message = error.response?.data?.status;
+      const statusMessage = error.response?.data?.status;
+      const apiMessage = error.response?.data?.message;
 
-      if (message === 'Token expired, Login ulang') {
-        alert('Sesi Anda telah berakhir. Silakan login ulang.');
-        await AsyncStorage.clear();
+      // Jika username/password salah
+      if (statusMessage === 'Invalid username or password') {
+        return Promise.reject(error);
+      }
+
+      // Handle token expired biasa
+      if (statusMessage === 'Token expired, Login ulang') {
+        if (!isLogoutTriggered) {
+          isLogoutTriggered = true;
+          alert('Sesi Anda telah berakhir. Silakan login ulang.');
+          localStorage.clear();
+          window.location.replace('/login');
+        }
+      }
+
+      // Handle expired session karena login di device lain
+      if (
+        statusMessage === 'Session invalid or expired' ||
+        apiMessage === 'Session invalid or expired'
+      ) {
+        if (!isLogoutTriggered) {
+          isLogoutTriggered = true;
+          alert('Anda login di perangkat lain. Silakan login kembali.');
+          localStorage.clear();
+          window.location.replace('/login');
+        }
       }
     }
     return Promise.reject(error);
