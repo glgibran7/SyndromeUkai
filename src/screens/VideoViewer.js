@@ -477,6 +477,37 @@ const VideoViewer = ({ route, navigation }) => {
               fullscreen={false}
               onError={e => console.log('Video error', e)}
             />
+
+            {/* Watermark Overlay */}
+            <View
+              pointerEvents="none"
+              style={[
+                StyleSheet.absoluteFill,
+                {
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  flexDirection: 'row',
+                  transform: [{ rotate: '-25deg' }],
+                  opacity: 0.15,
+                },
+              ]}
+            >
+              {Array.from({ length: 40 }).map((_, i) => (
+                <Text
+                  key={i}
+                  style={{
+                    fontSize: 24,
+                    fontWeight: 'bold',
+                    color: 'white',
+                    margin: 20,
+                    textTransform: 'capitalize',
+                  }}
+                >
+                  {user?.nama || 'User'}
+                </Text>
+              ))}
+            </View>
           </View>
 
           {/* Wrapper Putih */}

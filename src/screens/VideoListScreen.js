@@ -267,7 +267,7 @@ const VideoListScreen = ({ route, navigation }) => {
                   >
                     <View style={styles.thumbnailWrapper}>
                       <Image
-                        source={require('../img/thumnail_sementara.jpg')}
+                        source={require('../img/logo_putih.png')}
                         style={styles.thumbnail}
                       />
                     </View>
@@ -421,8 +421,9 @@ const styles = StyleSheet.create({
   thumbnail: {
     width: '100%',
     height: 200,
+    resizeMode: 'contain',
     borderRadius: 8,
-    backgroundColor: '#ccc',
+    backgroundColor: '#9D2828',
   },
   videoInfoRow: {
     flexDirection: 'row',

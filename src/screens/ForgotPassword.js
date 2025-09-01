@@ -14,7 +14,7 @@ const ForgotPassword = () => {
   const navigation = useNavigation();
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FF8DA1' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#9D2828' }}>
       <View style={styles.container}>
         {/* Tombol Back */}
         <TouchableOpacity
@@ -42,7 +42,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FF8DA1',
+    backgroundColor: '#9D2828',
     padding: 20,
   },
   backButton: {
@@ -63,12 +63,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#700101',
+    color: '#fff',
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 14,
-    color: '#000',
+    color: '#fff',
     textAlign: 'center',
     lineHeight: 20,
   },

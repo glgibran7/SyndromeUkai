@@ -1,11 +1,17 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Alert } from 'react-native';
+import { resetTo } from './NavigationService';
+
+// Flag global biar logout hanya sekali
+let isLogoutTriggered = false;
 
 const Api = axios.create({
-  baseURL: 'https://api.ukaisyndrome.id',
+  baseURL: 'https://api.ukaisyndrome.id', // ganti sesuai environment
   headers: { 'Content-Type': 'application/json' },
 });
 
+// Interceptor request: tambahkan token
 Api.interceptors.request.use(
   async config => {
     const token = await AsyncStorage.getItem('token');
@@ -20,36 +26,58 @@ Api.interceptors.request.use(
 // Interceptor response: handle error 401
 Api.interceptors.response.use(
   response => response,
-  error => {
+  async error => {
     if (error.response?.status === 401) {
       const statusMessage = error.response?.data?.status;
       const apiMessage = error.response?.data?.message;
 
-      // Jika username/password salah
+      // Jika username/password salah → jangan logout global
       if (statusMessage === 'Invalid username or password') {
         return Promise.reject(error);
       }
 
-      // Handle token expired biasa
+      // Token expired
       if (statusMessage === 'Token expired, Login ulang') {
         if (!isLogoutTriggered) {
           isLogoutTriggered = true;
-          alert('Sesi Anda telah berakhir. Silakan login ulang.');
-          localStorage.clear();
-          window.location.replace('/login');
+          Alert.alert(
+            'Sesi Berakhir',
+            'Sesi Anda telah berakhir. Silakan login ulang.',
+            [
+              {
+                text: 'OK',
+                onPress: async () => {
+                  await AsyncStorage.clear();
+                  resetTo('Login');
+                  isLogoutTriggered = false; // reset flag setelah redirect
+                },
+              },
+            ],
+          );
         }
       }
 
-      // Handle expired session karena login di device lain
+      // Session invalid karena login di device lain
       if (
         statusMessage === 'Session invalid or expired' ||
         apiMessage === 'Session invalid or expired'
       ) {
         if (!isLogoutTriggered) {
           isLogoutTriggered = true;
-          alert('Anda login di perangkat lain. Silakan login kembali.');
-          localStorage.clear();
-          window.location.replace('/login');
+          Alert.alert(
+            'Login di perangkat lain',
+            'Anda login di perangkat lain. Silakan login kembali.',
+            [
+              {
+                text: 'OK',
+                onPress: async () => {
+                  await AsyncStorage.clear();
+                  resetTo('Login');
+                  isLogoutTriggered = false;
+                },
+              },
+            ],
+          );
         }
       }
     }
