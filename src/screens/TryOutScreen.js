@@ -13,6 +13,7 @@ import {
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Ionicons from '@react-native-vector-icons/ionicons';
+import Header from '../components/Header';
 
 const { height, width } = Dimensions.get('window');
 
@@ -96,28 +97,11 @@ const TryoutScreen = ({ navigation }) => {
       colors={['#9D2828', '#191919']}
       style={{ flex: 1 }}
       start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
+      end={{ x: 1, y: 0 }}
     >
-      <StatusBar barStyle="light-content" backgroundColor="#a10505" />
-      <ScrollView style={{ flex: 1 }}>
+      <ScrollView style={{ flex: 1 }} stickyHeaderIndices={[0]}>
         {/* Header */}
-        <View style={styles.header}>
-          <Image
-            source={require('../../src/img/logo_putih.png')}
-            style={styles.logo}
-          />
-
-          <View style={styles.userInfo}>
-            {/* <View style={styles.paketBadge}>
-              <Text style={styles.paketText}>🥇 {user.paket}</Text>
-            </View> */}
-            <View style={styles.avatarInitial}>
-              <Text style={styles.avatarText}>
-                {user.name.split(' ')[0][0]}
-              </Text>
-            </View>
-          </View>
-        </View>
+        <Header navigation={navigation} />
 
         {/* Title & Search */}
         <View style={styles.greetingBox}>
@@ -244,51 +228,8 @@ const TryoutScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    paddingHorizontal: 10,
-    paddingTop: 20,
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  logo: {
-    width: width * 0.25,
-    height: width * 0.25,
-    resizeMode: 'contain',
-    marginLeft: 10,
-  },
-  userInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  avatarInitial: {
-    width: 35,
-    height: 35,
-    borderRadius: 999,
-    backgroundColor: '#0b62e4ff',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    textTransform: 'capitalize',
-  },
-  paketBadge: {
-    backgroundColor: '#feb600',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 12,
-  },
-  paketText: {
-    fontSize: 12,
-    color: '#fff',
-    fontWeight: 'bold',
-  },
   greetingBox: {
-    marginTop: -5,
-    paddingHorizontal: 20,
+    paddingHorizontal: 10,
   },
   sectionTitle: {
     fontSize: 18,
@@ -314,6 +255,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginTop: 30,
     minHeight: height - 200,
+    height: '100%',
   },
   filterContainer: {
     flexDirection: 'row',

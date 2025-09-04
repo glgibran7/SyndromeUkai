@@ -18,6 +18,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Api from '../utils/Api';
 import Ionicons from '@react-native-vector-icons/ionicons';
+import Header from '../components/Header';
 
 const { height, width } = Dimensions.get('window');
 
@@ -37,20 +38,6 @@ const Avatar = ({ size = 35, initial = 'U' }) => (
     </Text>
   </View>
 );
-
-const getDirectGoogleDriveLink = url => {
-  const match = url.match(/\/d\/(.+?)\//);
-  if (match && match[1]) {
-    return `https://drive.google.com/uc?export=download&id=${match[1]}`;
-  }
-  return url;
-};
-
-const getDriveThumbnail = url => {
-  if (!url) return null;
-  const m = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
-  return m ? `https://drive.google.com/thumbnail?id=${m[1]}` : null;
-};
 
 const VideoListScreen = ({ route, navigation }) => {
   const { id_modul } = route.params;
@@ -133,11 +120,6 @@ const VideoListScreen = ({ route, navigation }) => {
     scrollRef.current?.scrollTo({ y: 0, animated: true });
   };
 
-  const handleLogout = async () => {
-    await AsyncStorage.removeItem('user');
-    navigation.replace('Login');
-  };
-
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#9D2828' }}>
       <TouchableWithoutFeedback
@@ -146,8 +128,13 @@ const VideoListScreen = ({ route, navigation }) => {
           Keyboard.dismiss();
         }}
       >
-        <LinearGradient colors={['#9D2828', '#9D2828']} style={{ flex: 1 }}>
-          <StatusBar barStyle="light-content" backgroundColor="#9D2828" />
+        <LinearGradient
+          colors={['#9D2828', '#191919']}
+          style={{ flex: 1 }}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+        >
+          {' '}
           <ScrollView
             ref={scrollRef}
             onScroll={handleScroll}
@@ -157,66 +144,35 @@ const VideoListScreen = ({ route, navigation }) => {
           >
             {/* Sticky Header + Search */}
             <View style={styles.stickyHeaderWrapper}>
-              {/* Header */}
-              <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()}>
-                  <Ionicons name="arrow-back" size={26} color="#fff" />
-                </TouchableOpacity>
-                <Image
-                  source={require('../../src/img/logo_putih.png')}
-                  style={styles.logo}
-                />
-                <View style={styles.userInfo}>
-                  <TouchableOpacity
-                    style={styles.avatarInitial}
-                    onPress={() => setDropdownVisible(!dropdownVisible)}
-                  >
-                    <Text style={styles.avatarText}>
-                      {user.name.split(' ')[0][0]}
-                    </Text>
-                  </TouchableOpacity>
-
-                  {dropdownVisible && (
-                    <View style={styles.dropdown}>
-                      <TouchableOpacity
-                        style={styles.dropdownItem}
-                        onPress={() => {
-                          setDropdownVisible(false);
-                          navigation.navigate('Profile');
-                        }}
-                      >
-                        <Text style={styles.dropdownText}>Profile</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={styles.dropdownItem}
-                        onPress={handleLogout}
-                      >
-                        <Text style={styles.dropdownText}>Logout</Text>
-                      </TouchableOpacity>
-                    </View>
-                  )}
+              <LinearGradient
+                colors={['#9D2828', '#191919']} // Sesuaikan warna gradient di sini
+                style={{ flex: 1, paddingBottom: 10 }}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+              >
+                {/* Header */}
+                <Header navigation={navigation} showBack={true} />
+                {/* Search Bar */}
+                <View style={styles.greetingBox}>
+                  <Text style={styles.sectionTitle}>Video</Text>
+                  <View style={styles.searchContainer}>
+                    <TextInput
+                      style={styles.searchInput}
+                      placeholder="Search"
+                      placeholderTextColor="#fff"
+                      value={searchQuery}
+                      onChangeText={setSearchQuery}
+                    />
+                    <Ionicons name="search-outline" size={18} color="#fff" />
+                  </View>
                 </View>
-              </View>
-
-              {/* Search Bar */}
-              <View style={styles.greetingBox}>
-                <Text style={styles.sectionTitle}>Video</Text>
-                <View style={styles.searchContainer}>
-                  <TextInput
-                    style={styles.searchInput}
-                    placeholder="Search"
-                    placeholderTextColor="#fff"
-                    value={searchQuery}
-                    onChangeText={setSearchQuery}
-                  />
-                  <Ionicons name="search-outline" size={18} color="#fff" />
-                </View>
-              </View>
+              </LinearGradient>
             </View>
+
             {/* Filter */}
             <View style={styles.mainContent}>
               <View style={styles.filterContainer}>
-                <Text style={styles.sectionTitle2}>Daftar Materi</Text>
+                <Text style={styles.sectionTitle2}>Daftar Video</Text>
                 <TouchableOpacity
                   style={[
                     styles.filterButton,
@@ -292,7 +248,6 @@ const VideoListScreen = ({ route, navigation }) => {
               </View>
             </View>
           </ScrollView>
-
           {/* Scroll to Top */}
           <Animated.View style={[styles.scrollTopBtn, { opacity: fadeAnim }]}>
             <TouchableOpacity onPress={scrollToTop}>
@@ -306,73 +261,11 @@ const VideoListScreen = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    alignItems: 'center',
-    backgroundColor: '#9D2828',
-    zIndex: 101,
-  },
-
   stickyHeaderWrapper: {
-    backgroundColor: '#9D2828', // biar solid saat sticky
-    paddingBottom: 10,
     zIndex: 100,
   },
 
-  logo: {
-    width: width * 0.3,
-    height: width * 0.3,
-    resizeMode: 'contain',
-  },
-  userInfo: {
-    position: 'absolute',
-    right: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  avatarInitial: {
-    width: 35,
-    height: 35,
-    borderRadius: 999,
-    backgroundColor: '#0b62e4ff',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    textTransform: 'capitalize',
-  },
-  dropdown: {
-    position: 'absolute',
-    top: 45,
-    right: 0,
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-    zIndex: 999,
-    width: 160,
-  },
-  dropdownItem: {
-    paddingVertical: 12,
-    paddingHorizontal: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  dropdownText: { fontSize: 15, color: '#000' },
-  paketBadge: {
-    backgroundColor: '#feb600',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 12,
-  },
-  paketText: { fontSize: 12, color: '#fff', fontWeight: 'bold' },
-  greetingBox: { marginTop: -5, paddingHorizontal: 20 },
+  greetingBox: { paddingHorizontal: 20 },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
@@ -393,6 +286,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginTop: 30,
     minHeight: height - 200,
+    height: '100%',
   },
   filterContainer: {
     flexDirection: 'row',

@@ -11,12 +11,16 @@ import {
   SafeAreaView,
   ActivityIndicator,
   Image,
+  Dimensions,
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Header from '../components/Header';
+
+const { width, height } = Dimensions.get('window');
 
 const MateriViewer = ({ route, navigation }) => {
   const { url, title } = route.params;
@@ -42,11 +46,6 @@ const MateriViewer = ({ route, navigation }) => {
     };
     getUserData();
   }, []);
-
-  const handleLogout = async () => {
-    await AsyncStorage.removeItem('user');
-    navigation.replace('Login');
-  };
 
   const disableCopyJS = useMemo(() => `...`, []);
 
@@ -85,52 +84,7 @@ const MateriViewer = ({ route, navigation }) => {
           <StatusBar barStyle="light-content" backgroundColor="#9D2828" />
 
           {/* Header */}
-          <LinearGradient
-            colors={['#9D2828', '#191919']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={[styles.header]}
-          >
-            <TouchableOpacity onPress={() => navigation.goBack()}>
-              <Ionicons name="arrow-back" size={26} color="#fff" />
-            </TouchableOpacity>
-
-            <Image
-              source={require('../../src/img/logo_putih.png')}
-              style={styles.logo}
-            />
-
-            <View style={styles.userInfo}>
-              <TouchableOpacity
-                style={styles.avatarInitial}
-                onPress={() => setDropdownVisible(!dropdownVisible)}
-              >
-                <Text style={styles.avatarText}>
-                  {user.name.split(' ')[0][0]}
-                </Text>
-              </TouchableOpacity>
-
-              {dropdownVisible && (
-                <View style={styles.dropdown}>
-                  <TouchableOpacity
-                    style={styles.dropdownItem}
-                    onPress={() => {
-                      setDropdownVisible(false);
-                      navigation.navigate('Profile');
-                    }}
-                  >
-                    <Text style={styles.dropdownText}>Profile</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.dropdownItem}
-                    onPress={handleLogout}
-                  >
-                    <Text style={styles.dropdownText}>Logout</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-            </View>
-          </LinearGradient>
+          <Header navigation={navigation} showBack={true} />
 
           {/* Title bar */}
           <LinearGradient
@@ -185,63 +139,8 @@ const MateriViewer = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  logo: {
-    width: 80,
-    height: 80,
-    resizeMode: 'contain',
-  },
-  userInfo: {
-    position: 'relative',
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  avatarInitial: {
-    width: 35,
-    height: 35,
-    borderRadius: 999,
-    backgroundColor: '#0b62e4ff',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    textTransform: 'capitalize',
-  },
-  dropdown: {
-    position: 'absolute',
-    top: 45,
-    right: 0,
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-    zIndex: 999,
-    width: 160,
-  },
-  dropdownItem: {
-    paddingVertical: 12,
-    paddingHorizontal: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  dropdownText: {
-    fontSize: 15,
-    color: '#000',
-  },
   titleBar: {
-    paddingVertical: 8,
-    paddingHorizontal: 15,
+    paddingHorizontal: 20,
   },
   titleText: {
     color: '#fff',

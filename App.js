@@ -13,29 +13,37 @@ import MainTabNavigator from './src/navigation/MainTabNavigator';
 import Profile from './src/screens/Profile';
 import ForgotPassword from './src/screens/ForgotPassword';
 
-// ⬅️ import navigationRef dari NavigationService
+// ⬅️ import navigationRef
 import { navigationRef } from './src/utils/NavigationService';
+
+// ⬅️ import AuthProvider
+import { AuthProvider } from './src/context/AuthContext';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 const Stack = createNativeStackNavigator();
 
 function App() {
   return (
-    <NavigationContainer ref={navigationRef}>
-      <Stack.Navigator
-        initialRouteName="Splash"
-        screenOptions={{ headerShown: false }}
-      >
-        <Stack.Screen name="Login" component={Login} />
-        <Stack.Screen name="SignUp" component={SignUp} />
-        <Stack.Screen name="Detail" component={Detail} />
-        <Stack.Screen name="Splash" component={Splash} />
-        <Stack.Screen name="Paket" component={Paket} />
-        <Stack.Screen name="PaketDetail" component={PaketDetail} />
-        <Stack.Screen name="Main" component={MainTabNavigator} />
-        <Stack.Screen name="Profile" component={Profile} />
-        <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <SafeAreaProvider>
+      <AuthProvider navigationRef={navigationRef}>
+        <NavigationContainer ref={navigationRef}>
+          <Stack.Navigator
+            initialRouteName="Splash"
+            screenOptions={{ headerShown: false }}
+          >
+            <Stack.Screen name="Login" component={Login} />
+            <Stack.Screen name="SignUp" component={SignUp} />
+            <Stack.Screen name="Detail" component={Detail} />
+            <Stack.Screen name="Splash" component={Splash} />
+            <Stack.Screen name="Paket" component={Paket} />
+            <Stack.Screen name="PaketDetail" component={PaketDetail} />
+            <Stack.Screen name="Main" component={MainTabNavigator} />
+            <Stack.Screen name="Profile" component={Profile} />
+            <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
+          </Stack.Navigator>
+        </NavigationContainer>
+      </AuthProvider>
+    </SafeAreaProvider>
   );
 }
 

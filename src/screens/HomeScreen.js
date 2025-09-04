@@ -16,8 +16,9 @@ import { FlatList } from 'react-native';
 import MentorList from '../components/MentorList';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Api from '../utils/Api';
+import Header from '../components/Header';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 const Home = ({ navigation }) => {
   const flatListRef = useRef(null);
@@ -64,37 +65,6 @@ const Home = ({ navigation }) => {
     getUserData();
   }, []);
 
-  const handleLogout = async () => {
-    try {
-      setIsLoggingOut(true);
-      setMenuVisible(false); // tutup menu biar gak nyangkut
-
-      // Coba panggil API logout, tapi kalau gagal tetap lanjut clear storage
-      try {
-        await Api.post('/auth/logout');
-      } catch (err) {
-        console.warn(
-          'Logout API gagal, lanjut hapus data lokal:',
-          err?.message,
-        );
-      }
-
-      // Hapus semua data storage (lebih aman daripada removeItem satu-satu)
-      await AsyncStorage.clear();
-
-      // Redirect ke login
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Login' }],
-      });
-    } catch (error) {
-      console.error('Gagal logout:', error);
-      alert('Logout gagal, coba lagi.');
-    } finally {
-      setIsLoggingOut(false);
-    }
-  };
-
   const menus = [
     {
       title: 'Materi',
@@ -136,83 +106,11 @@ const Home = ({ navigation }) => {
         colors={['#9D2828', '#191919']}
         style={{ flex: 1 }}
         start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
+        end={{ x: 1, y: 0 }}
       >
-        <StatusBar barStyle="light-content" backgroundColor="#a10505" />
         <ScrollView style={{ flex: 1 }}>
-          {/* Overlay untuk menutup dropdown saat klik di luar area */}
-          {menuVisible && (
-            <TouchableOpacity
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                zIndex: 998,
-              }}
-              activeOpacity={1}
-              onPress={() => setMenuVisible(false)}
-            />
-          )}
           {/* Header */}
-          <View style={styles.header}>
-            <View style={{ flex: 1 }}>
-              <Image
-                source={require('../../src/img/logo_putih.png')}
-                style={styles.logo}
-              />
-            </View>
-
-            <View style={styles.userInfo}>
-              {/* Avatar */}
-              <TouchableOpacity onPress={() => setMenuVisible(!menuVisible)}>
-                <View style={styles.avatarInitial}>
-                  <Text style={styles.avatarText}>
-                    {user.name.split(' ')[0][0]}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-
-              {menuVisible && (
-                <View style={styles.dropdownMenu}>
-                  <TouchableOpacity
-                    style={styles.dropdownItem}
-                    onPress={() => {
-                      setMenuVisible(false);
-                      navigation.navigate('Profile');
-                    }}
-                  >
-                    <Text style={styles.dropdownText}>Profil</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.dropdownItem}
-                    onPress={handleLogout}
-                    disabled={isLoggingOut}
-                  >
-                    {isLoggingOut ? (
-                      <View
-                        style={{ flexDirection: 'row', alignItems: 'center' }}
-                      >
-                        <ActivityIndicator size="small" color="#700101" />
-                        <Text
-                          style={[
-                            styles.dropdownText,
-                            { marginLeft: 8, color: 'gray' },
-                          ]}
-                        >
-                          Logging out...
-                        </Text>
-                      </View>
-                    ) : (
-                      <Text style={styles.dropdownText}>Logout</Text>
-                    )}
-                  </TouchableOpacity>
-                </View>
-              )}
-            </View>
-          </View>
+          <Header navigation={navigation} />
 
           {/* Greeting */}
           <View style={styles.greetingBox}>
@@ -276,59 +174,9 @@ const Home = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    alignItems: 'center',
-  },
-  logo: {
-    width: width * 0.3,
-    height: width * 0.3,
-    resizeMode: 'contain',
-  },
-  userInfo: {
-    position: 'relative',
-  },
-  avatarInitial: {
-    width: 35,
-    height: 35,
-    borderRadius: 999,
-    backgroundColor: '#0b62e4ff',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    textTransform: 'capitalize',
-  },
-  dropdownMenu: {
-    position: 'absolute',
-    top: 45,
-    right: 0,
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-    zIndex: 999,
-    width: 160, // Lebar dropdown
-  },
-  dropdownItem: {
-    paddingVertical: 12,
-    paddingHorizontal: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  dropdownText: {
-    fontSize: 15,
-    color: '#000',
-  },
   greetingBox: {
-    marginTop: -5,
-    paddingHorizontal: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
   },
   greeting: {
     fontSize: 22,
@@ -347,7 +195,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     paddingVertical: 25,
     paddingHorizontal: 20,
-    marginTop: 30,
+    marginTop: 20,
+    height: '100%',
   },
   sectionTitle: {
     fontSize: 18,

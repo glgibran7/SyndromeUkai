@@ -22,6 +22,9 @@ import { WebView } from 'react-native-webview';
 import Video from 'react-native-video';
 import LinearGradient from 'react-native-linear-gradient';
 import Api from '../utils/Api'; // pastikan ini axios instance yang benar
+import Header from '../components/Header';
+import { NativeModules } from 'react-native';
+const { FlagSecure } = NativeModules;
 
 const { width, height } = Dimensions.get('window');
 const FIVE_MIN_MS = 5 * 60 * 1000;
@@ -56,6 +59,15 @@ const Avatar = ({ name, size = 28 }) => {
 };
 
 const VideoViewer = ({ route, navigation }) => {
+  useEffect(() => {
+    // Aktifkan proteksi
+    FlagSecure.enable();
+
+    // Matikan lagi saat keluar
+    return () => {
+      FlagSecure.disable();
+    };
+  }, []);
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const params = route?.params || {};
   const { id_materi, url_file, title = '', channel = 'UKAI' } = params;
@@ -86,11 +98,6 @@ const VideoViewer = ({ route, navigation }) => {
     if (inputRef.current && typeof inputRef.current.focus === 'function') {
       inputRef.current.focus();
     }
-  };
-
-  const handleLogout = async () => {
-    await AsyncStorage.removeItem('user');
-    navigation.replace('Login');
   };
 
   useEffect(() => {
@@ -149,7 +156,6 @@ const VideoViewer = ({ route, navigation }) => {
             (a, b) => new Date(a.created_at) - new Date(b.created_at),
           ),
         );
-
         setRawComments(data);
         setRootComments(roots);
         setRootPage(1);
@@ -418,52 +424,8 @@ const VideoViewer = ({ route, navigation }) => {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#9D2828' }}>
       <View style={{ flex: 1 }}>
-        <StatusBar barStyle="light-content" backgroundColor="#9D2828" />
         {/* Header */}
-        <LinearGradient
-          colors={['#9D2828', '#191919']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={[styles.header]}
-        >
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={26} color="#fff" />
-          </TouchableOpacity>
-
-          <Image
-            source={require('../../src/img/logo_putih.png')}
-            style={styles.logo}
-          />
-
-          <View style={styles.userInfo}>
-            <TouchableOpacity
-              style={styles.avatarInitial}
-              onPress={() => setDropdownVisible(!dropdownVisible)}
-            >
-              <Text style={styles.avatarText}>{(user.nama || 'P')[0]}</Text>
-            </TouchableOpacity>
-
-            {dropdownVisible && (
-              <View style={styles.dropdown}>
-                <TouchableOpacity
-                  style={styles.dropdownItem}
-                  onPress={() => {
-                    setDropdownVisible(false);
-                    navigation.navigate('Profile');
-                  }}
-                >
-                  <Text style={styles.dropdownText}>Profile</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.dropdownItem}
-                  onPress={handleLogout}
-                >
-                  <Text style={styles.dropdownText}>Logout</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-        </LinearGradient>
+        <Header navigation={navigation} showBack={true} />
 
         <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
           {/* Video player */}
@@ -607,58 +569,6 @@ const VideoViewer = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  logo: {
-    width: 80,
-    height: 80,
-    resizeMode: 'contain',
-  },
-  userInfo: {
-    position: 'relative',
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  avatarInitial: {
-    width: 35,
-    height: 35,
-    borderRadius: 999,
-    backgroundColor: '#0b62e4ff',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    textTransform: 'capitalize',
-  },
-  dropdown: {
-    position: 'absolute',
-    top: 45,
-    right: 0,
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-    zIndex: 999,
-    width: 160,
-  },
-  dropdownItem: {
-    paddingVertical: 12,
-    paddingHorizontal: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  dropdownText: { fontSize: 15, color: '#000' },
-
   titleText: {
     color: '#fff',
     fontWeight: 'bold',
@@ -725,6 +635,7 @@ const styles = StyleSheet.create({
   whiteWrapper: {
     backgroundColor: '#fff',
     overflow: 'hidden',
+    height: '100%',
   },
 
   commentInput: {
