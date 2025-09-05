@@ -2,12 +2,13 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert } from 'react-native';
 import { resetTo } from './NavigationService';
+import { API_BASE_URL } from '@env';
 
 // Flag global biar logout hanya sekali
 let isLogoutTriggered = false;
 
 const Api = axios.create({
-  baseURL: 'https://api.ukaisyndrome.id', // ganti sesuai environment
+  baseURL: API_BASE_URL,
   headers: { 'Content-Type': 'application/json' },
 });
 
