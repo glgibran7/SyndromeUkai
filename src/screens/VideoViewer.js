@@ -13,6 +13,7 @@ import {
   FlatList,
   ActivityIndicator,
   Alert,
+  RefreshControl,
   Keyboard,
   SafeAreaView,
 } from 'react-native';
@@ -25,7 +26,7 @@ import Api from '../utils/Api'; // pastikan ini axios instance yang benar
 import Header from '../components/Header';
 import { NativeModules } from 'react-native';
 const { FlagSecure } = NativeModules;
-
+const { ScreenRecord } = NativeModules;
 const { width, height } = Dimensions.get('window');
 const FIVE_MIN_MS = 5 * 60 * 1000;
 const ROOT_PAGE_SIZE = 8; // root comments per load
@@ -68,7 +69,26 @@ const VideoViewer = ({ route, navigation }) => {
       FlagSecure.disable();
     };
   }, []);
-  const [dropdownVisible, setDropdownVisible] = useState(false);
+
+  useEffect(() => {
+    let interval = setInterval(async () => {
+      try {
+        const rec = await ScreenRecord.isRecording();
+        if (rec) {
+          // mute video
+          setMuted(true);
+        } else {
+          // unmute video
+          setMuted(false);
+        }
+      } catch (e) {
+        console.log('check record err', e);
+      }
+    }, 2000); // cek tiap 2 detik
+
+    return () => clearInterval(interval);
+  }, []);
+
   const params = route?.params || {};
   const { id_materi, url_file, title = '', channel = 'UKAI' } = params;
 
@@ -83,14 +103,13 @@ const VideoViewer = ({ route, navigation }) => {
   const [displayedRoots, setDisplayedRoots] = useState([]);
   const [rootPage, setRootPage] = useState(1);
   const [hasMoreRoots, setHasMoreRoots] = useState(false);
-
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
-
   const [composeText, setComposeText] = useState('');
   const [replyingTo, setReplyingTo] = useState(null);
   const [editingComment, setEditingComment] = useState(null);
-
+  const [refreshing, setRefreshing] = useState(false); // buat swipe to refresh
+  const [videoLoading, setVideoLoading] = useState(true); // buat spinner saat video loading
   const [expandedReplies, setExpandedReplies] = useState({});
   const inputRef = useRef(null);
 
@@ -129,6 +148,13 @@ const VideoViewer = ({ route, navigation }) => {
     setDisplayedRoots(rootComments.slice(start, end));
     setHasMoreRoots(rootComments.length > end);
   }, [rootComments, rootPage]);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchComments(); // reload komentar
+    setVideoLoading(true); // trigger spinner video
+    setTimeout(() => setRefreshing(false), 800); // stop animasi refresh
+  };
 
   const fetchComments = async () => {
     setLoading(true);
@@ -427,7 +453,12 @@ const VideoViewer = ({ route, navigation }) => {
         {/* Header */}
         <Header navigation={navigation} showBack={true} />
 
-        <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
+        <ScrollView
+          contentContainerStyle={{ paddingBottom: 120 }}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        >
           {/* Video player */}
           <View style={{ height: height * 0.33, backgroundColor: '#000' }}>
             <Video
@@ -437,6 +468,9 @@ const VideoViewer = ({ route, navigation }) => {
               resizeMode="contain"
               paused={false}
               fullscreen={false}
+              muted={muted}
+              onLoadStart={() => setVideoLoading(true)} // mulai loading
+              onLoad={() => setVideoLoading(false)} // selesai loading
               onError={e => console.log('Video error', e)}
             />
 
@@ -469,6 +503,11 @@ const VideoViewer = ({ route, navigation }) => {
                   {user?.nama || 'User'}
                 </Text>
               ))}
+              {videoLoading && (
+                <View style={styles.videoLoadingOverlay}>
+                  <ActivityIndicator size="large" color="#fff" />
+                </View>
+              )}
             </View>
           </View>
 

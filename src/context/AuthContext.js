@@ -7,7 +7,7 @@ import { resetTo } from '../utils/NavigationService';
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState({ name: 'Peserta', paket: 'Premium' });
+  const [user, setUser] = useState({ name: '-', paket: '-' });
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {

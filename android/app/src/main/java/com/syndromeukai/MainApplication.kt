@@ -16,10 +16,8 @@ class MainApplication : Application(), ReactApplication {
       object : DefaultReactNativeHost(this) {
         override fun getPackages(): List<ReactPackage> =
             PackageList(this).packages.apply {
-              // ✅ Tambahkan manual package FlagSecure
               add(FlagSecurePackage())
-            }
-
+              add(FlagSecurePackage())                 }
         override fun getJSMainModuleName(): String = "index"
 
         override fun getUseDeveloperSupport(): Boolean = BuildConfig.DEBUG

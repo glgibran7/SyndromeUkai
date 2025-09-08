@@ -19,6 +19,7 @@ const { width } = Dimensions.get('window');
 const Header = ({ navigation, showBack = false }) => {
   const { user, handleLogout, isLoggingOut } = useContext(AuthContext);
   const [menuVisible, setMenuVisible] = useState(false);
+  const [notifVisible, setNotifVisible] = useState(false);
   const insets = useSafeAreaInsets();
 
   return (
@@ -29,11 +30,14 @@ const Header = ({ navigation, showBack = false }) => {
         barStyle="light-content"
       />
 
-      {menuVisible && (
+      {(menuVisible || notifVisible) && (
         <TouchableOpacity
           style={styles.overlay}
           activeOpacity={1}
-          onPress={() => setMenuVisible(false)}
+          onPress={() => {
+            setMenuVisible(false);
+            setNotifVisible(false);
+          }}
         />
       )}
 
@@ -61,16 +65,31 @@ const Header = ({ navigation, showBack = false }) => {
           />
         </View>
 
-        {/* User Info */}
-        <View style={styles.userInfo}>
+        {/* Notif & User Info */}
+        <View style={styles.rightSection}>
+          {/* Lonceng */}
+          <TouchableOpacity
+            style={{ marginRight: 15 }}
+            onPress={() => setNotifVisible(!notifVisible)}
+          >
+            <Ionicons name="notifications-outline" size={26} color="#fff" />
+          </TouchableOpacity>
+
+          {/* Avatar */}
           <TouchableOpacity onPress={() => setMenuVisible(!menuVisible)}>
             <View style={styles.avatarInitial}>
               <Text style={styles.avatarText}>
-                {user?.name?.split(' ')[0][0] || 'P'}
+                {user?.name
+                  ? (
+                      user?.name.split(' ')[0][0] +
+                      (user?.name.split(' ')[1]?.[0] || '')
+                    ).toUpperCase()
+                  : '-'}
               </Text>
             </View>
           </TouchableOpacity>
 
+          {/* Menu user */}
           {menuVisible && (
             <View style={styles.dropdownMenu}>
               <TouchableOpacity
@@ -80,7 +99,7 @@ const Header = ({ navigation, showBack = false }) => {
                   navigation.navigate('Profile');
                 }}
               >
-                <Text style={styles.dropdownText}>Profil</Text>
+                <Text style={styles.dropdownText}>Profile</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -104,6 +123,27 @@ const Header = ({ navigation, showBack = false }) => {
                   <Text style={styles.dropdownText}>Logout</Text>
                 )}
               </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Menu notifikasi */}
+          {notifVisible && (
+            <View style={styles.dropdownMenu}>
+              <TouchableOpacity
+                style={styles.dropdownItem}
+                onPress={() => {
+                  setNotifVisible(false);
+                  navigation.navigate('Notifications'); // buat screen notifikasi
+                }}
+              >
+                <Text style={styles.dropdownText}>Lihat Notifikasi</Text>
+              </TouchableOpacity>
+
+              <View style={styles.dropdownItem}>
+                <Text style={[styles.dropdownText, { color: 'gray' }]}>
+                  (Belum ada notifikasi)
+                </Text>
+              </View>
             </View>
           )}
         </View>
@@ -144,7 +184,9 @@ const styles = StyleSheet.create({
     height: width * 0.2,
     resizeMode: 'contain',
   },
-  userInfo: {
+  rightSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
     position: 'relative',
   },
   avatarInitial: {
@@ -172,7 +214,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 4,
     zIndex: 1001,
-    width: 160,
+    width: 180,
   },
   dropdownItem: {
     paddingVertical: 12,

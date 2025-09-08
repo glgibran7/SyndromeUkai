@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,16 +9,17 @@ import {
   ScrollView,
   StyleSheet,
   ActivityIndicator,
-  Alert,
   Dimensions,
   Modal,
   SafeAreaView,
+  Animated,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import FontAwesome6 from '@react-native-vector-icons/fontawesome';
 import Api from '../utils/Api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useToast } from '../context/ToastContext';
 
 const { width } = Dimensions.get('window');
 
@@ -26,10 +27,35 @@ const Login = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [secureText, setSecureText] = useState(true);
-  const [loading, setLoading] = useState(false); // 🔥 state loading
+  const [loading, setLoading] = useState(false);
+  const [fadeAnim] = useState(new Animated.Value(0));
+  const [scaleAnim] = useState(new Animated.Value(0));
+  const [translateYAnim] = useState(new Animated.Value(50));
+
+  const { show } = useToast(); // <-- pakai fungsi show dari context
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 1500,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: 1500,
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateYAnim, {
+        toValue: 0,
+        duration: 1500,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
 
   const handleLogin = async () => {
-    setLoading(true); // mulai loading
+    setLoading(true);
     try {
       const response = await Api.post('/auth/login/mobile', {
         email,
@@ -48,11 +74,20 @@ const Login = ({ navigation }) => {
       await AsyncStorage.setItem('token', access_token);
       await AsyncStorage.setItem(
         'user',
-        JSON.stringify({ id_user, nama, email: userEmail, role, nama_kelas }),
+        JSON.stringify({
+          id_user,
+          nama,
+          email: userEmail,
+          role,
+
+          nama_kelas,
+        }),
       );
 
-      if (role === 'admin' || role === 'mentor') {
-        navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
+      show('Login berhasil!', 'success');
+
+      if (role === 'mentor') {
+        navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
       } else if (role === 'peserta') {
         if (nama_kelas) {
           navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
@@ -60,13 +95,13 @@ const Login = ({ navigation }) => {
           navigation.reset({ index: 0, routes: [{ name: 'Paket' }] });
         }
       } else {
-        Alert.alert('Login Gagal', 'Role tidak dikenali!');
+        show('Role tidak dikenali!', 'warning');
       }
     } catch (error) {
       console.error('Login gagal:', error);
-      Alert.alert('Login Gagal', 'Email atau password salah!');
+      show('Email atau password salah!', 'error');
     } finally {
-      setLoading(false); // selesai loading
+      setLoading(false);
     }
   };
 
@@ -82,15 +117,25 @@ const Login = ({ navigation }) => {
           <StatusBar barStyle={'dark-content'} />
 
           {/* Gambar */}
-          <View style={styles.imageContainer}>
+          <Animated.View
+            style={[
+              styles.imageContainer,
+              { transform: [{ translateY: translateYAnim }] },
+            ]}
+          >
             <Image
               source={require('../../src/img/dokter_mobile.png')}
               style={styles.image}
             />
-          </View>
+          </Animated.View>
 
           {/* Konten */}
-          <View style={styles.content}>
+          <Animated.View
+            style={[
+              styles.content,
+              { opacity: fadeAnim, transform: [{ scale: scaleAnim }] },
+            ]}
+          >
             <Text style={styles.loginTitle}>SELAMAT DATANG</Text>
             <Text style={styles.label}>
               Platform penyedia layanan Pendidikan Farmasi berbasis teknologi{' '}
@@ -154,13 +199,15 @@ const Login = ({ navigation }) => {
 
             {/* Tombol Login */}
             <View style={styles.buttonContainer}>
-              <TouchableOpacity
-                style={styles.tombol}
-                onPress={handleLogin}
-                disabled={loading} // disable saat loading
-              >
-                <Text style={styles.loginButtonText}>Login</Text>
-              </TouchableOpacity>
+              <Animated.View style={{ opacity: fadeAnim }}>
+                <TouchableOpacity
+                  style={styles.tombol}
+                  onPress={handleLogin}
+                  disabled={loading}
+                >
+                  <Text style={styles.loginButtonText}>Login</Text>
+                </TouchableOpacity>
+              </Animated.View>
             </View>
 
             {/* Tombol Sign Up */}
@@ -173,10 +220,10 @@ const Login = ({ navigation }) => {
                 <Text style={styles.loginButtonText}>Sign Up</Text>
               </TouchableOpacity>
             </View>
-          </View>
+          </Animated.View>
         </ScrollView>
 
-        {/* 🔥 Overlay Loading */}
+        {/* Overlay Loading */}
         <Modal visible={loading} transparent animationType="fade">
           <View style={styles.overlay}>
             <ActivityIndicator size="large" color="#fff" />
@@ -194,22 +241,34 @@ const styles = StyleSheet.create({
   tombol: {
     backgroundColor: '#a81414ff',
     marginVertical: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 10,
-    width: 150,
+    paddingVertical: 15,
+    paddingHorizontal: 40,
+    width: width * 0.4,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 20,
+    alignSelf: 'center',
   },
   tombolSignUp: {
     backgroundColor: '#feb600ff',
     marginVertical: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 10,
-    width: 150,
+    paddingVertical: 15,
+    paddingHorizontal: 40,
+    width: width * 0.4,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 20,
+    alignSelf: 'center',
+  },
+  buttonContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  buttonContainerSignUp: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 10,
   },
   inputtext: {
     flex: 1,
@@ -237,13 +296,13 @@ const styles = StyleSheet.create({
     marginRight: 5,
   },
   loginTitle: {
-    fontSize: 40,
+    paddingHorizontal: 10,
+    fontSize: 32,
     fontWeight: 'bold',
     color: '#000',
     textAlign: 'center',
     marginTop: -25,
   },
-
   label: {
     color: '#000',
     textAlign: 'center',
@@ -276,15 +335,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 30,
     marginTop: 20,
-  },
-  buttonContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  buttonContainerSignUp: {
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   overlay: {
     flex: 1,

@@ -7,12 +7,13 @@ import {
   TouchableOpacity,
   StyleSheet,
   Dimensions,
-  StatusBar,
   TextInput,
   Animated,
   TouchableWithoutFeedback,
   Keyboard,
   SafeAreaView,
+  RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -20,7 +21,7 @@ import Api from '../utils/Api';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import Header from '../components/Header';
 
-const { height, width } = Dimensions.get('window');
+const { height } = Dimensions.get('window');
 
 const Avatar = ({ size = 35, initial = 'U' }) => (
   <View
@@ -45,46 +46,59 @@ const VideoListScreen = ({ route, navigation }) => {
   const [filteredList, setFilteredList] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('Semua');
-  const [user, setUser] = useState({ name: 'Peserta', paket: 'Premium' });
-  const [dropdownVisible, setDropdownVisible] = useState(false);
+  const [user, setUser] = useState({ name: 'User', role: 'peserta' });
+
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   const scrollRef = useRef(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
+  const getUserData = async () => {
+    try {
+      const storedUser = await AsyncStorage.getItem('user');
+      if (storedUser) {
+        const parsedUser = JSON.parse(storedUser);
+        setUser({
+          name: parsedUser.nama || 'User',
+          role: parsedUser.role || 'peserta', // <-- ambil role
+        });
+      }
+    } catch (error) {
+      console.error('Gagal mengambil data user:', error);
+    }
+  };
+
+  const getMateri = async () => {
+    try {
+      const endpoint =
+        user.role === 'mentor' ? '/materi/mentor' : '/materi/peserta';
+      const res = await Api.get(endpoint);
+      console.log('Endpoint dipakai:', endpoint);
+
+      if (res.data.status === 'success') {
+        const filtered = res.data.data.filter(
+          m => m.id_modul === id_modul && m.tipe_materi === 'video',
+        );
+        setMateriList(filtered);
+        setFilteredList(filtered);
+      } else {
+        setMateriList([]);
+        setFilteredList([]);
+      }
+    } catch (error) {
+      console.error('Gagal mengambil data materi:', error);
+      setMateriList([]);
+      setFilteredList([]);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
   useEffect(() => {
-    const getUserData = async () => {
-      try {
-        const storedUser = await AsyncStorage.getItem('user');
-        if (storedUser) {
-          const parsedUser = JSON.parse(storedUser);
-          setUser({
-            name: parsedUser.nama || 'Peserta',
-            paket: 'Premium',
-          });
-        }
-      } catch (error) {
-        console.error('Gagal mengambil data user:', error);
-      }
-    };
-
-    const getMateri = async () => {
-      try {
-        const res = await Api.get('/materi/peserta');
-        if (res.data.status === 'success') {
-          const filtered = res.data.data.filter(
-            m => m.id_modul === id_modul && m.tipe_materi === 'video',
-          );
-          setMateriList(filtered);
-          setFilteredList(filtered);
-        }
-      } catch (error) {
-        console.error('Gagal mengambil data materi:', error);
-      }
-    };
-
-    getUserData();
-    getMateri();
-  }, [id_modul]);
+    getUserData().then(() => getMateri());
+  }, [id_modul, user.role]);
 
   useEffect(() => {
     let data = materiList;
@@ -120,11 +134,15 @@ const VideoListScreen = ({ route, navigation }) => {
     scrollRef.current?.scrollTo({ y: 0, animated: true });
   };
 
+  const onRefresh = () => {
+    setRefreshing(true);
+    getMateri();
+  };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#9D2828' }}>
       <TouchableWithoutFeedback
         onPress={() => {
-          if (dropdownVisible) setDropdownVisible(false);
           Keyboard.dismiss();
         }}
       >
@@ -134,120 +152,134 @@ const VideoListScreen = ({ route, navigation }) => {
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
         >
-          {' '}
-          <ScrollView
-            ref={scrollRef}
-            onScroll={handleScroll}
-            scrollEventThrottle={16}
-            contentContainerStyle={{ paddingBottom: 50 }}
-            stickyHeaderIndices={[0]} // sticky wrapper di index 0
-          >
-            {/* Sticky Header + Search */}
-            <View style={styles.stickyHeaderWrapper}>
-              <LinearGradient
-                colors={['#9D2828', '#191919']} // Sesuaikan warna gradient di sini
-                style={{ flex: 1, paddingBottom: 10 }}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-              >
-                {/* Header */}
-                <Header navigation={navigation} showBack={true} />
-                {/* Search Bar */}
-                <View style={styles.greetingBox}>
-                  <Text style={styles.sectionTitle}>Video</Text>
-                  <View style={styles.searchContainer}>
-                    <TextInput
-                      style={styles.searchInput}
-                      placeholder="Search"
-                      placeholderTextColor="#fff"
-                      value={searchQuery}
-                      onChangeText={setSearchQuery}
-                    />
-                    <Ionicons name="search-outline" size={18} color="#fff" />
+          {loading ? (
+            <View style={styles.loaderContainer}>
+              <ActivityIndicator size="large" color="#fff" />
+              <Text style={{ color: '#fff', marginTop: 10 }}>Loading...</Text>
+            </View>
+          ) : (
+            <ScrollView
+              ref={scrollRef}
+              onScroll={handleScroll}
+              scrollEventThrottle={16}
+              contentContainerStyle={{ paddingBottom: 50 }}
+              stickyHeaderIndices={[0]}
+              refreshControl={
+                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+              }
+            >
+              {/* Sticky Header + Search */}
+              <View style={styles.stickyHeaderWrapper}>
+                <LinearGradient
+                  colors={['#9D2828', '#191919']}
+                  style={{ flex: 1, paddingBottom: 10 }}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                >
+                  <Header navigation={navigation} showBack={true} />
+                  <View style={styles.greetingBox}>
+                    <Text style={styles.sectionTitle}>Video</Text>
+                    <View style={styles.searchContainer}>
+                      <TextInput
+                        style={styles.searchInput}
+                        placeholder="Search"
+                        placeholderTextColor="#fff"
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
+                      />
+                      <Ionicons name="search-outline" size={18} color="#fff" />
+                    </View>
                   </View>
-                </View>
-              </LinearGradient>
-            </View>
-
-            {/* Filter */}
-            <View style={styles.mainContent}>
-              <View style={styles.filterContainer}>
-                <Text style={styles.sectionTitle2}>Daftar Video</Text>
-                <TouchableOpacity
-                  style={[
-                    styles.filterButton,
-                    filterType === 'Semua' && styles.filterActive,
-                  ]}
-                  onPress={() => setFilterType('Semua')}
-                >
-                  <Text
-                    style={[
-                      styles.filterText,
-                      filterType === 'Semua' && styles.filterTextActive,
-                    ]}
-                  >
-                    Semua
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.filterButton,
-                    filterType === 'Baru' && styles.filterActive,
-                  ]}
-                  onPress={() => setFilterType('Baru')}
-                >
-                  <Text
-                    style={[
-                      styles.filterText,
-                      filterType === 'Baru' && styles.filterTextActive,
-                    ]}
-                  >
-                    Baru di Tonton
-                  </Text>
-                </TouchableOpacity>
+                </LinearGradient>
               </View>
 
-              {/* Video List */}
-              <View style={styles.videoList}>
-                {filteredList.map(item => (
+              {/* Filter */}
+              <View style={styles.mainContent}>
+                <View style={styles.filterContainer}>
+                  <Text style={styles.sectionTitle2}>Daftar Video</Text>
                   <TouchableOpacity
-                    key={item.id_materi}
-                    onPress={() =>
-                      navigation.navigate('VideoViewer', {
-                        id_materi: item.id_materi,
-                        title: item.judul,
-                        url_file: item.url_file,
-                        channel: 'UKAI SYNDROME',
-                      })
-                    }
+                    style={[
+                      styles.filterButton,
+                      filterType === 'Semua' && styles.filterActive,
+                    ]}
+                    onPress={() => setFilterType('Semua')}
                   >
-                    <View style={styles.thumbnailWrapper}>
-                      <Image
-                        source={require('../img/logo_putih.png')}
-                        style={styles.thumbnail}
-                      />
-                    </View>
-                    <View style={styles.videoInfoRow}>
-                      <Avatar size={35} initial="U" />
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.videoTitle} numberOfLines={2}>
-                          {item.judul}
-                        </Text>
-                        <Text style={styles.videoMeta}>
-                          UKAI SYNDROME {'  '}
-                        </Text>
-                      </View>
-                      <Ionicons
-                        name="ellipsis-vertical"
-                        size={18}
-                        color="#555"
-                      />
-                    </View>
+                    <Text
+                      style={[
+                        styles.filterText,
+                        filterType === 'Semua' && styles.filterTextActive,
+                      ]}
+                    >
+                      Semua
+                    </Text>
                   </TouchableOpacity>
-                ))}
+                  <TouchableOpacity
+                    style={[
+                      styles.filterButton,
+                      filterType === 'Baru' && styles.filterActive,
+                    ]}
+                    onPress={() => setFilterType('Baru')}
+                  >
+                    <Text
+                      style={[
+                        styles.filterText,
+                        filterType === 'Baru' && styles.filterTextActive,
+                      ]}
+                    >
+                      Baru di Tonton
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Video List */}
+                <View style={styles.videoList}>
+                  {filteredList.length === 0 ? (
+                    <View style={{ alignItems: 'center', marginTop: 50 }}>
+                      <Text style={{ color: '#555' }}>
+                        Tidak ada materi tersedia
+                      </Text>
+                    </View>
+                  ) : (
+                    filteredList.map(item => (
+                      <TouchableOpacity
+                        key={item.id_materi}
+                        onPress={() =>
+                          navigation.navigate('VideoViewer', {
+                            id_materi: item.id_materi,
+                            title: item.judul,
+                            url_file: item.url_file,
+                            channel: 'UKAI SYNDROME',
+                          })
+                        }
+                      >
+                        <View style={styles.thumbnailWrapper}>
+                          <Image
+                            source={require('../img/logo_putih.png')}
+                            style={styles.thumbnail}
+                          />
+                        </View>
+                        <View style={styles.videoInfoRow}>
+                          <Avatar size={35} initial="U" />
+                          <View style={{ flex: 1 }}>
+                            <Text style={styles.videoTitle} numberOfLines={2}>
+                              {item.judul}
+                            </Text>
+                            <Text style={styles.videoMeta}>UKAI SYNDROME</Text>
+                          </View>
+                          <Ionicons
+                            name="ellipsis-vertical"
+                            size={18}
+                            color="#555"
+                          />
+                        </View>
+                      </TouchableOpacity>
+                    ))
+                  )}
+                </View>
               </View>
-            </View>
-          </ScrollView>
+            </ScrollView>
+          )}
+
           {/* Scroll to Top */}
           <Animated.View style={[styles.scrollTopBtn, { opacity: fadeAnim }]}>
             <TouchableOpacity onPress={scrollToTop}>
@@ -264,7 +296,11 @@ const styles = StyleSheet.create({
   stickyHeaderWrapper: {
     zIndex: 100,
   },
-
+  loaderContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   greetingBox: { paddingHorizontal: 20 },
   sectionTitle: {
     fontSize: 18,
@@ -324,12 +360,6 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     paddingTop: 8,
     gap: 8,
-  },
-  channelAvatar: {
-    width: 35,
-    height: 35,
-    borderRadius: 50,
-    backgroundColor: '#ddd',
   },
   videoTitle: {
     fontSize: 15,

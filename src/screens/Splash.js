@@ -1,19 +1,50 @@
 import { StackActions } from '@react-navigation/native';
 import React, { useEffect } from 'react';
-import { View, StyleSheet, Image, Animated } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  Image,
+  Animated,
+  StatusBar,
+  Text,
+} from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Splash = ({ navigation }) => {
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
+  const scaleAnim = React.useRef(new Animated.Value(0.5)).current; // Untuk animasi skala logo
+  const translateY = React.useRef(new Animated.Value(100)).current; // Untuk animasi pergerakan logo
+  const textOpacity = React.useRef(new Animated.Value(0)).current; // Untuk animasi teks
 
   useEffect(() => {
-    // animasi fade
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 1500,
-      useNativeDriver: true,
-    }).start();
+    // Menyembunyikan status bar
+    StatusBar.setHidden(true);
+
+    // Animasi fade dan pergerakan logo
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 1500,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: 1500,
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateY, {
+        toValue: 0,
+        duration: 1500,
+        useNativeDriver: true,
+      }),
+      Animated.timing(textOpacity, {
+        toValue: 1,
+        delay: 1200, // Teks muncul setelah logo
+        duration: 800,
+        useNativeDriver: true,
+      }),
+    ]).start();
 
     const checkAuth = async () => {
       try {
@@ -44,6 +75,11 @@ const Splash = ({ navigation }) => {
     };
 
     checkAuth();
+
+    return () => {
+      // Mengembalikan status bar ke kondisi normal setelah keluar dari splash screen
+      StatusBar.setHidden(false);
+    };
   }, []);
 
   return (
@@ -53,7 +89,12 @@ const Splash = ({ navigation }) => {
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
     >
-      <Animated.View style={{ opacity: fadeAnim, alignItems: 'center' }}>
+      <Animated.View
+        style={{
+          opacity: fadeAnim,
+          transform: [{ scale: scaleAnim }, { translateY }],
+        }}
+      >
         <Image source={require('../img/bg_ukai_new.png')} style={styles.logo} />
       </Animated.View>
     </LinearGradient>
@@ -67,11 +108,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logo: {
-    width: 200,
-    height: 80,
-    marginBottom: 30,
-    borderRadius: 30,
+    width: 250,
+    height: 100,
+    borderRadius: 20,
     shadowColor: '#000',
+  },
+  appName: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
+    textTransform: 'uppercase',
+    letterSpacing: 2,
   },
 });
 

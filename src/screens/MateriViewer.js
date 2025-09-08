@@ -3,31 +3,62 @@ import {
   View,
   StyleSheet,
   StatusBar,
-  TouchableOpacity,
-  Text,
-  Alert,
   TouchableWithoutFeedback,
   Keyboard,
   SafeAreaView,
   ActivityIndicator,
-  Image,
+  Text,
+  ScrollView,
+  RefreshControl,
   Dimensions,
+  Alert,
 } from 'react-native';
 import { WebView } from 'react-native-webview';
-import Ionicons from '@react-native-vector-icons/ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Header from '../components/Header';
+import { NativeModules } from 'react-native';
 
-const { width, height } = Dimensions.get('window');
+const { height } = Dimensions.get('window');
 
 const MateriViewer = ({ route, navigation }) => {
+  const { FlagSecure } = NativeModules;
+  const { ScreenRecord } = NativeModules;
   const { url, title } = route.params;
   const [user, setUser] = useState({ name: 'Peserta', paket: 'Premium' });
   const [dropdownVisible, setDropdownVisible] = useState(false);
-  const [loading, setLoading] = useState(true); // state loading
-  const insets = useSafeAreaInsets();
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [webKey, setWebKey] = useState(0); // force reload WebView
+
+  useEffect(() => {
+    // Aktifkan proteksi
+    FlagSecure.enable();
+
+    // Matikan lagi saat keluar
+    return () => {
+      FlagSecure.disable();
+    };
+  }, []);
+
+  useEffect(() => {
+    let interval = setInterval(async () => {
+      try {
+        const rec = await ScreenRecord.isRecording();
+        if (rec) {
+          // mute video
+          setMuted(true);
+        } else {
+          // unmute video
+          setMuted(false);
+        }
+      } catch (e) {
+        console.log('check record err', e);
+      }
+    }, 2000); // cek tiap 2 detik
+
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const getUserData = async () => {
@@ -47,8 +78,10 @@ const MateriViewer = ({ route, navigation }) => {
     getUserData();
   }, []);
 
-  const disableCopyJS = useMemo(() => `...`, []);
-
+  const disableCopyJS = useMemo(
+    () => `document.addEventListener('contextmenu', e => e.preventDefault());`,
+    [],
+  );
   const shouldStart = req => {
     const u = req?.url || '';
     if (
@@ -56,6 +89,7 @@ const MateriViewer = ({ route, navigation }) => {
         u,
       )
     ) {
+      // Cek apakah URL mengandung instruksi download, jika iya, blok
       return false;
     }
     return true;
@@ -63,6 +97,14 @@ const MateriViewer = ({ route, navigation }) => {
 
   const onFileDownload = () => {
     Alert.alert('Akses dibatasi', 'Unduhan file tidak diizinkan.');
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    setTimeout(() => {
+      setWebKey(prev => prev + 1); // reload WebView
+      setRefreshing(false);
+    }, 800);
   };
 
   const watermarkText = `${user.name}•${user.name}`;
@@ -98,40 +140,55 @@ const MateriViewer = ({ route, navigation }) => {
             </Text>
           </LinearGradient>
 
-          {/* Konten */}
-          <View style={{ flex: 1 }}>
-            <WebView
-              source={{ uri: url }}
-              startInLoadingState
-              style={{ flex: 1 }}
-              javaScriptEnabled
-              injectedJavaScriptBeforeContentLoaded={disableCopyJS}
-              injectedJavaScript={disableCopyJS}
-              onShouldStartLoadWithRequest={shouldStart}
-              onFileDownload={onFileDownload}
-              setSupportMultipleWindows={false}
-              javaScriptCanOpenWindowsAutomatically={false}
-              allowFileAccess={false}
-              allowsLinkPreview={false}
-              mediaPlaybackRequiresUserAction
-              originWhitelist={['https://*']}
-              nestedScrollEnabled={true}
-              onLoadStart={() => setLoading(true)}
-              onLoadEnd={() => setLoading(false)}
-            />
+          {/* Konten dengan Swipe Refresh */}
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={{ flexGrow: 1 }}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
+          >
+            {url ? (
+              <View style={{ flex: 1, minHeight: height - 150 }}>
+                <WebView
+                  key={webKey}
+                  source={{ uri: url }}
+                  startInLoadingState
+                  style={{ flex: 1 }}
+                  javaScriptEnabled
+                  injectedJavaScriptBeforeContentLoaded={disableCopyJS}
+                  injectedJavaScript={disableCopyJS}
+                  onShouldStartLoadWithRequest={shouldStart}
+                  onFileDownload={onFileDownload}
+                  setSupportMultipleWindows={false}
+                  javaScriptCanOpenWindowsAutomatically={false}
+                  allowFileAccess={false}
+                  allowsLinkPreview={false}
+                  mediaPlaybackRequiresUserAction
+                  originWhitelist={['https://*']}
+                  nestedScrollEnabled
+                  onLoadStart={() => setLoading(true)}
+                  onLoadEnd={() => setLoading(false)}
+                />
 
-            {/* Loading Spinner */}
-            {loading && (
-              <View style={styles.loadingOverlay}>
-                <ActivityIndicator size="large" color="#9D2828" />
+                {/* Loading Spinner */}
+                {loading && (
+                  <View style={styles.loadingOverlay}>
+                    <ActivityIndicator size="large" color="#9D2828" />
+                  </View>
+                )}
+
+                {/* Watermark */}
+                <View pointerEvents="none" style={styles.watermarkOverlay}>
+                  {watermarks}
+                </View>
+              </View>
+            ) : (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>Tidak ada materi tersedia</Text>
               </View>
             )}
-
-            {/* Watermark */}
-            <View pointerEvents="none" style={styles.watermarkOverlay}>
-              {watermarks}
-            </View>
-          </View>
+          </ScrollView>
         </View>
       </TouchableWithoutFeedback>
     </SafeAreaView>
@@ -166,6 +223,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.6)',
+  },
+  emptyContainer: {
+    flex: 1,
+    height: 400,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 14,
+    color: '#555',
   },
 });
 

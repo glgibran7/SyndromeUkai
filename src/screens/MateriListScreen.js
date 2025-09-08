@@ -1,17 +1,18 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
   ScrollView,
-  Image,
   TouchableOpacity,
   StyleSheet,
   Dimensions,
-  StatusBar,
   TextInput,
   TouchableWithoutFeedback,
   Keyboard,
-  SafeAreaView,
+  RefreshControl,
+  ActivityIndicator,
+  Modal,
+  Alert,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -19,7 +20,7 @@ import Api from '../utils/Api';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import Header from '../components/Header';
 
-const { height, width } = Dimensions.get('window');
+const { height } = Dimensions.get('window');
 
 const MateriListScreen = ({ route, navigation }) => {
   const { id_modul } = route.params;
@@ -27,42 +28,63 @@ const MateriListScreen = ({ route, navigation }) => {
   const [filteredList, setFilteredList] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('Semua');
-  const [user, setUser] = useState({ name: 'Peserta', paket: 'Premium' });
+  const [user, setUser] = useState({ name: 'Peserta', role: 'peserta' });
   const [dropdownVisible, setDropdownVisible] = useState(false);
 
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // --- Tambah Materi ---
+  const [addModal, setAddModal] = useState(false);
+  const [judul, setJudul] = useState('');
+  const [urlFile, setUrlFile] = useState('');
+  const [tipeMateri, setTipeMateri] = useState('document');
+  const [viewerOnly, setViewerOnly] = useState(false);
+  const [addLoading, setAddLoading] = useState(false);
+
+  // === Fetch Materi ===
+  const fetchMateri = async (role, modulId) => {
+    try {
+      setLoading(true);
+      const endpoint = role === 'mentor' ? '/materi/mentor' : '/materi/peserta';
+      const res = await Api.get(endpoint);
+
+      if (res.data.status === 'success') {
+        const filtered = res.data.data.filter(
+          m => m.id_modul === modulId && m.tipe_materi === 'document',
+        );
+        setMateriList(filtered);
+        setFilteredList(filtered);
+      }
+    } catch (error) {
+      console.error('Gagal mengambil data materi:', error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const getUserData = async () => {
+    try {
+      const storedUser = await AsyncStorage.getItem('user');
+      if (storedUser) {
+        const parsedUser = JSON.parse(storedUser);
+        setUser({
+          name: parsedUser.nama || 'Peserta',
+          role: parsedUser.role || 'peserta',
+        });
+        fetchMateri(parsedUser.role || 'peserta', id_modul);
+      } else {
+        fetchMateri('peserta', id_modul);
+      }
+    } catch (error) {
+      console.error('Gagal mengambil data user:', error);
+      fetchMateri('peserta', id_modul);
+    }
+  };
+
   useEffect(() => {
-    const getUserData = async () => {
-      try {
-        const storedUser = await AsyncStorage.getItem('user');
-        if (storedUser) {
-          const parsedUser = JSON.parse(storedUser);
-          setUser({
-            name: parsedUser.nama || 'Peserta',
-            paket: 'Premium',
-          });
-        }
-      } catch (error) {
-        console.error('Gagal mengambil data user:', error);
-      }
-    };
-
-    const getMateri = async () => {
-      try {
-        const res = await Api.get('/materi/peserta');
-        if (res.data.status === 'success') {
-          const filtered = res.data.data.filter(
-            m => m.id_modul === id_modul && m.tipe_materi === 'document',
-          );
-          setMateriList(filtered);
-          setFilteredList(filtered);
-        }
-      } catch (error) {
-        console.error('Gagal mengambil data materi:', error);
-      }
-    };
-
     getUserData();
-    getMateri();
   }, [id_modul]);
 
   // Search & filter
@@ -79,6 +101,42 @@ const MateriListScreen = ({ route, navigation }) => {
     setFilteredList(data);
   }, [searchQuery, filterType, materiList]);
 
+  // Swipe to refresh
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchMateri(user.role, id_modul);
+  }, [user.role, id_modul]);
+
+  // === Submit Materi ===
+  const handleAddMateri = async () => {
+    if (!judul || !urlFile) {
+      Alert.alert('Error', 'Judul dan URL wajib diisi');
+      return;
+    }
+    try {
+      setAddLoading(true);
+      const payload = {
+        id_modul,
+        tipe_materi: 'document', // 🔒 fix document saja
+        judul,
+        url_file: urlFile,
+        visibility: 'open',
+        viewer_only: viewerOnly,
+      };
+      await Api.post('/materi/mentor', payload);
+      setAddModal(false);
+      setJudul('');
+      setUrlFile('');
+      setViewerOnly(false);
+      fetchMateri(user.role, id_modul);
+    } catch (err) {
+      console.error('Gagal tambah materi:', err.response?.data || err.message);
+      Alert.alert('Error', 'Gagal menambah materi');
+    } finally {
+      setAddLoading(false);
+    }
+  };
+
   return (
     <TouchableWithoutFeedback
       onPress={() => {
@@ -92,13 +150,21 @@ const MateriListScreen = ({ route, navigation }) => {
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
       >
-        <ScrollView style={{ flex: 1 }} stickyHeaderIndices={[0]}>
+        <ScrollView
+          style={{ flex: 1 }}
+          stickyHeaderIndices={[0]}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        >
           {/* Header */}
           <Header navigation={navigation} showBack={true} />
 
           {/* Title & Search */}
           <View style={styles.greetingBox}>
-            <Text style={styles.sectionTitle}>Materi</Text>
+            <Text style={styles.sectionTitle}>
+              Materi ({user.role === 'mentor' ? 'Mentor' : 'Peserta'})
+            </Text>
             <View style={styles.searchContainer}>
               <TextInput
                 style={styles.searchInput}
@@ -113,91 +179,192 @@ const MateriListScreen = ({ route, navigation }) => {
 
           {/* Main Content */}
           <View style={styles.mainContent}>
-            {/* Filter */}
-            <View style={styles.filterContainer}>
-              <Text style={styles.sectionTitle2}>Daftar Materi</Text>
+            {loading ? (
+              <ActivityIndicator size="large" color="#9D2828" />
+            ) : (
+              <>
+                {/* Filter + Tambah Materi */}
+                <View style={styles.filterContainer}>
+                  <Text style={styles.sectionTitle2}>Daftar Materi</Text>
 
-              <TouchableOpacity
-                style={[
-                  styles.filterButton,
-                  filterType === 'Semua' && styles.filterActive,
-                ]}
-                onPress={() => setFilterType('Semua')}
-              >
-                <Text
-                  style={[
-                    styles.filterText,
-                    filterType === 'Semua' && styles.filterTextActive,
-                  ]}
-                >
-                  Semua
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.filterButton,
-                  filterType === 'Baru' && styles.filterActive,
-                ]}
-                onPress={() => setFilterType('Baru')}
-              >
-                <Text
-                  style={[
-                    styles.filterText,
-                    filterType === 'Baru' && styles.filterTextActive,
-                  ]}
-                >
-                  Baru Dibaca
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* List Card */}
-            <View style={styles.menuGrid}>
-              {filteredList.map(item => (
-                <TouchableOpacity
-                  key={item.id_materi}
-                  activeOpacity={0.8}
-                  onPress={() =>
-                    navigation.navigate('MateriViewer', {
-                      url: item.url_file,
-                      title: item.judul,
-                    })
-                  }
-                >
-                  <LinearGradient
-                    colors={['#B71C1C', '#7B0D0D']}
-                    style={styles.menuItem}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
+                  <TouchableOpacity
+                    style={[
+                      styles.filterButton,
+                      filterType === 'Semua' && styles.filterActive,
+                    ]}
+                    onPress={() => setFilterType('Semua')}
                   >
-                    <View
-                      style={{ flexDirection: 'row', alignItems: 'center' }}
+                    <Text
+                      style={[
+                        styles.filterText,
+                        filterType === 'Semua' && styles.filterTextActive,
+                      ]}
                     >
-                      <Ionicons
-                        name="document-text-outline"
-                        size={28}
-                        color="#fff"
-                        style={{ marginRight: 10 }}
-                      />
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.menuTitle}>{item.judul}</Text>
-                        <Text style={styles.menuDesc}>{item.tipe_materi}</Text>
-                      </View>
-                    </View>
-                  </LinearGradient>
-                </TouchableOpacity>
-              ))}
-            </View>
+                      Semua
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.filterButton,
+                      filterType === 'Baru' && styles.filterActive,
+                    ]}
+                    onPress={() => setFilterType('Baru')}
+                  >
+                    <Text
+                      style={[
+                        styles.filterText,
+                        filterType === 'Baru' && styles.filterTextActive,
+                      ]}
+                    >
+                      Baru Dibaca
+                    </Text>
+                  </TouchableOpacity>
+
+                  {user.role === 'mentor' && (
+                    <TouchableOpacity
+                      style={[
+                        styles.filterButton,
+                        { backgroundColor: '#9D2828' },
+                      ]}
+                      onPress={() => setAddModal(true)}
+                    >
+                      <Text style={{ color: '#fff', fontSize: 12 }}>
+                        + Materi
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                {/* List Card */}
+                <View style={styles.menuGrid}>
+                  {filteredList.length === 0 ? (
+                    <Text style={{ textAlign: 'center', color: '#555' }}>
+                      Tidak ada materi tersedia
+                    </Text>
+                  ) : (
+                    filteredList.map(item => (
+                      <TouchableOpacity
+                        key={item.id_materi}
+                        activeOpacity={0.8}
+                        onPress={() =>
+                          navigation.navigate('MateriViewer', {
+                            url: item.url_file,
+                            title: item.judul,
+                          })
+                        }
+                      >
+                        <LinearGradient
+                          colors={['#B71C1C', '#7B0D0D']}
+                          style={styles.menuItem}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 1 }}
+                        >
+                          <View
+                            style={{
+                              flexDirection: 'row',
+                              alignItems: 'center',
+                            }}
+                          >
+                            <Ionicons
+                              name="document-text-outline"
+                              size={28}
+                              color="#fff"
+                              style={{ marginRight: 10 }}
+                            />
+                            <View style={{ flex: 1 }}>
+                              <Text style={styles.menuTitle}>{item.judul}</Text>
+                              <Text style={styles.menuDesc}>
+                                {item.tipe_materi}
+                              </Text>
+                            </View>
+                          </View>
+                        </LinearGradient>
+                      </TouchableOpacity>
+                    ))
+                  )}
+                </View>
+              </>
+            )}
           </View>
         </ScrollView>
+
+        {/* Modal Tambah Materi */}
+        <Modal
+          visible={addModal}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => setAddModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalBox}>
+              <Text style={styles.modalTitle}>Tambah Materi</Text>
+              <TextInput
+                style={styles.modalInput}
+                placeholder="Judul"
+                value={judul}
+                onChangeText={setJudul}
+              />
+              <TextInput
+                style={styles.modalInput}
+                placeholder="URL File"
+                value={urlFile}
+                onChangeText={setUrlFile}
+              />
+              <TouchableOpacity
+                onPress={() => setViewerOnly(!viewerOnly)}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  marginBottom: 15,
+                }}
+              >
+                <Ionicons
+                  name={viewerOnly ? 'checkbox' : 'square-outline'}
+                  size={20}
+                  color="#000"
+                  style={{ marginRight: 8 }}
+                />
+                <Text>Viewer Only</Text>
+              </TouchableOpacity>
+
+              <View
+                style={{ flexDirection: 'row', justifyContent: 'flex-end' }}
+              >
+                <TouchableOpacity
+                  onPress={() => setAddModal(false)}
+                  style={[styles.filterButton, { marginRight: 10 }]}
+                >
+                  <Text>Batal</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={handleAddMateri}
+                  disabled={addLoading}
+                  style={[
+                    styles.filterButton,
+                    {
+                      backgroundColor: '#9D2828',
+                      opacity: addLoading ? 0.7 : 1,
+                    },
+                  ]}
+                >
+                  {addLoading ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <Text style={{ color: '#fff' }}>Simpan</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </LinearGradient>
     </TouchableWithoutFeedback>
   );
 };
 
 const styles = StyleSheet.create({
-  greetingBox: { paddingHorizontal: 10 },
+  greetingBox: { paddingHorizontal: 20 },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
@@ -215,7 +382,7 @@ const styles = StyleSheet.create({
   mainContent: {
     backgroundColor: 'white',
     paddingVertical: 20,
-    paddingHorizontal: 10,
+    paddingHorizontal: 20,
     marginTop: 30,
     minHeight: height - 200,
     height: '100%',
@@ -224,6 +391,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 15,
+    flexWrap: 'wrap',
     gap: 10,
   },
   sectionTitle2: {
@@ -255,6 +423,26 @@ const styles = StyleSheet.create({
     color: '#fff',
     marginTop: 2,
     textTransform: 'capitalize',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalBox: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 12,
+    width: '90%',
+  },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 15 },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 15,
   },
 });
 

@@ -7,9 +7,8 @@ import {
   TouchableOpacity,
   StyleSheet,
   Dimensions,
-  StatusBar,
-  ActivityIndicator,
   SafeAreaView,
+  RefreshControl,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { FlatList } from 'react-native';
@@ -22,9 +21,8 @@ const { width, height } = Dimensions.get('window');
 
 const Home = ({ navigation }) => {
   const flatListRef = useRef(null);
+  const [refreshing, setRefreshing] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [menuVisible, setMenuVisible] = useState(false);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -64,6 +62,12 @@ const Home = ({ navigation }) => {
 
     getUserData();
   }, []);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await getUserData(); // misalnya refresh user data
+    setRefreshing(false);
+  };
 
   const menus = [
     {
@@ -108,7 +112,12 @@ const Home = ({ navigation }) => {
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
       >
-        <ScrollView style={{ flex: 1 }}>
+        <ScrollView
+          style={{ flex: 1 }}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        >
           {/* Header */}
           <Header navigation={navigation} />
 
