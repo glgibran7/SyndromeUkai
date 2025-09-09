@@ -1,4 +1,3 @@
-// [Import Statements Tetap Sama]
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
@@ -12,17 +11,20 @@ import {
   RefreshControl,
   Modal,
   TextInput,
-  Alert,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Api from '../utils/Api';
 import Header from '../components/Header';
+import { useToast } from '../context/ToastContext';
+import Ionicons from '@react-native-vector-icons/ionicons';
 
 const { width, height } = Dimensions.get('window');
 
 const MateriScreen = ({ navigation }) => {
+  const toast = useToast();
   const [modulList, setModulList] = useState([]);
+  const [filteredList, setFilteredList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [user, setUser] = useState({});
@@ -34,6 +36,7 @@ const MateriScreen = ({ navigation }) => {
   const [newTitle, setNewTitle] = useState('');
   const [newDesc, setNewDesc] = useState('');
   const [visibility, setVisibility] = useState('open');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const getUserData = async () => {
     try {
@@ -71,8 +74,13 @@ const MateriScreen = ({ navigation }) => {
       }));
 
       setModulList(formatted);
+      setFilteredList(formatted);
     } catch (error) {
-      console.error('Gagal mengambil data modul:', error);
+      toast.show({
+        type: 'error',
+        text1: 'Gagal',
+        text2: 'Tidak bisa mengambil data modul',
+      });
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -89,6 +97,17 @@ const MateriScreen = ({ navigation }) => {
     getModul();
   }, []);
 
+  useEffect(() => {
+    if (!searchQuery) {
+      setFilteredList(modulList);
+    } else {
+      const filtered = modulList.filter(item =>
+        item.title.toLowerCase().includes(searchQuery.toLowerCase()),
+      );
+      setFilteredList(filtered);
+    }
+  }, [searchQuery, modulList]);
+
   const handleChangeVisibility = async (id_modul, newStatus) => {
     try {
       await Api.put(`/modul/${id_modul}/visibility`, { visibility: newStatus });
@@ -97,8 +116,9 @@ const MateriScreen = ({ navigation }) => {
           m.id_modul === id_modul ? { ...m, visibility: newStatus } : m,
         ),
       );
+      toast.show(`Visibility modul diubah ke ${newStatus}`, 'success');
     } catch (err) {
-      Alert.alert('Error', 'Gagal mengubah visibility modul.');
+      toast.show('Tidak bisa mengubah visibility modul', 'error');
     }
   };
 
@@ -124,14 +144,15 @@ const MateriScreen = ({ navigation }) => {
       });
       setEditModal(false);
       getModul();
+      toast.show('Modul berhasil diperbarui', 'success');
     } catch (err) {
-      Alert.alert('Error', 'Gagal menyimpan modul.');
+      toast.show('Tidak bisa menyimpan modul', 'error');
     }
   };
 
   const handleAddSubmit = async () => {
     if (!newTitle || !newDesc) {
-      Alert.alert('Error', 'Harap isi semua field.');
+      toast.show('Harap isi semua field', 'warning');
       return;
     }
     try {
@@ -145,8 +166,9 @@ const MateriScreen = ({ navigation }) => {
       setNewTitle('');
       setNewDesc('');
       getModul();
+      toast.show('Modul baru berhasil ditambahkan', 'success');
     } catch (err) {
-      Alert.alert('Error', 'Gagal menambah modul.');
+      toast.show('Tidak bisa menambah modul', 'error');
     } finally {
       setAddLoading(false);
     }
@@ -188,6 +210,18 @@ const MateriScreen = ({ navigation }) => {
         <View style={styles.greetingBox}>
           <Text style={styles.greeting}>Materi</Text>
           <Text style={styles.subtext}>Kumpulan materi bacaan lengkap</Text>
+
+          {/* Search bar */}
+          <View style={styles.searchContainer}>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Cari modul..."
+              placeholderTextColor="#fff"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+            <Ionicons name="search-outline" size={18} color="#fff" />
+          </View>
         </View>
 
         <View style={styles.mainContent}>
@@ -206,12 +240,12 @@ const MateriScreen = ({ navigation }) => {
           </View>
 
           <View style={styles.menuGrid}>
-            {modulList.length === 0 ? (
+            {filteredList.length === 0 ? (
               <Text style={{ textAlign: 'center', color: '#555' }}>
                 Tidak ada modul tersedia
               </Text>
             ) : (
-              modulList.map((item, index) => (
+              filteredList.map((item, index) => (
                 <View
                   key={index}
                   style={[
@@ -288,6 +322,7 @@ const MateriScreen = ({ navigation }) => {
           </View>
         </View>
       </ScrollView>
+
       {/* Modal Tambah */}
       <Modal visible={addModal} transparent animationType="slide">
         <View style={styles.modalOverlay}>
@@ -335,6 +370,7 @@ const MateriScreen = ({ navigation }) => {
           </View>
         </View>
       </Modal>
+
       {/* Modal Edit */}
       <Modal visible={editModal} transparent animationType="slide">
         <View style={styles.modalOverlay}>
@@ -421,6 +457,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   subtext: { fontSize: 13, color: '#fff', marginTop: 5, textAlign: 'center' },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0b1',
+    borderRadius: 15,
+    paddingHorizontal: 10,
+    marginTop: 15,
+  },
+  searchInput: { flex: 1, height: 40, color: '#000' },
   mainContent: {
     backgroundColor: 'white',
     paddingVertical: 20,

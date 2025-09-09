@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  StatusBar,
 } from 'react-native';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import { useNavigation } from '@react-navigation/native';
@@ -23,6 +24,8 @@ const Profile = () => {
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
@@ -55,13 +58,16 @@ const Profile = () => {
             <Ionicons name="chevron-forward" size={20} color="#444" />
           </TouchableOpacity> */}
 
-          <TouchableOpacity style={styles.menuItem}>
+          {/* <TouchableOpacity style={styles.menuItem}>
             <Ionicons name="globe-outline" size={20} color="#444" />
             <Text style={styles.menuText}>Bahasa</Text>
             <Ionicons name="chevron-forward" size={20} color="#444" />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
 
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => navigation.navigate('AboutScreen')}
+          >
             <Ionicons
               name="information-circle-outline"
               size={20}
@@ -71,7 +77,10 @@ const Profile = () => {
             <Ionicons name="chevron-forward" size={20} color="#444" />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => navigation.navigate('HelpScreen')}
+          >
             <Ionicons name="help-circle-outline" size={20} color="#444" />
             <Text style={styles.menuText}>Bantuan</Text>
             <Ionicons name="chevron-forward" size={20} color="#444" />

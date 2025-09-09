@@ -11,18 +11,22 @@ import {
   RefreshControl,
   Modal,
   TextInput,
-  Alert,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Api from '../utils/Api';
 import Header from '../components/Header';
 import DropDownPicker from 'react-native-dropdown-picker';
+import { useToast } from '../context/ToastContext';
+import Ionicons from '@react-native-vector-icons/ionicons';
 
 const { width, height } = Dimensions.get('window');
 
 const VideoScreen = ({ navigation }) => {
+  const toast = useToast();
+
   const [modulList, setModulList] = useState([]);
+  const [filteredList, setFilteredList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [user, setUser] = useState({});
@@ -35,11 +39,15 @@ const VideoScreen = ({ navigation }) => {
   const [newDesc, setNewDesc] = useState('');
   const [newOrder, setNewOrder] = useState('');
   const [visibility, setVisibility] = useState('open');
+  const [addLoading, setAddLoading] = useState(false);
 
   // dropdown state
   const [open, setOpen] = useState(false);
   const [kelasItems, setKelasItems] = useState([]);
   const [selectedClass, setSelectedClass] = useState(null);
+
+  // search state
+  const [searchQuery, setSearchQuery] = useState('');
 
   const getUserData = async () => {
     try {
@@ -50,7 +58,7 @@ const VideoScreen = ({ navigation }) => {
         return parsedUser;
       }
     } catch (error) {
-      console.error('Gagal mengambil data user:', error);
+      toast.show('Gagal mengambil data user', { type: 'danger' });
     }
     return null;
   };
@@ -77,32 +85,45 @@ const VideoScreen = ({ navigation }) => {
       }));
 
       setModulList(formatted);
+      setFilteredList(formatted);
     } catch (error) {
-      console.error('Gagal mengambil data modul:', error);
+      toast.show('Gagal mengambil data modul', { type: 'danger' });
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   };
 
-  const getKelasOptions = async () => {
-    try {
-      const res = await Api.get('/paket-kelas');
-      const formatted = (res.data.data || []).map(kelas => ({
-        label: kelas.nama_kelas,
-        value: kelas.id_paketkelas,
-      }));
-      setKelasItems(formatted);
-    } catch (err) {
-      console.error('Gagal ambil kelas:', err);
-    }
-  };
+  // const getKelasOptions = async () => {
+  //   try {
+  //     const res = await Api.get('/paket-kelas');
+  //     const formatted = (res.data.data || []).map(kelas => ({
+  //       label: kelas.nama_kelas,
+  //       value: kelas.id_paketkelas,
+  //     }));
+  //     setKelasItems(formatted);
+  //   } catch (err) {
+  //     toast.show('Gagal mengambil data kelas', { type: 'danger' });
+  //   }
+  // };
 
   useEffect(() => {
     getUserData();
     getModul();
-    getKelasOptions();
+    //getKelasOptions();
   }, []);
+
+  // filter by search
+  useEffect(() => {
+    if (!searchQuery) {
+      setFilteredList(modulList);
+    } else {
+      const filtered = modulList.filter(item =>
+        item.title.toLowerCase().includes(searchQuery.toLowerCase()),
+      );
+      setFilteredList(filtered);
+    }
+  }, [searchQuery, modulList]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -119,8 +140,9 @@ const VideoScreen = ({ navigation }) => {
           m.id_modul === id_modul ? { ...m, visibility: newStatus } : m,
         ),
       );
+      toast.show('Berhasil ubah visibility modul', { type: 'success' });
     } catch (err) {
-      Alert.alert('Error', 'Gagal mengubah visibility modul.');
+      toast.show('Gagal mengubah visibility modul', { type: 'danger' });
     }
   };
 
@@ -150,17 +172,19 @@ const VideoScreen = ({ navigation }) => {
 
       setEditModal(false);
       getModul();
+      toast.show('Modul berhasil diperbarui', { type: 'success' });
     } catch (err) {
-      Alert.alert('Error', 'Gagal menyimpan modul.');
+      toast.show('Gagal menyimpan modul', { type: 'danger' });
     }
   };
 
   const handleAddSubmit = async () => {
-    if (!newTitle || !newDesc || !newOrder || !selectedClass) {
-      Alert.alert('Error', 'Harap lengkapi semua field.');
+    if (!newTitle || !newDesc || !selectedClass) {
+      toast.show('Harap lengkapi semua field', { type: 'warning' });
       return;
     }
     try {
+      setAddLoading(true);
       const urutanBaru = modulList.length + 1;
       const payload = {
         judul: newTitle,
@@ -176,8 +200,11 @@ const VideoScreen = ({ navigation }) => {
       setNewOrder('');
       setSelectedClass(null);
       getModul();
+      toast.show('Modul berhasil ditambahkan', { type: 'success' });
     } catch (err) {
-      Alert.alert('Error', 'Gagal menambah modul.');
+      toast.show('Gagal menambah modul', { type: 'danger' });
+    } finally {
+      setAddLoading(false);
     }
   };
 
@@ -219,6 +246,18 @@ const VideoScreen = ({ navigation }) => {
         <View style={styles.greetingBox}>
           <Text style={styles.greeting}>Video</Text>
           <Text style={styles.subtext}>Kumpulan materi video lengkap</Text>
+
+          {/* Search Bar */}
+          <View style={styles.searchContainer}>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Cari modul video..."
+              placeholderTextColor="#fff"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+            <Ionicons name="search-outline" size={18} color="#fff" />
+          </View>
         </View>
 
         <View style={styles.mainContent}>
@@ -237,12 +276,12 @@ const VideoScreen = ({ navigation }) => {
           </View>
 
           <View style={styles.menuGrid}>
-            {modulList.length === 0 ? (
+            {filteredList.length === 0 ? (
               <Text style={{ textAlign: 'center', color: '#555' }}>
                 Tidak ada modul tersedia
               </Text>
             ) : (
-              modulList.map((item, index) => (
+              filteredList.map((item, index) => (
                 <View
                   key={index}
                   style={[
@@ -273,7 +312,14 @@ const VideoScreen = ({ navigation }) => {
                             key={opt}
                             style={[
                               styles.option,
-                              item.visibility === opt && styles.optionActive,
+                              item.visibility === opt && {
+                                backgroundColor:
+                                  opt === 'open'
+                                    ? '#4CAF50'
+                                    : opt === 'hold'
+                                    ? '#FFEB3B'
+                                    : '#F44336',
+                              },
                             ]}
                             onPress={() =>
                               handleChangeVisibility(item.id_modul, opt)
@@ -282,11 +328,14 @@ const VideoScreen = ({ navigation }) => {
                             <Text
                               style={{
                                 color:
-                                  opt === 'open'
-                                    ? 'green'
+                                  item.visibility === opt
+                                    ? '#fff'
+                                    : opt === 'open'
+                                    ? '#4CAF50'
                                     : opt === 'hold'
-                                    ? 'orange'
-                                    : 'red',
+                                    ? '#FBC02D'
+                                    : '#F44336',
+                                fontWeight: 'bold',
                               }}
                             >
                               {opt.toUpperCase()}
@@ -309,14 +358,16 @@ const VideoScreen = ({ navigation }) => {
           </View>
         </View>
       </ScrollView>
+
       {/* Modal Tambah Modul */}
       <Modal visible={addModal} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={{ fontWeight: 'bold', fontSize: 16 }}>
+            <Text style={{ fontWeight: 'bold', fontSize: 24 }}>
               Tambah Modul
             </Text>
 
+            <Text style={styles.keteranganText}>Judul Modul</Text>
             <TextInput
               value={newTitle}
               onChangeText={setNewTitle}
@@ -324,6 +375,8 @@ const VideoScreen = ({ navigation }) => {
               placeholder="Judul Modul"
               placeholderTextColor="#888"
             />
+
+            <Text style={styles.keteranganText}>Deskripsi Modul</Text>
             <TextInput
               value={newDesc}
               onChangeText={setNewDesc}
@@ -333,7 +386,7 @@ const VideoScreen = ({ navigation }) => {
               multiline
             />
 
-            <Text style={{ marginTop: 10 }}>Pilih Kelas</Text>
+            <Text style={styles.keteranganText}>Pilih Kelas</Text>
             <DropDownPicker
               open={open}
               value={selectedClass}
@@ -355,20 +408,30 @@ const VideoScreen = ({ navigation }) => {
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={handleAddSubmit}
-                style={[styles.editButton, { marginLeft: 10 }]}
+                disabled={addLoading}
+                style={[
+                  styles.editButton,
+                  { marginLeft: 10, opacity: addLoading ? 0.7 : 1 },
+                ]}
               >
-                <Text style={{ color: '#fff' }}>Simpan</Text>
+                {addLoading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={{ color: '#fff' }}>Simpan</Text>
+                )}
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
+
       {/* Modal Edit Modul */}
       <Modal visible={editModal} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={{ fontWeight: 'bold', fontSize: 16 }}>Edit Modul</Text>
+            <Text style={{ fontWeight: 'bold', fontSize: 24 }}>Edit Modul</Text>
 
+            <Text style={styles.keteranganText}>Judul Modul</Text>
             <TextInput
               value={newTitle}
               onChangeText={setNewTitle}
@@ -376,6 +439,8 @@ const VideoScreen = ({ navigation }) => {
               placeholder="Judul Modul"
               placeholderTextColor="#888"
             />
+
+            <Text style={styles.keteranganText}>Deskripsi Modul</Text>
             <TextInput
               value={newDesc}
               onChangeText={setNewDesc}
@@ -384,6 +449,8 @@ const VideoScreen = ({ navigation }) => {
               placeholderTextColor="#888"
               multiline
             />
+
+            <Text style={styles.keteranganText}>Urutan Modul</Text>
             <TextInput
               value={newOrder}
               onChangeText={setNewOrder}
@@ -393,25 +460,35 @@ const VideoScreen = ({ navigation }) => {
               keyboardType="numeric"
             />
 
-            <Text style={{ marginTop: 10 }}>Visibility</Text>
+            <Text style={styles.keteranganText}>Visibility</Text>
             <View style={styles.dropdownContainer}>
               {['open', 'hold', 'close'].map(opt => (
                 <TouchableOpacity
                   key={opt}
                   style={[
                     styles.option,
-                    visibility === opt && styles.optionActive,
+                    visibility === opt && {
+                      backgroundColor:
+                        opt === 'open'
+                          ? '#4CAF50'
+                          : opt === 'hold'
+                          ? '#FFEB3B'
+                          : '#F44336',
+                    },
                   ]}
                   onPress={() => setVisibility(opt)}
                 >
                   <Text
                     style={{
                       color:
-                        opt === 'open'
-                          ? 'green'
+                        visibility === opt
+                          ? '#fff'
+                          : opt === 'open'
+                          ? '#4CAF50'
                           : opt === 'hold'
-                          ? 'orange'
-                          : 'red',
+                          ? '#FBC02D'
+                          : '#F44336',
+                      fontWeight: 'bold',
                     }}
                   >
                     {opt.toUpperCase()}
@@ -442,7 +519,7 @@ const VideoScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  greetingBox: { paddingHorizontal: 15 },
+  greetingBox: { paddingHorizontal: 15, marginBottom: 10 },
   greeting: {
     fontSize: 22,
     color: '#fff',
@@ -450,11 +527,20 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   subtext: { fontSize: 13, color: '#fff', marginTop: 5, textAlign: 'center' },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0b1',
+    borderRadius: 15,
+    paddingHorizontal: 10,
+    marginTop: 15,
+  },
+  searchInput: { flex: 1, height: 40, color: '#000' },
   mainContent: {
     backgroundColor: 'white',
     paddingVertical: 20,
     paddingHorizontal: 20,
-    marginTop: 30,
+    marginTop: 20,
     minHeight: height - 200,
   },
   headerRow: {
@@ -507,7 +593,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 2,
   },
-  optionActive: { backgroundColor: '#eee' },
   editButton: {
     marginTop: 8,
     padding: 8,
@@ -540,6 +625,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 6,
+  },
+  keteranganText: {
+    fontSize: 14,
+    color: '#333',
+    marginTop: 10,
+    fontWeight: 'bold',
   },
 });
 

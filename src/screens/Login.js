@@ -56,6 +56,14 @@ const Login = ({ navigation }) => {
 
   const handleLogin = async () => {
     setLoading(true);
+
+    // Check if email or password is empty
+    if (!email || !password) {
+      show('Email atau Password tidak boleh kosong!', 'warning');
+      setLoading(false);
+      return; // Exit early if fields are empty
+    }
+
     try {
       const response = await Api.post('/auth/login/mobile', {
         email,
@@ -79,23 +87,27 @@ const Login = ({ navigation }) => {
           nama,
           email: userEmail,
           role,
-
           nama_kelas,
         }),
       );
 
       show('Login berhasil!', 'success');
 
-      if (role === 'mentor') {
-        navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
-      } else if (role === 'peserta') {
-        if (nama_kelas) {
+      // Switch case to handle different roles
+      switch (role) {
+        case 'mentor':
           navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
-        } else {
-          navigation.reset({ index: 0, routes: [{ name: 'Paket' }] });
-        }
-      } else {
-        show('Role tidak dikenali!', 'warning');
+          break;
+        case 'peserta':
+          if (nama_kelas) {
+            navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
+          } else {
+            navigation.reset({ index: 0, routes: [{ name: 'Paket' }] });
+          }
+          break;
+        default:
+          show('Role tidak dikenali!', 'warning');
+          break;
       }
     } catch (error) {
       console.error('Login gagal:', error);

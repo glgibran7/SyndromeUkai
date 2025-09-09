@@ -60,6 +60,29 @@ const Avatar = ({ name, size = 28 }) => {
 };
 
 const VideoViewer = ({ route, navigation }) => {
+  const [muted, setMuted] = useState(false);
+  const params = route?.params || {};
+  const { id_materi, url_file, title = '', channel = 'UKAI' } = params;
+  const [user, setUser] = useState({
+    id_user: null,
+    nama: 'Peserta',
+    paket: 'Premium',
+  });
+  const [rawComments, setRawComments] = useState([]);
+  const [rootComments, setRootComments] = useState([]);
+  const [displayedRoots, setDisplayedRoots] = useState([]);
+  const [rootPage, setRootPage] = useState(1);
+  const [hasMoreRoots, setHasMoreRoots] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [composeText, setComposeText] = useState('');
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [editingComment, setEditingComment] = useState(null);
+  const [refreshing, setRefreshing] = useState(false); // buat swipe to refresh
+  const [videoLoading, setVideoLoading] = useState(true); // buat spinner saat video loading
+  const [expandedReplies, setExpandedReplies] = useState({});
+  const inputRef = useRef(null);
+
   useEffect(() => {
     // Aktifkan proteksi
     FlagSecure.enable();
@@ -88,31 +111,6 @@ const VideoViewer = ({ route, navigation }) => {
 
     return () => clearInterval(interval);
   }, []);
-
-  const params = route?.params || {};
-  const { id_materi, url_file, title = '', channel = 'UKAI' } = params;
-
-  const [user, setUser] = useState({
-    id_user: null,
-    nama: 'Peserta',
-    paket: 'Premium',
-  });
-
-  const [rawComments, setRawComments] = useState([]);
-  const [rootComments, setRootComments] = useState([]);
-  const [displayedRoots, setDisplayedRoots] = useState([]);
-  const [rootPage, setRootPage] = useState(1);
-  const [hasMoreRoots, setHasMoreRoots] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [sending, setSending] = useState(false);
-  const [composeText, setComposeText] = useState('');
-  const [replyingTo, setReplyingTo] = useState(null);
-  const [editingComment, setEditingComment] = useState(null);
-  const [refreshing, setRefreshing] = useState(false); // buat swipe to refresh
-  const [videoLoading, setVideoLoading] = useState(true); // buat spinner saat video loading
-  const [expandedReplies, setExpandedReplies] = useState({});
-  const inputRef = useRef(null);
-
   const safeFocus = () => {
     if (inputRef.current && typeof inputRef.current.focus === 'function') {
       inputRef.current.focus();

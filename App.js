@@ -3,6 +3,7 @@ import * as React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { ToastProvider } from './src/context/ToastContext';
+import Toast from 'react-native-toast-message';
 
 import Login from './src/screens/Login';
 import SignUp from './src/screens/SignUp';
@@ -13,11 +14,11 @@ import PaketDetail from './src/screens/PaketDetail';
 import MainTabNavigator from './src/navigation/MainTabNavigator';
 import Profile from './src/screens/Profile';
 import ForgotPassword from './src/screens/ForgotPassword';
+import AboutScreen from './src/screens/AboutScreen';
+import HelpScreen from './src/screens/HelpScreen';
 
-// ⬅️ import navigationRef
 import { navigationRef } from './src/utils/NavigationService';
 
-// ⬅️ import AuthProvider
 import { AuthProvider } from './src/context/AuthContext';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -41,7 +42,9 @@ function App() {
               <Stack.Screen name="PaketDetail" component={PaketDetail} />
               <Stack.Screen name="Main" component={MainTabNavigator} />
               <Stack.Screen name="Profile" component={Profile} />
+              <Stack.Screen name="AboutScreen" component={AboutScreen} />
               <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
+              <Stack.Screen name="HelpScreen" component={HelpScreen} />
             </Stack.Navigator>
           </NavigationContainer>
         </AuthProvider>

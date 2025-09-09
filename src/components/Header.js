@@ -22,8 +22,25 @@ const Header = ({ navigation, showBack = false }) => {
   const [notifVisible, setNotifVisible] = useState(false);
   const insets = useSafeAreaInsets();
 
+  // Handle closing of menu when touching outside
+  const closeMenu = () => {
+    setMenuVisible(false);
+    setNotifVisible(false);
+  };
+
+  // Handle menu and notification toggle
+  const toggleMenu = () => {
+    if (notifVisible) setNotifVisible(false); // Close notification if open
+    setMenuVisible(!menuVisible);
+  };
+
+  const toggleNotif = () => {
+    if (menuVisible) setMenuVisible(false); // Close menu if open
+    setNotifVisible(!notifVisible);
+  };
+
   return (
-    <View style={{ zIndex: 1000 }}>
+    <View style={{ zIndex: 1000 }} onStartShouldSetResponder={closeMenu}>
       <StatusBar
         translucent={true}
         backgroundColor="transparent"
@@ -34,10 +51,7 @@ const Header = ({ navigation, showBack = false }) => {
         <TouchableOpacity
           style={styles.overlay}
           activeOpacity={1}
-          onPress={() => {
-            setMenuVisible(false);
-            setNotifVisible(false);
-          }}
+          onPress={closeMenu} // Close both menu and notif when overlay touched
         />
       )}
 
@@ -47,7 +61,7 @@ const Header = ({ navigation, showBack = false }) => {
         end={{ x: 1, y: 0 }}
         style={[styles.header, { paddingTop: insets.top }]}
       >
-        {/* Back button kalau ada */}
+        {/* Back button if available */}
         {showBack && (
           <TouchableOpacity
             onPress={() => navigation.goBack()}
@@ -65,18 +79,20 @@ const Header = ({ navigation, showBack = false }) => {
           />
         </View>
 
-        {/* Notif & User Info */}
+        {/* Notifications & User Info */}
         <View style={styles.rightSection}>
-          {/* Lonceng */}
+          {/* Bell Icon */}
           <TouchableOpacity
             style={{ marginRight: 15 }}
-            onPress={() => setNotifVisible(!notifVisible)}
+            onPress={toggleNotif} // Toggle notification menu
           >
             <Ionicons name="notifications-outline" size={26} color="#fff" />
           </TouchableOpacity>
 
-          {/* Avatar */}
-          <TouchableOpacity onPress={() => setMenuVisible(!menuVisible)}>
+          {/* Avatar Icon */}
+          <TouchableOpacity onPress={toggleMenu}>
+            {' '}
+            {/* Toggle user menu */}
             <View style={styles.avatarInitial}>
               <Text style={styles.avatarText}>
                 {user?.name
@@ -89,7 +105,7 @@ const Header = ({ navigation, showBack = false }) => {
             </View>
           </TouchableOpacity>
 
-          {/* Menu user */}
+          {/* User Menu */}
           {menuVisible && (
             <View style={styles.dropdownMenu}>
               <TouchableOpacity
@@ -126,14 +142,14 @@ const Header = ({ navigation, showBack = false }) => {
             </View>
           )}
 
-          {/* Menu notifikasi */}
+          {/* Notifications Menu */}
           {notifVisible && (
             <View style={styles.dropdownMenu}>
               <TouchableOpacity
                 style={styles.dropdownItem}
                 onPress={() => {
                   setNotifVisible(false);
-                  navigation.navigate('Notifications'); // buat screen notifikasi
+                  navigation.navigate('Notifications'); // go to notification screen
                 }}
               >
                 <Text style={styles.dropdownText}>Lihat Notifikasi</Text>
