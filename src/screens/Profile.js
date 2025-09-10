@@ -47,23 +47,14 @@ const Profile = () => {
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.name}>{user?.name || 'User'}</Text>
+          {/* Nama user dengan kapitalisasi */}
+          <Text style={styles.name}>
+            {user?.name?.toUpperCase() || 'User'.toUpperCase()}
+          </Text>
         </View>
 
         {/* Menu List */}
         <View style={styles.menu}>
-          {/* <TouchableOpacity style={styles.menuItem}>
-            <Ionicons name="star" size={20} color="#444" />
-            <Text style={styles.menuText}>Upgrade Paket</Text>
-            <Ionicons name="chevron-forward" size={20} color="#444" />
-          </TouchableOpacity> */}
-
-          {/* <TouchableOpacity style={styles.menuItem}>
-            <Ionicons name="globe-outline" size={20} color="#444" />
-            <Text style={styles.menuText}>Bahasa</Text>
-            <Ionicons name="chevron-forward" size={20} color="#444" />
-          </TouchableOpacity> */}
-
           <TouchableOpacity
             style={styles.menuItem}
             onPress={() => navigation.navigate('AboutScreen')}

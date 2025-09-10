@@ -261,7 +261,7 @@ const MateriScreen = ({ navigation }) => {
                     }
                   >
                     <Text style={styles.menuTitle}>{item.title}</Text>
-                    <Text style={styles.menuDesc}>{item.desc}</Text>
+                    {/* <Text style={styles.menuDesc}>{item.desc}</Text> */}
                     <View style={styles.menuIconContainer}>
                       <Image source={item.icon} style={styles.menuIcon} />
                     </View>
@@ -493,7 +493,12 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     position: 'relative',
   },
-  menuTitle: { fontWeight: 'bold', fontSize: 16, color: '#700101' },
+  menuTitle: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    color: '#700101',
+    textTransform: 'capitalize',
+  },
   menuDesc: { fontSize: 10, color: '#555', marginTop: 2 },
   menuIcon: {
     width: 50,
