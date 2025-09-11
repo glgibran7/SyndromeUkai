@@ -66,7 +66,6 @@ const VideoViewer = ({ route, navigation }) => {
   const [user, setUser] = useState({
     id_user: null,
     nama: 'Peserta',
-    paket: 'Premium',
   });
   const [rawComments, setRawComments] = useState([]);
   const [rootComments, setRootComments] = useState([]);
@@ -118,22 +117,25 @@ const VideoViewer = ({ route, navigation }) => {
   };
 
   useEffect(() => {
-    (async () => {
+    const fetchProfile = async () => {
       try {
-        const s = await AsyncStorage.getItem('user');
-        if (s) {
-          const p = JSON.parse(s);
-          setUser({
-            id_user: p?.id_user ?? null,
-            nama: p?.nama ?? 'Peserta',
-            paket: p?.paket ?? 'Premium',
-          });
-        }
+        const res = await Api.get('/profile');
+        const profile = res.data.data;
+        setUser({
+          id_user: profile?.id_user ?? null,
+          nama: profile?.nama ?? 'Peserta',
+        });
       } catch (err) {
-        console.warn('read user failed', err);
+        console.error('Gagal fetch profile:', err);
       }
-    })();
-  }, []);
+    };
+
+    fetchProfile();
+
+    // supaya auto update kalau kembali ke halaman ini
+    const unsubscribe = navigation.addListener('focus', fetchProfile);
+    return unsubscribe;
+  }, [navigation]);
 
   useEffect(() => {
     if (!id_materi) return;

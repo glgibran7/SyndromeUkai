@@ -17,7 +17,7 @@ import ForgotPassword from './src/screens/ForgotPassword';
 import AboutScreen from './src/screens/AboutScreen';
 import HelpScreen from './src/screens/HelpScreen';
 import ChangePassword from './src/screens/ChangePasswordScreen';
-import ChangeName from './src/screens/ChangeNameScreen';
+import EditProfile from './src/screens/EditProfileScreen';
 
 import { navigationRef } from './src/utils/NavigationService';
 
@@ -47,7 +47,7 @@ function App() {
               <Stack.Screen name="AboutScreen" component={AboutScreen} />
               <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
               <Stack.Screen name="HelpScreen" component={HelpScreen} />
-              <Stack.Screen name="ChangeName" component={ChangeName} />
+              <Stack.Screen name="EditProfile" component={EditProfile} />
               <Stack.Screen name="ChangePassword" component={ChangePassword} />
             </Stack.Navigator>
           </NavigationContainer>

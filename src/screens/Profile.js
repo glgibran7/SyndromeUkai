@@ -1,4 +1,4 @@
-import React, { useContext, useState, useRef } from 'react';
+import React, { useContext, useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -15,15 +15,39 @@ import Ionicons from '@react-native-vector-icons/ionicons';
 import { useNavigation } from '@react-navigation/native';
 import { AuthContext } from '../context/AuthContext';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
-import ToastMessage from '../components/ToastMessage'; // pakai toast yang sudah kamu buat
+import ToastMessage from '../components/ToastMessage';
+import Api from '../utils/Api'; // ✅ tambahkan ini
 
 const Profile = () => {
   const navigation = useNavigation();
-  const { user, handleLogout } = useContext(AuthContext);
+  const { user, setUser, handleLogout } = useContext(AuthContext);
   const [profileImage, setProfileImage] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [previewVisible, setPreviewVisible] = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
+
+  // ambil data profile setiap kali halaman ini diakses
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await Api.get('/profile');
+        const profile = res.data.data;
+
+        // update ke context biar global sinkron
+        setUser(prev => ({
+          ...prev,
+          name: profile.nama,
+          email: profile.email,
+          no_hp: profile.no_hp,
+        }));
+      } catch (err) {
+        console.error('Gagal mengambil profile:', err);
+      }
+    };
+
+    const unsubscribe = navigation.addListener('focus', fetchProfile);
+    return unsubscribe;
+  }, [navigation, setUser]);
 
   // Animasi drag untuk preview
   const translateY = useRef(new Animated.Value(0)).current;
@@ -123,13 +147,13 @@ const Profile = () => {
         </View>
 
         <View style={styles.menu}>
-          {/* Ganti Nama */}
+          {/* Edit Profile */}
           <TouchableOpacity
             style={styles.menuItem}
-            onPress={() => navigation.navigate('ChangeName')}
+            onPress={() => navigation.navigate('EditProfile')}
           >
             <Ionicons name="person-outline" size={20} color="#444" />
-            <Text style={styles.menuText}>Ganti Nama</Text>
+            <Text style={styles.menuText}>Edit Profile</Text>
             <Ionicons name="chevron-forward" size={20} color="#444" />
           </TouchableOpacity>
 
@@ -336,11 +360,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 14,
   },
-  sheetText: {
-    fontSize: 15,
-    marginLeft: 12,
-    color: '#333',
-  },
+  sheetText: { fontSize: 15, marginLeft: 12, color: '#333' },
 
   // Fullscreen preview
   previewContainer: {
@@ -355,12 +375,7 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
     borderRadius: 12,
   },
-  closeBtn: {
-    position: 'absolute',
-    top: 40,
-    right: 20,
-    zIndex: 2,
-  },
+  closeBtn: { position: 'absolute', top: 40, right: 20, zIndex: 2 },
 });
 
 export default Profile;

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useContext } from 'react';
 import {
   View,
   Text,
@@ -13,16 +13,17 @@ import {
 import LinearGradient from 'react-native-linear-gradient';
 import { FlatList } from 'react-native';
 import MentorList from '../components/MentorList';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import Api from '../utils/Api';
+import { AuthContext } from '../context/AuthContext'; // 🔥 gunakan context
 import Header from '../components/Header';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 const Home = ({ navigation }) => {
   const flatListRef = useRef(null);
   const [refreshing, setRefreshing] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
+
+  const { user } = useContext(AuthContext); // 🔥 ambil langsung dari AuthContext
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -39,33 +40,9 @@ const Home = ({ navigation }) => {
     return () => clearInterval(interval);
   }, [currentIndex]);
 
-  const [user, setUser] = useState({
-    name: 'Peserta',
-    paket: 'Premium',
-  });
-
-  useEffect(() => {
-    const getUserData = async () => {
-      try {
-        const storedUser = await AsyncStorage.getItem('user');
-        if (storedUser) {
-          const parsedUser = JSON.parse(storedUser);
-          setUser({
-            name: parsedUser.nama || 'Peserta',
-            paket: 'Premium',
-          });
-        }
-      } catch (error) {
-        console.error('Gagal mengambil data user:', error);
-      }
-    };
-
-    getUserData();
-  }, []);
-
   const onRefresh = async () => {
     setRefreshing(true);
-    await getUserData(); // misalnya refresh user data
+    // kalau mau sync dari API, bisa panggil ulang di AuthContext
     setRefreshing(false);
   };
 
@@ -123,10 +100,9 @@ const Home = ({ navigation }) => {
 
           {/* Greeting */}
           <View style={styles.greetingBox}>
-            <Text style={styles.greeting}>Hi, {user.name}</Text>
+            <Text style={styles.greeting}>Hi, {user?.name}</Text>
             <Text style={styles.subtext}>
               Langkah kecil hari ini, lompatan besar untuk hari esok.
-              {/* <Text style={{ fontWeight: 'bold' }}>terbaik dan ter-murah</Text> */}
             </Text>
           </View>
 

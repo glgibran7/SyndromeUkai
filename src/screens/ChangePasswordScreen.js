@@ -6,29 +6,69 @@ import {
   TextInput,
   TouchableOpacity,
   StatusBar,
+  ActivityIndicator,
 } from 'react-native';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import { useNavigation } from '@react-navigation/native';
-import ToastMessage from '../components/ToastMessage'; // pastikan path benar
+import ToastMessage from '../components/ToastMessage';
+import Api from '../utils/Api'; // axios instance
 
 const ChangePasswordScreen = () => {
   const navigation = useNavigation();
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [toastVisible, setToastVisible] = useState(false);
 
-  // 👁️ state untuk toggle password visibility
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState('info');
+  const [loading, setLoading] = useState(false);
+
+  // 👁️ toggle visibility
   const [showOld, setShowOld] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  const handleSave = () => {
-    setToastVisible(true);
-    setTimeout(() => {
-      setToastVisible(false);
-      navigation.goBack();
-    }, 2000);
+  const handleSave = async () => {
+    if (!oldPassword || !newPassword || !confirmPassword) {
+      setToastMessage('Semua field wajib diisi');
+      setToastType('error');
+      setToastVisible(true);
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setToastMessage('Konfirmasi password tidak sama');
+      setToastType('error');
+      setToastVisible(true);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await Api.put('/profile/password', {
+        password_lama: oldPassword,
+        password_baru: newPassword,
+        konfirmasi_password_baru: confirmPassword,
+      });
+
+      setToastMessage('Password berhasil diperbarui');
+      setToastType('success');
+      setToastVisible(true);
+
+      setTimeout(() => {
+        setToastVisible(false);
+        navigation.goBack();
+      }, 2000);
+    } catch (error) {
+      console.log(error.response?.data || error.message);
+      setToastMessage(
+        error.response?.data?.message || 'Gagal mengganti password',
+      );
+      setToastType('error');
+      setToastVisible(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -84,7 +124,7 @@ const ChangePasswordScreen = () => {
           </TouchableOpacity>
         </View>
 
-        {/* Konfirmasi Password */}
+        {/* Konfirmasi Password Baru */}
         <Text style={styles.label}>Konfirmasi Password Baru</Text>
         <View style={styles.inputWrapper}>
           <TextInput
@@ -104,16 +144,24 @@ const ChangePasswordScreen = () => {
         </View>
 
         {/* Tombol Simpan */}
-        <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
-          <Text style={styles.saveText}>Simpan</Text>
+        <TouchableOpacity
+          style={[styles.saveBtn, loading && { opacity: 0.7 }]}
+          onPress={handleSave}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.saveText}>Simpan</Text>
+          )}
         </TouchableOpacity>
       </View>
 
       {/* Toast */}
       <ToastMessage
-        message="Fitur ini masih dalam pengembangan"
+        message={toastMessage}
         visible={toastVisible}
-        type="info"
+        type={toastType}
         onHide={() => setToastVisible(false)}
       />
     </View>
