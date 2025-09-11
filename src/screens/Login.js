@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   View,
   Text,
@@ -20,10 +20,12 @@ import FontAwesome6 from '@react-native-vector-icons/fontawesome';
 import Api from '../utils/Api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useToast } from '../context/ToastContext';
+import { AuthContext } from '../context/AuthContext';
 
 const { width } = Dimensions.get('window');
 
 const Login = ({ navigation }) => {
+  const { setUser } = useContext(AuthContext);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [secureText, setSecureText] = useState(true);
@@ -91,6 +93,8 @@ const Login = ({ navigation }) => {
         }),
       );
 
+      setUser({ name: nama });
+
       show('Login berhasil!', 'success');
 
       // Switch case to handle different roles
@@ -126,7 +130,7 @@ const Login = ({ navigation }) => {
         end={{ x: 1, y: 1 }}
       >
         <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-          <StatusBar barStyle={'dark-content'} />
+          <StatusBar barStyle={'dark-content'} backgroundColor="#fff" />
 
           {/* Gambar */}
           <Animated.View
