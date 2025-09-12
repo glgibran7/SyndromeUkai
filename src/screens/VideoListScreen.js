@@ -458,6 +458,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 15,
+    flexWrap: 'wrap',
     gap: 10,
   },
   sectionTitle2: {
