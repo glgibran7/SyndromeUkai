@@ -9,22 +9,24 @@ import {
   Dimensions,
   ActivityIndicator,
   RefreshControl,
-  Modal,
   TextInput,
+  Alert,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Api from '../utils/Api';
 import Header from '../components/Header';
-import DropDownPicker from 'react-native-dropdown-picker';
 import { useToast } from '../context/ToastContext';
 import Ionicons from '@react-native-vector-icons/ionicons';
+
+import EditModulModal from '../components/EditModulModal';
+import AddModulModal from '../components/AddModulModal';
+import Video from 'react-native-video';
 
 const { width, height } = Dimensions.get('window');
 
 const VideoScreen = ({ navigation }) => {
   const toast = useToast();
-
   const [modulList, setModulList] = useState([]);
   const [filteredList, setFilteredList] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -33,21 +35,9 @@ const VideoScreen = ({ navigation }) => {
   const [editModal, setEditModal] = useState(false);
   const [addModal, setAddModal] = useState(false);
   const [selectedModul, setSelectedModul] = useState(null);
-
-  // form state
-  const [newTitle, setNewTitle] = useState('');
-  const [newDesc, setNewDesc] = useState('');
-  const [newOrder, setNewOrder] = useState('');
-  const [visibility, setVisibility] = useState('open');
-  const [addLoading, setAddLoading] = useState(false);
-
-  // dropdown state
-  const [open, setOpen] = useState(false);
-  const [kelasItems, setKelasItems] = useState([]);
-  const [selectedClass, setSelectedClass] = useState(null);
-
-  // search state
   const [searchQuery, setSearchQuery] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [adding, setAdding] = useState(false);
 
   const getUserData = async () => {
     try {
@@ -58,7 +48,7 @@ const VideoScreen = ({ navigation }) => {
         return parsedUser;
       }
     } catch (error) {
-      toast.show('Gagal mengambil data user', { type: 'danger' });
+      console.error('Gagal mengambil data user:', error);
     }
     return null;
   };
@@ -87,33 +77,27 @@ const VideoScreen = ({ navigation }) => {
       setModulList(formatted);
       setFilteredList(formatted);
     } catch (error) {
-      toast.show('Gagal mengambil data modul', { type: 'danger' });
+      toast.show({
+        type: 'error',
+        text1: 'Gagal',
+        text2: 'Tidak bisa mengambil data modul',
+      });
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   };
 
-  // const getKelasOptions = async () => {
-  //   try {
-  //     const res = await Api.get('/paket-kelas');
-  //     const formatted = (res.data.data || []).map(kelas => ({
-  //       label: kelas.nama_kelas,
-  //       value: kelas.id_paketkelas,
-  //     }));
-  //     setKelasItems(formatted);
-  //   } catch (err) {
-  //     toast.show('Gagal mengambil data kelas', { type: 'danger' });
-  //   }
-  // };
-
   useEffect(() => {
     getUserData();
     getModul();
-    //getKelasOptions();
   }, []);
 
-  // filter by search
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    getModul();
+  }, []);
+
   useEffect(() => {
     if (!searchQuery) {
       setFilteredList(modulList);
@@ -125,86 +109,92 @@ const VideoScreen = ({ navigation }) => {
     }
   }, [searchQuery, modulList]);
 
-  const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    getModul();
-  }, []);
-
   const handleChangeVisibility = async (id_modul, newStatus) => {
     try {
-      await Api.put(`/modul/${id_modul}/visibility`, {
-        visibility: newStatus,
-      });
+      await Api.put(`/modul/${id_modul}/visibility`, { visibility: newStatus });
       setModulList(prev =>
         prev.map(m =>
           m.id_modul === id_modul ? { ...m, visibility: newStatus } : m,
         ),
       );
-      toast.show('Berhasil ubah visibility modul', { type: 'success' });
+      toast.show(`Visibility modul diubah ke ${newStatus}`, 'success');
     } catch (err) {
-      toast.show('Gagal mengubah visibility modul', { type: 'danger' });
+      toast.show('Tidak bisa mengubah visibility modul', 'error');
     }
   };
 
   const openEditModal = modul => {
     setSelectedModul(modul);
-    setNewTitle(modul.title);
-    setNewDesc(modul.desc);
-    setNewOrder(modul.order?.toString() || '0');
-    setVisibility(modul.visibility || 'open');
     setEditModal(true);
   };
 
-  const handleEditSubmit = async () => {
-    if (!selectedModul) return;
+  const handleEditSubmit = async updated => {
+    if (!updated) return;
     try {
+      setSaving(true);
       const payload = {
-        id_paketkelas: selectedModul.id_paketkelas,
-        judul: newTitle,
-        deskripsi: newDesc,
-        urutan_modul: parseInt(newOrder),
+        id_paketkelas: updated.id_paketkelas,
+        judul: updated.title,
+        deskripsi: updated.desc,
       };
-      await Api.put(`/modul/${selectedModul.id_modul}`, payload);
-
-      await Api.put(`/modul/${selectedModul.id_modul}/visibility`, {
-        visibility,
+      await Api.put(`/modul/${updated.id_modul}`, payload);
+      await Api.put(`/modul/${updated.id_modul}/visibility`, {
+        visibility: updated.visibility,
       });
-
       setEditModal(false);
       getModul();
-      toast.show('Modul berhasil diperbarui', { type: 'success' });
+      toast.show('Modul berhasil diperbarui', 'success');
     } catch (err) {
-      toast.show('Gagal menyimpan modul', { type: 'danger' });
+      toast.show('Tidak bisa menyimpan modul', 'error');
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleAddSubmit = async () => {
-    if (!newTitle || !newDesc || !selectedClass) {
-      toast.show('Harap lengkapi semua field', { type: 'warning' });
+  const handleDelete = async modul => {
+    if (!modul) return;
+    Alert.alert(
+      'Konfirmasi',
+      `Apakah Anda yakin ingin menghapus modul "${modul.title}"?`,
+      [
+        { text: 'Batal', style: 'cancel' },
+        {
+          text: 'Hapus',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await Api.delete(`/modul/${modul.id_modul}`);
+              setEditModal(false);
+              getModul();
+              toast.show('Modul berhasil dihapus', 'success');
+            } catch (err) {
+              toast.show('Tidak bisa menghapus modul', 'error');
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const handleAddSubmit = async data => {
+    if (!data?.title || !data?.desc) {
+      toast.show('Harap isi semua field', 'warning');
       return;
     }
     try {
-      setAddLoading(true);
-      const urutanBaru = modulList.length + 1;
-      const payload = {
-        judul: newTitle,
-        deskripsi: newDesc,
-        urutan_modul: urutanBaru,
-        id_paketkelas: selectedClass,
-      };
-      await Api.post('/modul', payload);
-
+      setAdding(true);
+      await Api.post('/modul/mentor', {
+        judul: data.title,
+        deskripsi: data.desc,
+        visibility: 'open',
+      });
       setAddModal(false);
-      setNewTitle('');
-      setNewDesc('');
-      setNewOrder('');
-      setSelectedClass(null);
       getModul();
-      toast.show('Modul berhasil ditambahkan', { type: 'success' });
+      toast.show('Modul baru berhasil ditambahkan', 'success');
     } catch (err) {
-      toast.show('Gagal menambah modul', { type: 'danger' });
+      toast.show('Tidak bisa menambah modul', 'error');
     } finally {
-      setAddLoading(false);
+      setAdding(false);
     }
   };
 
@@ -212,12 +202,10 @@ const VideoScreen = ({ navigation }) => {
     return (
       <LinearGradient
         colors={['#9D2828', '#191919']}
-        style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
+        style={styles.loadingContainer}
       >
         <ActivityIndicator size="large" color="#fff" />
-        <Text style={{ color: '#fff', marginTop: 10, fontSize: 16 }}>
-          Memuat modul video...
-        </Text>
+        <Text style={styles.loadingText}>Memuat modul...</Text>
       </LinearGradient>
     );
   }
@@ -247,11 +235,11 @@ const VideoScreen = ({ navigation }) => {
           <Text style={styles.greeting}>Video</Text>
           <Text style={styles.subtext}>Kumpulan materi video lengkap</Text>
 
-          {/* Search Bar */}
+          {/* Search bar */}
           <View style={styles.searchContainer}>
             <TextInput
               style={styles.searchInput}
-              placeholder="Cari modul video..."
+              placeholder="Cari modul..."
               placeholderTextColor="#fff"
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -297,7 +285,6 @@ const VideoScreen = ({ navigation }) => {
                     }
                   >
                     <Text style={styles.menuTitle}>{item.title}</Text>
-                    {/* <Text style={styles.menuDesc}>{item.desc}</Text> */}
                     <View style={styles.menuIconContainer}>
                       <Image source={item.icon} style={styles.menuIcon} />
                     </View>
@@ -359,167 +346,29 @@ const VideoScreen = ({ navigation }) => {
         </View>
       </ScrollView>
 
-      {/* Modal Tambah Modul */}
-      <Modal visible={addModal} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={{ fontWeight: 'bold', fontSize: 24 }}>
-              Tambah Modul
-            </Text>
+      {/* Modal Tambah */}
+      <AddModulModal
+        visible={addModal}
+        onClose={() => setAddModal(false)}
+        onSave={handleAddSubmit}
+        loading={adding}
+      />
 
-            <Text style={styles.keteranganText}>Judul Modul</Text>
-            <TextInput
-              value={newTitle}
-              onChangeText={setNewTitle}
-              style={styles.input}
-              placeholder="Judul Modul"
-              placeholderTextColor="#888"
-            />
-
-            <Text style={styles.keteranganText}>Deskripsi Modul</Text>
-            <TextInput
-              value={newDesc}
-              onChangeText={setNewDesc}
-              style={styles.input}
-              placeholder="Deskripsi Modul"
-              placeholderTextColor="#888"
-              multiline
-            />
-
-            <Text style={styles.keteranganText}>Pilih Kelas</Text>
-            <DropDownPicker
-              open={open}
-              value={selectedClass}
-              items={kelasItems}
-              setOpen={setOpen}
-              setValue={setSelectedClass}
-              setItems={setKelasItems}
-              placeholder="Pilih Kelas"
-              style={{ borderColor: '#ccc', marginTop: 5 }}
-              dropDownContainerStyle={{ borderColor: '#ccc' }}
-            />
-
-            <View style={{ flexDirection: 'row', marginTop: 10 }}>
-              <TouchableOpacity
-                onPress={() => setAddModal(false)}
-                style={[styles.editButton, { backgroundColor: 'gray' }]}
-              >
-                <Text style={{ color: '#fff' }}>Batal</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={handleAddSubmit}
-                disabled={addLoading}
-                style={[
-                  styles.editButton,
-                  { marginLeft: 10, opacity: addLoading ? 0.7 : 1 },
-                ]}
-              >
-                {addLoading ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <Text style={{ color: '#fff' }}>Simpan</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Modal Edit Modul */}
-      <Modal visible={editModal} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={{ fontWeight: 'bold', fontSize: 24 }}>Edit Modul</Text>
-
-            <Text style={styles.keteranganText}>Judul Modul</Text>
-            <TextInput
-              value={newTitle}
-              onChangeText={setNewTitle}
-              style={styles.input}
-              placeholder="Judul Modul"
-              placeholderTextColor="#888"
-            />
-
-            <Text style={styles.keteranganText}>Deskripsi Modul</Text>
-            <TextInput
-              value={newDesc}
-              onChangeText={setNewDesc}
-              style={styles.input}
-              placeholder="Deskripsi Modul"
-              placeholderTextColor="#888"
-              multiline
-            />
-
-            <Text style={styles.keteranganText}>Urutan Modul</Text>
-            <TextInput
-              value={newOrder}
-              onChangeText={setNewOrder}
-              style={styles.input}
-              placeholder="Urutan Modul"
-              placeholderTextColor="#888"
-              keyboardType="numeric"
-            />
-
-            <Text style={styles.keteranganText}>Visibility</Text>
-            <View style={styles.dropdownContainer}>
-              {['open', 'hold', 'close'].map(opt => (
-                <TouchableOpacity
-                  key={opt}
-                  style={[
-                    styles.option,
-                    visibility === opt && {
-                      backgroundColor:
-                        opt === 'open'
-                          ? '#4CAF50'
-                          : opt === 'hold'
-                          ? '#FFEB3B'
-                          : '#F44336',
-                    },
-                  ]}
-                  onPress={() => setVisibility(opt)}
-                >
-                  <Text
-                    style={{
-                      color:
-                        visibility === opt
-                          ? '#fff'
-                          : opt === 'open'
-                          ? '#4CAF50'
-                          : opt === 'hold'
-                          ? '#FBC02D'
-                          : '#F44336',
-                      fontWeight: 'bold',
-                    }}
-                  >
-                    {opt.toUpperCase()}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <View style={{ flexDirection: 'row', marginTop: 10 }}>
-              <TouchableOpacity
-                onPress={() => setEditModal(false)}
-                style={[styles.editButton, { backgroundColor: 'gray' }]}
-              >
-                <Text style={{ color: '#fff' }}>Batal</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={handleEditSubmit}
-                style={[styles.editButton, { marginLeft: 10 }]}
-              >
-                <Text style={{ color: '#fff' }}>Simpan</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+      {/* Modal Edit */}
+      <EditModulModal
+        visible={editModal}
+        modul={selectedModul}
+        onClose={() => setEditModal(false)}
+        onSave={handleEditSubmit}
+        onDelete={handleDelete}
+        loading={saving}
+      />
     </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
-  greetingBox: { paddingHorizontal: 15, marginBottom: 10 },
+  greetingBox: { paddingHorizontal: 15 },
   greeting: {
     fontSize: 22,
     color: '#fff',
@@ -540,7 +389,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     paddingVertical: 20,
     paddingHorizontal: 20,
-    marginTop: 20,
+    marginTop: 30,
     minHeight: height - 200,
   },
   headerRow: {
@@ -569,7 +418,6 @@ const styles = StyleSheet.create({
     color: '#700101',
     textTransform: 'capitalize',
   },
-  menuDesc: { fontSize: 10, color: '#555', marginTop: 2 },
   menuIcon: {
     width: 50,
     height: 50,
@@ -584,46 +432,26 @@ const styles = StyleSheet.create({
     right: 0,
     height: 80,
     width: 'auto',
-    resizeMode: 'cover',
+    resizeMode: 'stretch',
     borderBottomLeftRadius: 15,
     borderBottomRightRadius: 15,
     zIndex: -1,
   },
   dropdownContainer: { flexDirection: 'row', marginTop: 5 },
   option: {
-    padding: 2,
+    padding: width * 0.005,
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 5,
     alignItems: 'center',
-    marginRight: 2,
+    marginRight: 5,
   },
   editButton: {
     marginTop: 8,
     padding: 8,
     backgroundColor: '#007bff',
-    borderRadius: 6,
+    borderRadius: 5,
     alignItems: 'center',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: 'white',
-    padding: 20,
-    borderRadius: 10,
-    width: '80%',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 8,
-    borderRadius: 6,
-    marginTop: 10,
-    color: '#000',
   },
   addButton: {
     backgroundColor: '#28a745',
@@ -631,11 +459,15 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 6,
   },
-  keteranganText: {
-    fontSize: 14,
-    color: '#333',
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    color: '#fff',
     marginTop: 10,
-    fontWeight: 'bold',
+    fontSize: 16,
   },
 });
 

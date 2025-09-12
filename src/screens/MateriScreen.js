@@ -9,8 +9,8 @@ import {
   Dimensions,
   ActivityIndicator,
   RefreshControl,
-  Modal,
   TextInput,
+  Alert,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -18,6 +18,9 @@ import Api from '../utils/Api';
 import Header from '../components/Header';
 import { useToast } from '../context/ToastContext';
 import Ionicons from '@react-native-vector-icons/ionicons';
+
+import EditModulModal from '../components/EditModulModal';
+import AddModulModal from '../components/AddModulModal';
 
 const { width, height } = Dimensions.get('window');
 
@@ -31,12 +34,9 @@ const MateriScreen = ({ navigation }) => {
   const [editModal, setEditModal] = useState(false);
   const [addModal, setAddModal] = useState(false);
   const [selectedModul, setSelectedModul] = useState(null);
-  const [addLoading, setAddLoading] = useState(false);
-
-  const [newTitle, setNewTitle] = useState('');
-  const [newDesc, setNewDesc] = useState('');
-  const [visibility, setVisibility] = useState('open');
   const [searchQuery, setSearchQuery] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [adding, setAdding] = useState(false);
 
   const getUserData = async () => {
     try {
@@ -124,53 +124,76 @@ const MateriScreen = ({ navigation }) => {
 
   const openEditModal = modul => {
     setSelectedModul(modul);
-    setNewTitle(modul.title);
-    setNewDesc(modul.desc);
-    setVisibility(modul.visibility || 'open');
     setEditModal(true);
   };
 
-  const handleEditSubmit = async () => {
-    if (!selectedModul) return;
+  const handleEditSubmit = async updated => {
+    if (!updated) return;
     try {
+      setSaving(true);
       const payload = {
-        id_paketkelas: selectedModul.id_paketkelas,
-        judul: newTitle,
-        deskripsi: newDesc,
+        id_paketkelas: updated.id_paketkelas,
+        judul: updated.title,
+        deskripsi: updated.desc,
       };
-      await Api.put(`/modul/${selectedModul.id_modul}`, payload);
-      await Api.put(`/modul/${selectedModul.id_modul}/visibility`, {
-        visibility,
+      await Api.put(`/modul/${updated.id_modul}`, payload);
+      await Api.put(`/modul/${updated.id_modul}/visibility`, {
+        visibility: updated.visibility,
       });
       setEditModal(false);
       getModul();
       toast.show('Modul berhasil diperbarui', 'success');
     } catch (err) {
       toast.show('Tidak bisa menyimpan modul', 'error');
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleAddSubmit = async () => {
-    if (!newTitle || !newDesc) {
+  const handleDelete = async modul => {
+    if (!modul) return;
+    Alert.alert(
+      'Konfirmasi',
+      `Apakah Anda yakin ingin menghapus modul "${modul.title}"?`,
+      [
+        { text: 'Batal', style: 'cancel' },
+        {
+          text: 'Hapus',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await Api.delete(`/modul/${modul.id_modul}`);
+              setEditModal(false);
+              getModul();
+              toast.show('Modul berhasil dihapus', 'success');
+            } catch (err) {
+              toast.show('Tidak bisa menghapus modul', 'error');
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const handleAddSubmit = async data => {
+    if (!data?.title || !data?.desc) {
       toast.show('Harap isi semua field', 'warning');
       return;
     }
     try {
-      setAddLoading(true);
+      setAdding(true);
       await Api.post('/modul/mentor', {
-        judul: newTitle,
-        deskripsi: newDesc,
+        judul: data.title,
+        deskripsi: data.desc,
         visibility: 'open',
       });
       setAddModal(false);
-      setNewTitle('');
-      setNewDesc('');
       getModul();
       toast.show('Modul baru berhasil ditambahkan', 'success');
     } catch (err) {
       toast.show('Tidak bisa menambah modul', 'error');
     } finally {
-      setAddLoading(false);
+      setAdding(false);
     }
   };
 
@@ -261,7 +284,6 @@ const MateriScreen = ({ navigation }) => {
                     }
                   >
                     <Text style={styles.menuTitle}>{item.title}</Text>
-                    {/* <Text style={styles.menuDesc}>{item.desc}</Text> */}
                     <View style={styles.menuIconContainer}>
                       <Image source={item.icon} style={styles.menuIcon} />
                     </View>
@@ -324,126 +346,22 @@ const MateriScreen = ({ navigation }) => {
       </ScrollView>
 
       {/* Modal Tambah */}
-      <Modal visible={addModal} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={{ fontWeight: 'bold', fontSize: 24 }}>
-              Tambah Modul
-            </Text>
-            <Text style={styles.keteranganText}>Judul Modul</Text>
-            <TextInput
-              value={newTitle}
-              onChangeText={setNewTitle}
-              style={styles.input}
-              placeholder="Masukkan judul"
-            />
-            <Text style={styles.keteranganText}>Deskripsi Modul</Text>
-            <TextInput
-              value={newDesc}
-              onChangeText={setNewDesc}
-              style={styles.input}
-              placeholder="Masukkan deskripsi"
-              multiline
-            />
-            <View style={{ flexDirection: 'row', marginTop: 10 }}>
-              <TouchableOpacity
-                onPress={() => setAddModal(false)}
-                style={[styles.editButton, { backgroundColor: 'gray' }]}
-              >
-                <Text style={{ color: '#fff' }}>Batal</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={handleAddSubmit}
-                disabled={addLoading}
-                style={[
-                  styles.editButton,
-                  { marginLeft: 10, opacity: addLoading ? 0.7 : 1 },
-                ]}
-              >
-                {addLoading ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <Text style={{ color: '#fff' }}>Simpan</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+      <AddModulModal
+        visible={addModal}
+        onClose={() => setAddModal(false)}
+        onSave={handleAddSubmit}
+        loading={adding}
+      />
 
       {/* Modal Edit */}
-      <Modal visible={editModal} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={{ fontWeight: 'bold', fontSize: 24 }}>Edit Modul</Text>
-            <Text style={styles.keteranganText}>Judul Modul</Text>
-            <TextInput
-              value={newTitle}
-              onChangeText={setNewTitle}
-              style={styles.input}
-              placeholder="Judul Modul"
-            />
-            <Text style={styles.keteranganText}>Deskripsi Modul</Text>
-            <TextInput
-              value={newDesc}
-              onChangeText={setNewDesc}
-              style={styles.input}
-              placeholder="Deskripsi Modul"
-              multiline
-            />
-            <Text style={styles.keteranganText}>Visibility</Text>
-            <View style={styles.dropdownContainer}>
-              {['open', 'hold', 'close'].map(opt => (
-                <TouchableOpacity
-                  key={opt}
-                  style={[
-                    styles.option,
-                    visibility === opt && {
-                      backgroundColor:
-                        opt === 'open'
-                          ? '#4CAF50'
-                          : opt === 'hold'
-                          ? '#FFEB3B'
-                          : '#F44336',
-                    },
-                  ]}
-                  onPress={() => setVisibility(opt)}
-                >
-                  <Text
-                    style={{
-                      color:
-                        visibility === opt
-                          ? '#fff'
-                          : opt === 'open'
-                          ? '#4CAF50'
-                          : opt === 'hold'
-                          ? '#FBC02D'
-                          : '#F44336',
-                      fontWeight: 'bold',
-                    }}
-                  >
-                    {opt.toUpperCase()}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            <View style={{ flexDirection: 'row', marginTop: 10 }}>
-              <TouchableOpacity
-                onPress={() => setEditModal(false)}
-                style={[styles.editButton, { backgroundColor: 'gray' }]}
-              >
-                <Text style={{ color: '#fff' }}>Batal</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={handleEditSubmit}
-                style={[styles.editButton, { marginLeft: 10 }]}
-              >
-                <Text style={{ color: '#fff' }}>Simpan</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+      <EditModulModal
+        visible={editModal}
+        modul={selectedModul}
+        onClose={() => setEditModal(false)}
+        onSave={handleEditSubmit}
+        onDelete={handleDelete}
+        loading={saving}
+      />
     </LinearGradient>
   );
 };
@@ -499,7 +417,6 @@ const styles = StyleSheet.create({
     color: '#700101',
     textTransform: 'capitalize',
   },
-  menuDesc: { fontSize: 10, color: '#555', marginTop: 2 },
   menuIcon: {
     width: 50,
     height: 50,
@@ -535,35 +452,11 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     alignItems: 'center',
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: 'white',
-    padding: 20,
-    borderRadius: 10,
-    width: '80%',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 8,
-    borderRadius: 6,
-  },
   addButton: {
     backgroundColor: '#28a745',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 6,
-  },
-  keteranganText: {
-    fontSize: 14,
-    color: '#333',
-    marginTop: 10,
-    fontWeight: 'bold',
   },
   loadingContainer: {
     flex: 1,

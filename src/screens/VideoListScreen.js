@@ -14,6 +14,8 @@ import {
   SafeAreaView,
   RefreshControl,
   ActivityIndicator,
+  Modal,
+  Alert,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -51,6 +53,13 @@ const VideoListScreen = ({ route, navigation }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  // --- Tambah Video ---
+  const [addModal, setAddModal] = useState(false);
+  const [judul, setJudul] = useState('');
+  const [urlFile, setUrlFile] = useState('');
+  const [viewerOnly, setViewerOnly] = useState(false);
+  const [addLoading, setAddLoading] = useState(false);
+
   const scrollRef = useRef(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -61,18 +70,20 @@ const VideoListScreen = ({ route, navigation }) => {
         const parsedUser = JSON.parse(storedUser);
         setUser({
           name: parsedUser.nama || 'User',
-          role: parsedUser.role || 'peserta', // <-- ambil role
+          role: parsedUser.role || 'peserta',
         });
+        return parsedUser.role || 'peserta';
       }
     } catch (error) {
       console.error('Gagal mengambil data user:', error);
     }
+    return 'peserta';
   };
 
-  const getMateri = async () => {
+  const getMateri = async role => {
     try {
-      const endpoint =
-        user.role === 'mentor' ? '/materi/mentor' : '/materi/peserta';
+      setLoading(true);
+      const endpoint = role === 'mentor' ? '/materi/mentor' : '/materi/peserta';
       const res = await Api.get(endpoint);
       console.log('Endpoint dipakai:', endpoint);
 
@@ -97,8 +108,12 @@ const VideoListScreen = ({ route, navigation }) => {
   };
 
   useEffect(() => {
-    getUserData().then(() => getMateri());
-  }, [id_modul, user.role]);
+    // ambil user dulu lalu fetch materi sesuai role
+    (async () => {
+      const role = await getUserData();
+      await getMateri(role);
+    })();
+  }, [id_modul]);
 
   useEffect(() => {
     let data = materiList;
@@ -136,7 +151,38 @@ const VideoListScreen = ({ route, navigation }) => {
 
   const onRefresh = () => {
     setRefreshing(true);
-    getMateri();
+    getMateri(user.role);
+  };
+
+  // === Submit Video ===
+  const handleAddMateri = async () => {
+    if (!judul || !urlFile) {
+      Alert.alert('Error', 'Judul dan URL wajib diisi');
+      return;
+    }
+    try {
+      setAddLoading(true);
+      const payload = {
+        id_modul,
+        tipe_materi: 'video',
+        judul,
+        url_file: urlFile,
+        visibility: 'open',
+        viewer_only: viewerOnly,
+      };
+      await Api.post('/materi/mentor', payload);
+      setAddModal(false);
+      setJudul('');
+      setUrlFile('');
+      setViewerOnly(false);
+      // refresh list
+      getMateri(user.role);
+    } catch (err) {
+      console.error('Gagal tambah materi:', err.response?.data || err.message);
+      Alert.alert('Error', 'Gagal menambah materi');
+    } finally {
+      setAddLoading(false);
+    }
   };
 
   return (
@@ -229,6 +275,20 @@ const VideoListScreen = ({ route, navigation }) => {
                       Baru di Tonton
                     </Text>
                   </TouchableOpacity>
+
+                  {user.role === 'mentor' && (
+                    <TouchableOpacity
+                      style={[
+                        styles.filterButton,
+                        { backgroundColor: 'green' },
+                      ]}
+                      onPress={() => setAddModal(true)}
+                    >
+                      <Text style={{ color: '#fff', fontSize: 12 }}>
+                        + Tambah Video
+                      </Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
 
                 {/* Video List */}
@@ -248,7 +308,7 @@ const VideoListScreen = ({ route, navigation }) => {
                             id_materi: item.id_materi,
                             title: item.judul,
                             url_file: item.url_file,
-                            channel: 'UKAI SYNDROME',
+                            channel: item.user?.nama || user.name,
                           })
                         }
                       >
@@ -286,6 +346,76 @@ const VideoListScreen = ({ route, navigation }) => {
               <Ionicons name="arrow-up" size={22} color="#fff" />
             </TouchableOpacity>
           </Animated.View>
+
+          {/* Modal Tambah Video */}
+          <Modal
+            visible={addModal}
+            animationType="slide"
+            transparent={true}
+            onRequestClose={() => setAddModal(false)}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalBox}>
+                <Text style={styles.modalTitle}>Tambah Video</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder="Judul"
+                  value={judul}
+                  onChangeText={setJudul}
+                />
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder="URL File (video)"
+                  value={urlFile}
+                  onChangeText={setUrlFile}
+                />
+                <TouchableOpacity
+                  onPress={() => setViewerOnly(!viewerOnly)}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    marginBottom: 15,
+                  }}
+                >
+                  <Ionicons
+                    name={viewerOnly ? 'checkbox' : 'square-outline'}
+                    size={20}
+                    color="#000"
+                    style={{ marginRight: 8 }}
+                  />
+                  <Text>Viewer Only</Text>
+                </TouchableOpacity>
+
+                <View
+                  style={{ flexDirection: 'row', justifyContent: 'flex-end' }}
+                >
+                  <TouchableOpacity
+                    onPress={() => setAddModal(false)}
+                    style={[styles.filterButton, { marginRight: 10 }]}
+                  >
+                    <Text>Batal</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={handleAddMateri}
+                    disabled={addLoading}
+                    style={[
+                      styles.filterButton,
+                      {
+                        backgroundColor: '#9D2828',
+                        opacity: addLoading ? 0.7 : 1,
+                      },
+                    ]}
+                  >
+                    {addLoading ? (
+                      <ActivityIndicator color="#fff" />
+                    ) : (
+                      <Text style={{ color: '#fff' }}>Simpan</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </Modal>
         </LinearGradient>
       </TouchableWithoutFeedback>
     </SafeAreaView>
@@ -376,6 +506,26 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 50,
     elevation: 5,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalBox: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 12,
+    width: '90%',
+  },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 15 },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 15,
   },
 });
 

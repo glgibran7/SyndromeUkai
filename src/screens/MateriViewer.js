@@ -17,7 +17,7 @@ import { WebView } from 'react-native-webview';
 import LinearGradient from 'react-native-linear-gradient';
 import Header from '../components/Header';
 import { NativeModules } from 'react-native';
-import Api from '../utils/Api'; // ✅ tambahkan ini
+import Api from '../utils/Api';
 
 const { height } = Dimensions.get('window');
 
@@ -29,6 +29,26 @@ const MateriViewer = ({ route, navigation }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [webKey, setWebKey] = useState(0);
+
+  // 🔧 helper untuk convert link drive
+  const formatUrl = rawUrl => {
+    if (!rawUrl) return rawUrl;
+
+    // Google Drive direct download → ubah jadi preview
+    if (rawUrl.includes('drive.google.com')) {
+      if (rawUrl.includes('uc?export=download')) {
+        const fileId = rawUrl.match(/id=([^&]+)/)?.[1];
+        if (fileId) {
+          return `https://drive.google.com/file/d/${fileId}/preview`;
+        }
+      }
+      if (rawUrl.includes('/view')) {
+        return rawUrl.replace('/view', '/preview');
+      }
+    }
+
+    return rawUrl; // selain itu, biarkan
+  };
 
   // ✅ Proteksi screen capture
   useEffect(() => {
@@ -44,9 +64,7 @@ const MateriViewer = ({ route, navigation }) => {
       try {
         const rec = await ScreenRecord.isRecording();
         if (rec) {
-          setMuted(true);
-        } else {
-          setMuted(false);
+          // bisa tambahin aksi kalau ketahuan record
         }
       } catch (e) {
         console.log('check record err', e);
@@ -144,7 +162,7 @@ const MateriViewer = ({ route, navigation }) => {
               <View style={{ flex: 1, minHeight: height - 150 }}>
                 <WebView
                   key={webKey}
-                  source={{ uri: url }}
+                  source={{ uri: formatUrl(url) }}
                   startInLoadingState
                   style={{ flex: 1 }}
                   javaScriptEnabled

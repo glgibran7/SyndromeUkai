@@ -225,12 +225,12 @@ const MateriListScreen = ({ route, navigation }) => {
                     <TouchableOpacity
                       style={[
                         styles.filterButton,
-                        { backgroundColor: '#9D2828' },
+                        { backgroundColor: 'green' },
                       ]}
                       onPress={() => setAddModal(true)}
                     >
                       <Text style={{ color: '#fff', fontSize: 12 }}>
-                        + Materi
+                        + Tambah Materi
                       </Text>
                     </TouchableOpacity>
                   )}
