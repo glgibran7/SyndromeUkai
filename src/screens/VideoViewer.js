@@ -1,55 +1,37 @@
-// src/screens/VideoViewer.js
 import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   Dimensions,
-  StatusBar,
   TouchableOpacity,
   ScrollView,
   TextInput,
-  Image,
-  FlatList,
   ActivityIndicator,
   Alert,
   RefreshControl,
   Keyboard,
   SafeAreaView,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import Ionicons from '@react-native-vector-icons/ionicons';
-import { WebView } from 'react-native-webview';
 import Video from 'react-native-video';
-import LinearGradient from 'react-native-linear-gradient';
-import Api from '../utils/Api'; // pastikan ini axios instance yang benar
+import { WebView } from 'react-native-webview';
+import Api from '../utils/Api';
 import Header from '../components/Header';
-import { NativeModules } from 'react-native';
-const { FlagSecure } = NativeModules;
-const { ScreenRecord } = NativeModules;
-const { width, height } = Dimensions.get('window');
-const FIVE_MIN_MS = 5 * 60 * 1000;
-const ROOT_PAGE_SIZE = 8; // root comments per load
 
-const getDriveDirectLink = url => {
-  if (!url) return url;
-  const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
-  if (match) {
-    return `https://drive.google.com/uc?export=download&id=${match[1]}`;
-  }
-  return url;
-};
+const { height } = Dimensions.get('window');
+const FIVE_MIN_MS = 5 * 60 * 1000;
+const ROOT_PAGE_SIZE = 8;
 
 const Avatar = ({ name, size = 28 }) => {
   const initial = name ? String(name).trim()[0].toUpperCase() : '?';
-  const bg = '#0b62e4';
   return (
     <View
       style={{
         width: size,
         height: size,
         borderRadius: size / 2,
-        backgroundColor: bg,
+        backgroundColor: '#0b62e4',
         justifyContent: 'center',
         alignItems: 'center',
       }}
@@ -60,13 +42,15 @@ const Avatar = ({ name, size = 28 }) => {
 };
 
 const VideoViewer = ({ route, navigation }) => {
-  const [muted, setMuted] = useState(false);
-  const params = route?.params || {};
-  const { id_materi, url_file, title = '', channel = 'UKAI' } = params;
-  const [user, setUser] = useState({
-    id_user: null,
-    nama: 'Peserta',
-  });
+  const {
+    id_materi,
+    id_paketkelas,
+    url_file,
+    title = '',
+    channel = 'UKAI',
+  } = route?.params || {};
+
+  const [user, setUser] = useState({ id_user: null, nama: 'Peserta' });
   const [rawComments, setRawComments] = useState([]);
   const [rootComments, setRootComments] = useState([]);
   const [displayedRoots, setDisplayedRoots] = useState([]);
@@ -77,44 +61,32 @@ const VideoViewer = ({ route, navigation }) => {
   const [composeText, setComposeText] = useState('');
   const [replyingTo, setReplyingTo] = useState(null);
   const [editingComment, setEditingComment] = useState(null);
-  const [refreshing, setRefreshing] = useState(false); // buat swipe to refresh
-  const [videoLoading, setVideoLoading] = useState(true); // buat spinner saat video loading
+  const [refreshing, setRefreshing] = useState(false);
+  const [videoLoading, setVideoLoading] = useState(true);
   const [expandedReplies, setExpandedReplies] = useState({});
   const inputRef = useRef(null);
 
-  useEffect(() => {
-    // Aktifkan proteksi
-    FlagSecure.enable();
-
-    // Matikan lagi saat keluar
-    return () => {
-      FlagSecure.disable();
-    };
-  }, []);
-
-  useEffect(() => {
-    let interval = setInterval(async () => {
-      try {
-        const rec = await ScreenRecord.isRecording();
-        if (rec) {
-          // mute video
-          setMuted(true);
-        } else {
-          // unmute video
-          setMuted(false);
-        }
-      } catch (e) {
-        console.log('check record err', e);
-      }
-    }, 2000); // cek tiap 2 detik
-
-    return () => clearInterval(interval);
-  }, []);
   const safeFocus = () => {
     if (inputRef.current && typeof inputRef.current.focus === 'function') {
       inputRef.current.focus();
     }
   };
+
+  const getGDrivePreviewLink = url => {
+    if (!url) return url;
+    const match1 = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if (match1) {
+      return `https://drive.google.com/file/d/${match1[1]}/preview`;
+    }
+    const match2 = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (match2) {
+      return `https://drive.google.com/file/d/${match2[1]}/preview`;
+    }
+    return url;
+  };
+
+  const isGoogleDrivePreview = url =>
+    url?.includes('drive.google.com') && url?.includes('/preview');
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -131,16 +103,14 @@ const VideoViewer = ({ route, navigation }) => {
     };
 
     fetchProfile();
-
-    // supaya auto update kalau kembali ke halaman ini
     const unsubscribe = navigation.addListener('focus', fetchProfile);
     return unsubscribe;
   }, [navigation]);
 
   useEffect(() => {
-    if (!id_materi) return;
+    if (!id_materi || !id_paketkelas) return;
     fetchComments();
-  }, [id_materi]);
+  }, [id_materi, id_paketkelas]);
 
   useEffect(() => {
     const start = 0;
@@ -151,15 +121,18 @@ const VideoViewer = ({ route, navigation }) => {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await fetchComments(); // reload komentar
-    setVideoLoading(true); // trigger spinner video
-    setTimeout(() => setRefreshing(false), 800); // stop animasi refresh
+    await fetchComments();
+    setVideoLoading(true);
+    setTimeout(() => setRefreshing(false), 800);
   };
 
   const fetchComments = async () => {
+    if (!id_materi || !id_paketkelas) return;
     setLoading(true);
     try {
-      const res = await Api.get(`/komentar/${id_materi}/komentar`);
+      const res = await Api.get(
+        `/komentar/${id_materi}/komentar/${id_paketkelas}`,
+      );
       if (res?.data?.status === 'success') {
         const data = Array.isArray(res.data.data) ? res.data.data : [];
         const map = {};
@@ -168,7 +141,7 @@ const VideoViewer = ({ route, navigation }) => {
         });
         const roots = [];
         data.forEach(c => {
-          if (c.parent_id === null || c.parent_id === undefined) {
+          if (c.parent_id == null) {
             roots.push(map[c.id_komentarmateri]);
           } else if (map[c.parent_id]) {
             map[c.parent_id].replies.push(map[c.id_komentarmateri]);
@@ -191,13 +164,14 @@ const VideoViewer = ({ route, navigation }) => {
       }
     } catch (err) {
       console.error('fetchComments error:', err);
-      Alert.alert('Error', 'Gagal memuat komentar. Periksa koneksi/API.');
+      Alert.alert('Error', 'Gagal memuat komentar.');
     } finally {
       setLoading(false);
     }
   };
 
   const postComment = async () => {
+    if (!id_paketkelas) return;
     const text = composeText.trim();
     if (!text) return;
     setSending(true);
@@ -207,7 +181,10 @@ const VideoViewer = ({ route, navigation }) => {
         parent_id: replyingTo ? replyingTo.id_komentarmateri : null,
         id_materi,
       };
-      const res = await Api.post(`/komentar/${id_materi}/komentar`, payload);
+      const res = await Api.post(
+        `/komentar/${id_materi}/komentar/${id_paketkelas}`,
+        payload,
+      );
       if (res?.data?.status === 'success') {
         setComposeText('');
         setReplyingTo(null);
@@ -236,9 +213,7 @@ const VideoViewer = ({ route, navigation }) => {
     try {
       const res = await Api.put(
         `/komentar/${id_materi}/komentar/${editingComment.id_komentarmateri}`,
-        {
-          isi_komentar: text,
-        },
+        { isi_komentar: text },
       );
       if (res?.data?.status === 'success') {
         setComposeText('');
@@ -255,7 +230,7 @@ const VideoViewer = ({ route, navigation }) => {
     }
   };
 
-  const doDeleteComment = comment => {
+  const doDeleteComment = async comment => {
     Alert.alert('Hapus komentar', 'Yakin ingin menghapus komentar ini?', [
       { text: 'Batal', style: 'cancel' },
       {
@@ -266,11 +241,7 @@ const VideoViewer = ({ route, navigation }) => {
             const res = await Api.delete(
               `/komentar/${comment.id_komentarmateri}`,
             );
-            if (
-              res?.status === 200 ||
-              res?.status === 204 ||
-              res?.data?.status === 'success'
-            ) {
+            if (res?.status === 200 || res?.data?.status === 'success') {
               await fetchComments();
             } else {
               Alert.alert('Gagal', 'Server menolak penghapusan.');
@@ -284,78 +255,73 @@ const VideoViewer = ({ route, navigation }) => {
     ]);
   };
 
-  const canEdit = createdAt => {
-    if (!createdAt) return false;
-    return Date.now() - new Date(createdAt).getTime() <= FIVE_MIN_MS;
-  };
+  const canEdit = createdAt =>
+    createdAt && Date.now() - new Date(createdAt).getTime() <= FIVE_MIN_MS;
 
-  const renderReply = (r, depth = 1) => {
-    return (
-      <View
-        key={`reply-${r.id_komentarmateri}`}
-        style={[styles.commentRow, { marginLeft: depth * 52, marginTop: 8 }]}
-      >
-        <Avatar name={r.nama} size={28} />
-        <View style={{ flex: 1, marginLeft: 10 }}>
-          <View style={styles.rowSpace}>
-            <Text style={styles.commentName}>{r.nama}</Text>
-            <Text style={styles.commentTime}>
-              {new Date(r.created_at).toLocaleString()}
-            </Text>
-          </View>
-          <Text
-            style={[styles.commentText, r.is_deleted && styles.commentDeleted]}
-          >
-            {r.is_deleted
-              ? r.deleted_by_mentor
-                ? 'Komentar telah dihapus oleh mentor'
-                : 'Komentar telah dihapus'
-              : r.isi_komentar}
+  const renderReply = (r, depth = 1) => (
+    <View
+      key={`reply-${r.id_komentarmateri}`}
+      style={[styles.commentRow, { marginLeft: depth * 52, marginTop: 8 }]}
+    >
+      <Avatar name={r.nama} size={28} />
+      <View style={{ flex: 1, marginLeft: 10 }}>
+        <View style={styles.rowSpace}>
+          <Text style={styles.commentName}>{r.nama}</Text>
+          <Text style={styles.commentTime}>
+            {new Date(r.created_at).toLocaleString()}
           </Text>
-          {/* Tombol edit/hapus/balas reply */}
-          {!r.is_deleted && (
-            <View style={{ flexDirection: 'row', marginTop: 4 }}>
-              {user.id_user === r.id_user && canEdit(r.created_at) && (
-                <>
-                  <TouchableOpacity
-                    onPress={() => {
-                      setEditingComment(r);
-                      setComposeText(r.isi_komentar);
-                      safeFocus();
-                    }}
-                    style={{ marginRight: 12 }}
-                  >
-                    <Text style={{ color: '#1976D2', fontWeight: 'bold' }}>
-                      Edit
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={() => doDeleteComment(r)}
-                    style={{ marginRight: 12 }}
-                  >
-                    <Text style={{ color: '#D32F2F', fontWeight: 'bold' }}>
-                      Hapus
-                    </Text>
-                  </TouchableOpacity>
-                </>
-              )}
-              <TouchableOpacity
-                onPress={() => {
-                  setReplyingTo(r);
-                  setComposeText('');
-                  safeFocus();
-                }}
-              >
-                <Text style={{ color: '#1976D2', fontWeight: 'bold' }}>
-                  Balas
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
         </View>
+        <Text
+          style={[styles.commentText, r.is_deleted && styles.commentDeleted]}
+        >
+          {r.is_deleted
+            ? r.deleted_by_mentor
+              ? 'Komentar telah dihapus oleh mentor'
+              : 'Komentar telah dihapus'
+            : r.isi_komentar}
+        </Text>
+        {!r.is_deleted && (
+          <View style={{ flexDirection: 'row', marginTop: 4 }}>
+            {user.id_user === r.id_user && canEdit(r.created_at) && (
+              <>
+                <TouchableOpacity
+                  onPress={() => {
+                    setEditingComment(r);
+                    setComposeText(r.isi_komentar);
+                    safeFocus();
+                  }}
+                  style={{ marginRight: 12 }}
+                >
+                  <Text style={{ color: '#1976D2', fontWeight: 'bold' }}>
+                    Edit
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => doDeleteComment(r)}
+                  style={{ marginRight: 12 }}
+                >
+                  <Text style={{ color: '#D32F2F', fontWeight: 'bold' }}>
+                    Hapus
+                  </Text>
+                </TouchableOpacity>
+              </>
+            )}
+            <TouchableOpacity
+              onPress={() => {
+                setReplyingTo(r);
+                setComposeText('');
+                safeFocus();
+              }}
+            >
+              <Text style={{ color: '#1976D2', fontWeight: 'bold' }}>
+                Balas
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
-    );
-  };
+    </View>
+  );
 
   const renderRoot = ({ item }) => {
     const repliesCount = item.replies?.length || 0;
@@ -383,7 +349,6 @@ const VideoViewer = ({ route, navigation }) => {
                   : 'Komentar telah dihapus'
                 : item.isi_komentar}
             </Text>
-            {/* Tombol edit/hapus/balas root */}
             {!item.is_deleted && (
               <View style={{ flexDirection: 'row', marginTop: 4 }}>
                 {user.id_user === item.id_user && canEdit(item.created_at) && (
@@ -450,7 +415,6 @@ const VideoViewer = ({ route, navigation }) => {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#9D2828' }}>
       <View style={{ flex: 1 }}>
-        {/* Header */}
         <Header navigation={navigation} showBack={true} />
 
         <ScrollView
@@ -459,67 +423,78 @@ const VideoViewer = ({ route, navigation }) => {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
         >
-          {/* Video player */}
           <View style={{ height: height * 0.33, backgroundColor: '#000' }}>
-            <Video
-              source={{ uri: getDriveDirectLink(url_file) }}
-              style={{ width: '100%', height: '100%' }}
-              controls
-              resizeMode="contain"
-              paused={false}
-              fullscreen={false}
-              muted={muted}
-              onLoadStart={() => setVideoLoading(true)} // mulai loading
-              onLoad={() => setVideoLoading(false)} // selesai loading
-              onError={e => console.log('Video error', e)}
-            />
-
-            {/* Watermark Overlay */}
-            <View
-              pointerEvents="none"
-              style={[
-                StyleSheet.absoluteFill,
-                {
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  flexWrap: 'wrap',
-                  flexDirection: 'row',
-                  transform: [{ rotate: '-25deg' }],
-                  opacity: 0.15,
-                },
-              ]}
-            >
-              {Array.from({ length: 40 }).map((_, i) => (
-                <Text
-                  key={i}
-                  style={{
-                    fontSize: 24,
-                    fontWeight: 'bold',
-                    color: 'white',
-                    margin: 20,
-                    textTransform: 'capitalize',
-                  }}
-                >
-                  {user?.nama || 'User'}
-                </Text>
-              ))}
-              {videoLoading && (
-                <View style={styles.videoLoadingOverlay}>
-                  <ActivityIndicator size="large" color="#fff" />
-                </View>
-              )}
-            </View>
+            {isGoogleDrivePreview(url_file) ? (
+              <WebView
+                originWhitelist={['*']}
+                source={{
+                  html: `
+      <html>
+        <head>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <style>
+            body, html { margin:0; padding:0; height:100%; background:black; }
+            iframe { width:100%; height:100%; border:0; }
+            .ndfHFb-c4YZDc-Wrql6b,
+            .ndfHFb-c4YZDc-Wrql6c,
+            .ndfHFb-c4YZDc-Wrql6d {
+              pointer-events: none !important;
+              opacity: 0.3 !important;
+            }
+          </style>
+        </head>
+        <body>
+          <iframe
+            src="${getGDrivePreviewLink(url_file)}"
+            allow="autoplay; fullscreen"
+            allowfullscreen
+          ></iframe>
+        </body>
+      </html>
+    `,
+                }}
+                style={{ flex: 1 }}
+                javaScriptEnabled={true}
+                domStorageEnabled={true}
+                allowsFullscreenVideo={true}
+                startInLoadingState={true}
+                renderLoading={() => (
+                  <ActivityIndicator
+                    size="large"
+                    color="#fff"
+                    style={{
+                      flex: 1,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                    }}
+                  />
+                )}
+              />
+            ) : (
+              <Video
+                source={{ uri: url_file }}
+                style={{ width: '100%', height: '100%' }}
+                controls
+                resizeMode="contain"
+                paused={false}
+                onLoadStart={() => setVideoLoading(true)}
+                onLoad={() => setVideoLoading(false)}
+                onError={e => console.log('Video error', e)}
+              />
+            )}
+            {videoLoading && (
+              <View style={styles.videoLoadingOverlay}>
+                <ActivityIndicator size="large" color="#fff" />
+              </View>
+            )}
           </View>
 
-          {/* Wrapper Putih */}
           <View style={styles.whiteWrapper}>
-            {/* Info */}
             <View style={styles.infoBox}>
               <Text style={styles.videoTitle}>{title}</Text>
               <Text style={styles.videoMeta}>{channel}</Text>
             </View>
 
-            {/* Komentar Input */}
             <View style={styles.commentInput}>
               <TextInput
                 ref={inputRef}
@@ -564,7 +539,6 @@ const VideoViewer = ({ route, navigation }) => {
               )}
             </View>
 
-            {/* Comments */}
             <View style={styles.commentsSection}>
               <View style={styles.commentsHeader}>
                 <Text style={styles.commentsTitle}>Komentar</Text>
@@ -572,20 +546,13 @@ const VideoViewer = ({ route, navigation }) => {
               </View>
               {loading ? (
                 <ActivityIndicator style={{ marginVertical: 20 }} />
+              ) : displayedRoots.length === 0 ? (
+                <Text style={{ color: '#666', paddingVertical: 12 }}>
+                  Belum ada komentar.
+                </Text>
               ) : (
                 <>
-                  {displayedRoots.length === 0 ? (
-                    <Text style={{ color: '#666', paddingVertical: 12 }}>
-                      Belum ada komentar.
-                    </Text>
-                  ) : (
-                    <FlatList
-                      data={displayedRoots}
-                      keyExtractor={it => String(it.id_komentarmateri)}
-                      renderItem={renderRoot}
-                      scrollEnabled={false}
-                    />
-                  )}
+                  {displayedRoots.map(it => renderRoot({ item: it }))}
                   {hasMoreRoots && (
                     <TouchableOpacity
                       style={styles.loadMoreBtn}
@@ -600,7 +567,6 @@ const VideoViewer = ({ route, navigation }) => {
               )}
             </View>
           </View>
-          {/* End Wrapper Putih */}
         </ScrollView>
       </View>
     </SafeAreaView>
@@ -608,13 +574,6 @@ const VideoViewer = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  titleText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-    textTransform: 'capitalize',
-  },
-
   infoBox: {
     backgroundColor: '#fff',
     padding: 12,
@@ -628,7 +587,6 @@ const styles = StyleSheet.create({
     textTransform: 'capitalize',
   },
   videoMeta: { fontSize: 12, color: '#666', marginTop: 6 },
-
   commentsSection: {
     padding: 12,
     backgroundColor: '#fff',
@@ -643,7 +601,6 @@ const styles = StyleSheet.create({
   },
   commentsTitle: { fontSize: 16, fontWeight: '700' },
   commentsCount: { color: '#666' },
-
   rootBox: {
     paddingVertical: 8,
     borderBottomWidth: 1,
@@ -659,10 +616,8 @@ const styles = StyleSheet.create({
   commentTime: { fontSize: 11, color: '#777', marginLeft: 8 },
   commentText: { marginTop: 6, color: '#222', fontSize: 14 },
   commentDeleted: { fontStyle: 'italic', color: '#999' },
-
   viewRepliesBtn: { marginTop: 6 },
   viewRepliesText: { color: '#1f7af7' },
-
   loadMoreBtn: {
     marginTop: 12,
     alignItems: 'center',
@@ -676,7 +631,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     height: '100%',
   },
-
   commentInput: {
     padding: 12,
     flexDirection: 'row',
@@ -684,7 +638,6 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#eee',
   },
-
   commentTextInput: {
     flex: 1,
     height: 40,
@@ -701,6 +654,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 8,
     borderRadius: 8,
+  },
+  videoLoadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
 });
 

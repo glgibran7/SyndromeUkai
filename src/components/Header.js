@@ -8,35 +8,44 @@ import {
   StyleSheet,
   Dimensions,
   StatusBar,
+  Picker, // atau gunakan @react-native-picker/picker
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
+import { KelasContext } from '../context/KelasContext'; // tambahkan
 import Ionicons from '@react-native-vector-icons/ionicons';
 
 const { width } = Dimensions.get('window');
 
 const Header = ({ navigation, showBack = false }) => {
   const { user, handleLogout, isLoggingOut } = useContext(AuthContext);
+  const { kelasList, kelasUser, gantiKelas } = useContext(KelasContext); // ambil data kelas
   const [menuVisible, setMenuVisible] = useState(false);
   const [notifVisible, setNotifVisible] = useState(false);
   const insets = useSafeAreaInsets();
 
-  // Handle closing of menu when touching outside
   const closeMenu = () => {
     setMenuVisible(false);
     setNotifVisible(false);
   };
 
-  // Handle menu and notification toggle
   const toggleMenu = () => {
-    if (notifVisible) setNotifVisible(false); // Close notification if open
+    if (notifVisible) setNotifVisible(false);
     setMenuVisible(!menuVisible);
   };
 
   const toggleNotif = () => {
-    if (menuVisible) setMenuVisible(false); // Close menu if open
+    if (menuVisible) setMenuVisible(false);
     setNotifVisible(!notifVisible);
+  };
+
+  const handleChangeKelas = id => {
+    const selected = kelasList.find(k => k.id_paketkelas == id);
+    if (selected) {
+      gantiKelas(selected);
+      // reload data halaman
+    }
   };
 
   return (
@@ -51,7 +60,7 @@ const Header = ({ navigation, showBack = false }) => {
         <TouchableOpacity
           style={styles.overlay}
           activeOpacity={1}
-          onPress={closeMenu} // Close both menu and notif when overlay touched
+          onPress={closeMenu}
         />
       )}
 
@@ -61,7 +70,7 @@ const Header = ({ navigation, showBack = false }) => {
         end={{ x: 1, y: 0 }}
         style={[styles.header, { paddingTop: insets.top }]}
       >
-        {/* Back button if available */}
+        {/* Tombol Back */}
         {showBack && (
           <TouchableOpacity
             onPress={() => navigation.goBack()}
@@ -79,20 +88,35 @@ const Header = ({ navigation, showBack = false }) => {
           />
         </View>
 
-        {/* Notifications & User Info */}
+        {/* Dropdown Kelas */}
+        {kelasList?.length > 0 && (
+          <View style={{ marginRight: 15, minWidth: 130 }}>
+            <Picker
+              selectedValue={kelasUser?.id_paketkelas || ''}
+              style={styles.kelasPicker}
+              dropdownIconColor="#fff"
+              onValueChange={itemValue => handleChangeKelas(itemValue)}
+            >
+              {kelasList.map(kelas => (
+                <Picker.Item
+                  key={kelas.id_paketkelas}
+                  label={`${kelas.nama_kelas} ${
+                    kelas.batch ? `(Batch ${kelas.batch})` : ''
+                  }`}
+                  value={kelas.id_paketkelas}
+                />
+              ))}
+            </Picker>
+          </View>
+        )}
+
+        {/* Notifikasi + Avatar */}
         <View style={styles.rightSection}>
-          {/* Bell Icon */}
-          <TouchableOpacity
-            style={{ marginRight: 15 }}
-            onPress={toggleNotif} // Toggle notification menu
-          >
+          <TouchableOpacity style={{ marginRight: 15 }} onPress={toggleNotif}>
             <Ionicons name="notifications-outline" size={26} color="#fff" />
           </TouchableOpacity>
 
-          {/* Avatar Icon */}
           <TouchableOpacity onPress={toggleMenu}>
-            {' '}
-            {/* Toggle user menu */}
             <View style={styles.avatarInitial}>
               <Text style={styles.avatarText}>
                 {user?.name
@@ -105,7 +129,7 @@ const Header = ({ navigation, showBack = false }) => {
             </View>
           </TouchableOpacity>
 
-          {/* User Menu */}
+          {/* Menu User */}
           {menuVisible && (
             <View style={styles.dropdownMenu}>
               <TouchableOpacity
@@ -142,19 +166,18 @@ const Header = ({ navigation, showBack = false }) => {
             </View>
           )}
 
-          {/* Notifications Menu */}
+          {/* Notifikasi */}
           {notifVisible && (
             <View style={styles.dropdownMenu}>
               <TouchableOpacity
                 style={styles.dropdownItem}
                 onPress={() => {
                   setNotifVisible(false);
-                  navigation.navigate('Notifications'); // go to notification screen
+                  navigation.navigate('Notifications');
                 }}
               >
                 <Text style={styles.dropdownText}>Lihat Notifikasi</Text>
               </TouchableOpacity>
-
               <View style={styles.dropdownItem}>
                 <Text style={[styles.dropdownText, { color: 'gray' }]}>
                   (Belum ada notifikasi)
@@ -184,22 +207,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     zIndex: 1000,
   },
-  backButton: {
-    padding: 8,
-    marginRight: 10,
-  },
-  logoContainer: {
-    flex: 1,
-    alignItems: 'flex-start',
-  },
-  logoCenter: {
-    //alignItems: 'center',
-  },
-  logo: {
-    width: width * 0.3,
-    height: width * 0.2,
-    resizeMode: 'contain',
-  },
+  backButton: { padding: 8, marginRight: 10 },
+  logoContainer: { flex: 1, alignItems: 'flex-start' },
+  logoCenter: {},
+  logo: { width: width * 0.3, height: width * 0.2, resizeMode: 'contain' },
   rightSection: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -238,10 +249,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
   },
-  dropdownText: {
-    fontSize: 15,
-    color: '#000',
-  },
+  dropdownText: { fontSize: 15, color: '#000' },
+  kelasPicker: { height: 40, color: '#fff', backgroundColor: 'transparent' },
 });
 
 export default Header;

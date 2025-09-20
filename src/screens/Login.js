@@ -66,10 +66,11 @@ const Login = ({ navigation }) => {
     }
 
     try {
-      const response = await Api.post('/auth/login/mobile', {
+      const response = await Api.post('/auth/login/web', {
         email,
         password,
       });
+
       const {
         access_token,
         id_user,
@@ -77,6 +78,7 @@ const Login = ({ navigation }) => {
         email: userEmail,
         role,
         nama_kelas,
+        id_paketkelas, // kalau API peserta sudah kirim, kita ambil
       } = response.data;
 
       // Simpan token
@@ -88,7 +90,9 @@ const Login = ({ navigation }) => {
         email: userEmail,
         role,
         nama_kelas,
+        id_paketkelas: id_paketkelas || null, // kalau mentor default null
       };
+
       await AsyncStorage.setItem('user', JSON.stringify(userData));
       setUser(userData);
 

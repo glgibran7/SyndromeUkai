@@ -20,7 +20,7 @@ import ChangePassword from './src/screens/ChangePasswordScreen';
 import EditProfile from './src/screens/EditProfileScreen';
 
 import { navigationRef } from './src/utils/NavigationService';
-
+import { KelasProvider } from './src/context/KelasContext';
 import { AuthProvider } from './src/context/AuthContext';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -31,26 +31,34 @@ function App() {
     <SafeAreaProvider>
       <ToastProvider>
         <AuthProvider navigationRef={navigationRef}>
-          <NavigationContainer ref={navigationRef}>
-            <Stack.Navigator
-              initialRouteName="Splash"
-              screenOptions={{ headerShown: false }}
-            >
-              <Stack.Screen name="Login" component={Login} />
-              <Stack.Screen name="SignUp" component={SignUp} />
-              <Stack.Screen name="Detail" component={Detail} />
-              <Stack.Screen name="Splash" component={Splash} />
-              <Stack.Screen name="Paket" component={Paket} />
-              <Stack.Screen name="PaketDetail" component={PaketDetail} />
-              <Stack.Screen name="Main" component={MainTabNavigator} />
-              <Stack.Screen name="Profile" component={Profile} />
-              <Stack.Screen name="AboutScreen" component={AboutScreen} />
-              <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
-              <Stack.Screen name="HelpScreen" component={HelpScreen} />
-              <Stack.Screen name="EditProfile" component={EditProfile} />
-              <Stack.Screen name="ChangePassword" component={ChangePassword} />
-            </Stack.Navigator>
-          </NavigationContainer>
+          <KelasProvider>
+            <NavigationContainer ref={navigationRef}>
+              <Stack.Navigator
+                initialRouteName="Splash"
+                screenOptions={{ headerShown: false }}
+              >
+                <Stack.Screen name="Login" component={Login} />
+                <Stack.Screen name="SignUp" component={SignUp} />
+                <Stack.Screen name="Detail" component={Detail} />
+                <Stack.Screen name="Splash" component={Splash} />
+                <Stack.Screen name="Paket" component={Paket} />
+                <Stack.Screen name="PaketDetail" component={PaketDetail} />
+                <Stack.Screen name="Main" component={MainTabNavigator} />
+                <Stack.Screen name="Profile" component={Profile} />
+                <Stack.Screen name="AboutScreen" component={AboutScreen} />
+                <Stack.Screen
+                  name="ForgotPassword"
+                  component={ForgotPassword}
+                />
+                <Stack.Screen name="HelpScreen" component={HelpScreen} />
+                <Stack.Screen name="EditProfile" component={EditProfile} />
+                <Stack.Screen
+                  name="ChangePassword"
+                  component={ChangePassword}
+                />
+              </Stack.Navigator>
+            </NavigationContainer>
+          </KelasProvider>
         </AuthProvider>
       </ToastProvider>
     </SafeAreaProvider>

@@ -306,6 +306,7 @@ const VideoListScreen = ({ route, navigation }) => {
                         onPress={() =>
                           navigation.navigate('VideoViewer', {
                             id_materi: item.id_materi,
+                            id_paketkelas: item.id_paketkelas, // ⬅️ ini penting
                             title: item.judul,
                             url_file: item.url_file,
                             channel: item.user?.nama || user.name,
