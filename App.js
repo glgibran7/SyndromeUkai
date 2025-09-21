@@ -1,4 +1,3 @@
-// In App.js in a new project
 import * as React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -19,6 +18,9 @@ import HelpScreen from './src/screens/HelpScreen';
 import ChangePassword from './src/screens/ChangePasswordScreen';
 import EditProfile from './src/screens/EditProfileScreen';
 
+// ⬇️ tambahin ini
+import Onboarding from './src/screens/Onboarding';
+
 import { navigationRef } from './src/utils/NavigationService';
 import { KelasProvider } from './src/context/KelasContext';
 import { AuthProvider } from './src/context/AuthContext';
@@ -37,10 +39,12 @@ function App() {
                 initialRouteName="Splash"
                 screenOptions={{ headerShown: false }}
               >
+                {/* urutkan supaya jelas */}
+                <Stack.Screen name="Splash" component={Splash} />
+                <Stack.Screen name="Onboarding" component={Onboarding} />
                 <Stack.Screen name="Login" component={Login} />
                 <Stack.Screen name="SignUp" component={SignUp} />
                 <Stack.Screen name="Detail" component={Detail} />
-                <Stack.Screen name="Splash" component={Splash} />
                 <Stack.Screen name="Paket" component={Paket} />
                 <Stack.Screen name="PaketDetail" component={PaketDetail} />
                 <Stack.Screen name="Main" component={MainTabNavigator} />

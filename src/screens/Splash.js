@@ -1,27 +1,18 @@
+// Splash.js
 import { StackActions } from '@react-navigation/native';
 import React, { useEffect } from 'react';
-import {
-  View,
-  StyleSheet,
-  Image,
-  Animated,
-  StatusBar,
-  Text,
-} from 'react-native';
+import { View, StyleSheet, Image, Animated, StatusBar } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Splash = ({ navigation }) => {
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
-  const scaleAnim = React.useRef(new Animated.Value(0.5)).current; // Untuk animasi skala logo
-  const translateY = React.useRef(new Animated.Value(100)).current; // Untuk animasi pergerakan logo
-  const textOpacity = React.useRef(new Animated.Value(0)).current; // Untuk animasi teks
+  const scaleAnim = React.useRef(new Animated.Value(0.5)).current;
+  const translateY = React.useRef(new Animated.Value(100)).current;
 
   useEffect(() => {
-    // Menyembunyikan status bar
     StatusBar.setHidden(true);
 
-    // Animasi fade dan pergerakan logo
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -38,36 +29,36 @@ const Splash = ({ navigation }) => {
         duration: 1500,
         useNativeDriver: true,
       }),
-      Animated.timing(textOpacity, {
-        toValue: 1,
-        delay: 1200, // Teks muncul setelah logo
-        duration: 800,
-        useNativeDriver: true,
-      }),
     ]).start();
 
     const checkAuth = async () => {
       try {
+        const hasOnboarded = await AsyncStorage.getItem('hasOnboarded');
         const userData = await AsyncStorage.getItem('user');
         const token = await AsyncStorage.getItem('token');
 
         setTimeout(() => {
+          // 🔑 Cek dulu onboarding
+          if (!hasOnboarded) {
+            navigation.dispatch(StackActions.replace('Onboarding'));
+            return;
+          }
+
+          // 🔑 Kalau sudah onboarding, cek auth
           if (userData && token) {
             const parsedUser = JSON.parse(userData);
-
-            // 🔑 aturan navigasi
             if (
               parsedUser.role === 'peserta' &&
               parsedUser.nama_kelas !== null
             ) {
-              navigation.dispatch(StackActions.replace('Main')); // ke Home
+              navigation.dispatch(StackActions.replace('Main'));
             } else {
-              navigation.dispatch(StackActions.replace('Paket')); // ke Paket
+              navigation.dispatch(StackActions.replace('Paket'));
             }
           } else {
             navigation.dispatch(StackActions.replace('Login'));
           }
-        }, 2000); // kasih delay biar splash kelihatan dulu
+        }, 2000);
       } catch (error) {
         console.error('Error cek auth:', error);
         navigation.dispatch(StackActions.replace('Login'));
@@ -77,7 +68,6 @@ const Splash = ({ navigation }) => {
     checkAuth();
 
     return () => {
-      // Mengembalikan status bar ke kondisi normal setelah keluar dari splash screen
       StatusBar.setHidden(false);
     };
   }, []);
@@ -102,24 +92,8 @@ const Splash = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  logo: {
-    width: 250,
-    height: 100,
-    borderRadius: 20,
-    shadowColor: '#000',
-  },
-  appName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-    textTransform: 'uppercase',
-    letterSpacing: 2,
-  },
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  logo: { width: 250, height: 100, borderRadius: 20, shadowColor: '#000' },
 });
 
 export default Splash;

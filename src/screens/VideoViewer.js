@@ -435,20 +435,49 @@ const VideoViewer = ({ route, navigation }) => {
           <style>
             body, html { margin:0; padding:0; height:100%; background:black; }
             iframe { width:100%; height:100%; border:0; }
-            .ndfHFb-c4YZDc-Wrql6b,
-            .ndfHFb-c4YZDc-Wrql6c,
-            .ndfHFb-c4YZDc-Wrql6d {
-              pointer-events: none !important;
-              opacity: 0.3 !important;
+
+            /* Transparent overlay global (tidak blokir) */
+            .overlay {
+              position: absolute;
+              top: 0; left: 0; right: 0; bottom: 0;
+              background: transparent;
+              pointer-events: none; /* biar video tetap bisa diklik */
+            }
+
+            /* Block tombol pop-out kanan atas */
+            .block-popout {
+              position: absolute;
+              top: 0;
+              right: 0;
+              width: 60px;
+              height: 60px;
+              background: transparent;
+              pointer-events: auto; /* blokir klik */
+            }
+
+            /* Block tombol download & share kanan bawah */
+            .block-bottom-right {
+              position: absolute;
+              bottom: 0;
+              right: 0;
+              width: 120px;   /* cover 2 tombol */
+              height: 60px;
+              background: transparent;
+              pointer-events: auto; /* blokir klik */
             }
           </style>
         </head>
         <body>
-          <iframe
-            src="${getGDrivePreviewLink(url_file)}"
-            allow="autoplay; fullscreen"
-            allowfullscreen
-          ></iframe>
+          <div style="position:relative;width:100%;height:100%;">
+            <iframe
+              src="${getGDrivePreviewLink(url_file)}"
+              allow="autoplay; fullscreen"
+              allowfullscreen
+            ></iframe>
+            <div class="overlay"></div>
+            <div class="block-popout"></div>
+            <div class="block-bottom-right"></div>
+          </div>
         </body>
       </html>
     `,
@@ -458,6 +487,7 @@ const VideoViewer = ({ route, navigation }) => {
                 domStorageEnabled={true}
                 allowsFullscreenVideo={true}
                 startInLoadingState={true}
+                onLoadEnd={() => setVideoLoading(false)}
                 renderLoading={() => (
                   <ActivityIndicator
                     size="large"
@@ -552,7 +582,12 @@ const VideoViewer = ({ route, navigation }) => {
                 </Text>
               ) : (
                 <>
-                  {displayedRoots.map(it => renderRoot({ item: it }))}
+                  {displayedRoots.map(it => (
+                    <View key={`root-${it.id_komentarmateri}`}>
+                      {renderRoot({ item: it })}
+                    </View>
+                  ))}
+
                   {hasMoreRoots && (
                     <TouchableOpacity
                       style={styles.loadMoreBtn}

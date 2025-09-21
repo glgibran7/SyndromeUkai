@@ -66,7 +66,7 @@ const Login = ({ navigation }) => {
     }
 
     try {
-      const response = await Api.post('/auth/login/web', {
+      const response = await Api.post('/auth/login/mobile', {
         email,
         password,
       });
