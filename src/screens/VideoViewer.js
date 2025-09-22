@@ -436,15 +436,7 @@ const VideoViewer = ({ route, navigation }) => {
             body, html { margin:0; padding:0; height:100%; background:black; }
             iframe { width:100%; height:100%; border:0; }
 
-            /* Transparent overlay global (tidak blokir) */
-            .overlay {
-              position: absolute;
-              top: 0; left: 0; right: 0; bottom: 0;
-              background: transparent;
-              pointer-events: none; /* biar video tetap bisa diklik */
-            }
-
-            /* Block tombol pop-out kanan atas */
+            /* ✅ Overlay tombol pop-out kanan atas */
             .block-popout {
               position: absolute;
               top: 0;
@@ -455,12 +447,12 @@ const VideoViewer = ({ route, navigation }) => {
               pointer-events: auto; /* blokir klik */
             }
 
-            /* Block tombol download & share kanan bawah */
+            /* ✅ Overlay tombol download & share kanan bawah */
             .block-bottom-right {
               position: absolute;
               bottom: 0;
               right: 0;
-              width: 120px;   /* cover 2 tombol */
+              width: 120px;  /* cover dua tombol */
               height: 60px;
               background: transparent;
               pointer-events: auto; /* blokir klik */
@@ -469,12 +461,11 @@ const VideoViewer = ({ route, navigation }) => {
         </head>
         <body>
           <div style="position:relative;width:100%;height:100%;">
-            <iframe
-              src="${getGDrivePreviewLink(url_file)}"
-              allow="autoplay; fullscreen"
-              allowfullscreen
-            ></iframe>
-            <div class="overlay"></div>
+            <iframe 
+              src="${url_file}" 
+              allow="autoplay; fullscreen; encrypted-media" 
+              allowfullscreen>
+            </iframe>
             <div class="block-popout"></div>
             <div class="block-bottom-right"></div>
           </div>
@@ -482,10 +473,11 @@ const VideoViewer = ({ route, navigation }) => {
       </html>
     `,
                 }}
-                style={{ flex: 1 }}
+                style={{ flex: 1, backgroundColor: '#000' }}
                 javaScriptEnabled={true}
                 domStorageEnabled={true}
                 allowsFullscreenVideo={true}
+                mediaPlaybackRequiresUserAction={false}
                 startInLoadingState={true}
                 onLoadEnd={() => setVideoLoading(false)}
                 renderLoading={() => (
@@ -509,9 +501,13 @@ const VideoViewer = ({ route, navigation }) => {
                 paused={false}
                 onLoadStart={() => setVideoLoading(true)}
                 onLoad={() => setVideoLoading(false)}
-                onError={e => console.log('Video error', e)}
+                onError={e => {
+                  console.log('Video error', e);
+                  Alert.alert('Error', 'Video gagal dimuat.');
+                }}
               />
             )}
+
             {videoLoading && (
               <View style={styles.videoLoadingOverlay}>
                 <ActivityIndicator size="large" color="#fff" />
