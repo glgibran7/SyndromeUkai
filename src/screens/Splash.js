@@ -47,13 +47,17 @@ const Splash = ({ navigation }) => {
           // 🔑 Kalau sudah onboarding, cek auth
           if (userData && token) {
             const parsedUser = JSON.parse(userData);
-            if (
-              parsedUser.role === 'peserta' &&
-              parsedUser.nama_kelas !== null
-            ) {
-              navigation.dispatch(StackActions.replace('Main'));
+
+            if (parsedUser.role === 'peserta') {
+              if (parsedUser.nama_kelas) {
+                navigation.dispatch(StackActions.replace('Main'));
+              } else {
+                navigation.dispatch(StackActions.replace('Paket'));
+              }
+            } else if (parsedUser.role === 'mentor') {
+              navigation.dispatch(StackActions.replace('HomeMentor'));
             } else {
-              navigation.dispatch(StackActions.replace('Paket'));
+              navigation.dispatch(StackActions.replace('Login'));
             }
           } else {
             navigation.dispatch(StackActions.replace('Login'));

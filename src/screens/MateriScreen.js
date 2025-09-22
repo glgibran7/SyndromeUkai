@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useContext } from 'react';
 import {
   View,
   Text,
@@ -18,6 +18,7 @@ import Api from '../utils/Api';
 import Header from '../components/Header';
 import { useToast } from '../context/ToastContext';
 import Ionicons from '@react-native-vector-icons/ionicons';
+import { KelasContext } from '../context/KelasContext';
 
 import EditModulModal from '../components/EditModulModal';
 import AddModulModal from '../components/AddModulModal';
@@ -26,6 +27,7 @@ const { width, height } = Dimensions.get('window');
 
 const MateriScreen = ({ navigation }) => {
   const toast = useToast();
+  const { kelasAktif, isWaliKelas } = useContext(KelasContext);
   const [modulList, setModulList] = useState([]);
   const [filteredList, setFilteredList] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -55,7 +57,15 @@ const MateriScreen = ({ navigation }) => {
   const getModul = async () => {
     try {
       const parsedUser = await getUserData();
-      const endpoint = parsedUser?.role === 'mentor' ? '/modul' : '/modul/user';
+      const idKelas = await AsyncStorage.getItem('kelas'); // ambil kelas yang dipilih
+
+      let endpoint = '';
+      if (parsedUser?.role === 'mentor') {
+        endpoint = idKelas ? `/modul/mentor/${idKelas}` : '/modul/mentor';
+      } else {
+        endpoint = idKelas ? `/modul/user/${idKelas}` : '/modul/user';
+      }
+
       const res = await Api.get(endpoint);
 
       const data =
@@ -76,11 +86,7 @@ const MateriScreen = ({ navigation }) => {
       setModulList(formatted);
       setFilteredList(formatted);
     } catch (error) {
-      toast.show({
-        type: 'error',
-        text1: 'Gagal',
-        text2: 'Tidak bisa mengambil data modul',
-      });
+      toast.show('Gagal: Tidak bisa mengambil data modul', 'error');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -91,11 +97,14 @@ const MateriScreen = ({ navigation }) => {
     getUserData();
     getModul();
   }, []);
+  useEffect(() => {
+    getModul();
+  }, [kelasAktif, isWaliKelas]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     getModul();
-  }, []);
+  }, [kelasAktif, isWaliKelas]);
 
   useEffect(() => {
     if (!searchQuery) {

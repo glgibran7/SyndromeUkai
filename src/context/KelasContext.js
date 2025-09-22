@@ -1,66 +1,78 @@
-// context/KelasContext.js
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useContext } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Api from '../utils/Api';
+import { AuthContext } from './AuthContext';
+
 export const KelasContext = createContext();
 
 export const KelasProvider = ({ children }) => {
-  const [kelasList, setKelasList] = useState([]);
-  const [kelasUser, setKelasUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { user } = useContext(AuthContext);
 
-  // Ambil daftar kelas user
-  const fetchKelasUser = async () => {
+  const [kelasAktif, setKelasAktif] = useState(null);
+  const [daftarKelas, setDaftarKelas] = useState([]);
+  const [isLoadingKelas, setIsLoadingKelas] = useState(true);
+  const [isWaliKelas, setIsWaliKelas] = useState(false); // 🔥 toggle wali kelas
+
+  const loadKelas = async () => {
+    if (!user) return;
+    setIsLoadingKelas(true);
     try {
-      setLoading(true);
-      const res = await Api.get('/profile/kelas-saya');
-      if (res?.data) {
-        setKelasList(res.data);
+      const token = await AsyncStorage.getItem('token');
+      let list = [];
 
-        // cek kelas yang terakhir dipilih (dari storage)
-        const stored = await AsyncStorage.getItem('kelasUser');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          const stillExist = res.data.find(
-            k => k.id_paketkelas == parsed.id_paketkelas,
-          );
-          if (stillExist) {
-            setKelasUser(stillExist);
-            return;
-          }
+      if (user.role === 'mentor') {
+        const endpoint = isWaliKelas
+          ? '/paket-kelas/wali-kelas'
+          : '/paket-kelas/mentor';
+
+        const res = await Api.get(endpoint, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        list = res.data?.data || [];
+
+        setDaftarKelas(list);
+
+        if (list.length > 0 && !kelasAktif) {
+          setKelasAktif(list[0]);
+          await AsyncStorage.setItem('kelas', list[0].id_paketkelas.toString());
+          await AsyncStorage.setItem('namaKelas', list[0].nama_kelas);
         }
-
-        // default pilih kelas pertama
-        if (res.data.length > 0) {
-          setKelasUser(res.data[0]);
-          await AsyncStorage.setItem('kelasUser', JSON.stringify(res.data[0]));
+      } else if (user.role === 'peserta') {
+        const res = await Api.get('/profile/kelas-saya', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const kelasPeserta = res.data?.data?.[0];
+        if (kelasPeserta) {
+          setKelasAktif(kelasPeserta);
+          setDaftarKelas([kelasPeserta]); // konsisten array
+          await AsyncStorage.setItem(
+            'kelas',
+            kelasPeserta.id_paketkelas.toString(),
+          );
+          await AsyncStorage.setItem('namaKelas', kelasPeserta.nama_kelas);
         }
       }
     } catch (err) {
-      console.error('Gagal ambil kelas:', err);
+      console.error('Gagal ambil daftar kelas:', err);
     } finally {
-      setLoading(false);
+      setIsLoadingKelas(false);
     }
   };
 
-  // Ganti kelas
-  const gantiKelas = async kelas => {
-    setKelasUser(kelas);
-    await AsyncStorage.setItem('kelasUser', JSON.stringify(kelas));
-  };
-
   useEffect(() => {
-    fetchKelasUser();
-  }, []);
+    loadKelas();
+  }, [user, isWaliKelas]); // 🔥 refetch setiap kali toggle berubah
 
   return (
     <KelasContext.Provider
       value={{
-        kelasList,
-        kelasUser,
-        gantiKelas,
-        loading,
-        refresh: fetchKelasUser,
+        kelasAktif,
+        setKelasAktif,
+        daftarKelas,
+        isLoadingKelas,
+        isWaliKelas,
+        setIsWaliKelas, // 🔥 biar bisa dipanggil di Header
+        loadKelas,
       }}
     >
       {children}

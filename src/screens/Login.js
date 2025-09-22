@@ -8,7 +8,6 @@ import {
   TextInput,
   ScrollView,
   StyleSheet,
-  ActivityIndicator,
   Dimensions,
   Modal,
   SafeAreaView,
@@ -34,6 +33,7 @@ const Login = ({ navigation }) => {
   const [fadeAnim] = useState(new Animated.Value(0));
   const [scaleAnim] = useState(new Animated.Value(0));
   const [translateYAnim] = useState(new Animated.Value(50));
+  const [rotationAnim] = useState(new Animated.Value(0)); // Rotation Animation
   const { show } = useToast();
 
   useEffect(() => {
@@ -54,6 +54,15 @@ const Login = ({ navigation }) => {
         useNativeDriver: true,
       }),
     ]).start();
+
+    // Start the rotating animation for spinner
+    Animated.loop(
+      Animated.timing(rotationAnim, {
+        toValue: 1,
+        duration: 1000, // Speed of rotation
+        useNativeDriver: true,
+      }),
+    ).start();
   }, []);
 
   const handleLogin = async () => {
@@ -78,19 +87,36 @@ const Login = ({ navigation }) => {
         email: userEmail,
         role,
         nama_kelas,
-        id_paketkelas, // kalau API peserta sudah kirim, kita ambil
+        id_paketkelas,
       } = response.data;
 
-      // Simpan token
       await AsyncStorage.setItem('token', access_token);
+
+      let finalNamaKelas = nama_kelas;
+      let finalIdPaketKelas = id_paketkelas;
+
+      if (role === 'peserta' && !nama_kelas) {
+        try {
+          const kelasRes = await Api.get('/profile/kelas-saya', {
+            headers: { Authorization: `Bearer ${access_token}` },
+          });
+
+          if (kelasRes.data?.data?.length > 0) {
+            finalNamaKelas = kelasRes.data.data[0].nama_kelas;
+            finalIdPaketKelas = kelasRes.data.data[0].id_paketkelas;
+          }
+        } catch (err) {
+          console.warn('Gagal ambil kelas peserta:', err);
+        }
+      }
 
       const userData = {
         id_user,
         name: nama,
         email: userEmail,
         role,
-        nama_kelas,
-        id_paketkelas: id_paketkelas || null, // kalau mentor default null
+        nama_kelas: finalNamaKelas || null,
+        id_paketkelas: finalIdPaketKelas || null,
       };
 
       await AsyncStorage.setItem('user', JSON.stringify(userData));
@@ -98,11 +124,12 @@ const Login = ({ navigation }) => {
 
       show('Login berhasil!', 'success');
 
-      // Navigasi berdasarkan role & paket
-      if (role === 'mentor' || (role === 'peserta' && nama_kelas)) {
+      if (role === 'peserta' && userData.nama_kelas) {
         navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
       } else if (role === 'peserta') {
         navigation.reset({ index: 0, routes: [{ name: 'Paket' }] });
+      } else if (role === 'mentor') {
+        navigation.reset({ index: 0, routes: [{ name: 'HomeMentor' }] });
       } else {
         show('Role tidak dikenali!', 'warning');
       }
@@ -113,6 +140,12 @@ const Login = ({ navigation }) => {
       setLoading(false);
     }
   };
+
+  // Custom Spinner Animation
+  const rotateInterpolate = rotationAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
@@ -203,7 +236,20 @@ const Login = ({ navigation }) => {
                 disabled={loading}
               >
                 {loading ? (
-                  <ActivityIndicator color="#fff" />
+                  <Animated.View
+                    style={{
+                      transform: [{ rotate: rotateInterpolate }],
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <View
+                      style={[
+                        styles.spinner,
+                        { width: 40, height: 40, borderWidth: 4 },
+                      ]}
+                    />
+                  </Animated.View>
                 ) : (
                   <Text style={styles.loginButtonText}>Login</Text>
                 )}
@@ -223,7 +269,20 @@ const Login = ({ navigation }) => {
 
           <Modal visible={loading} transparent animationType="fade">
             <View style={styles.overlay}>
-              <ActivityIndicator size="large" color="#fff" />
+              <Animated.View
+                style={{
+                  transform: [{ rotate: rotateInterpolate }],
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+              >
+                <View
+                  style={[
+                    styles.spinner,
+                    { width: 60, height: 60, borderWidth: 6 },
+                  ]}
+                />
+              </Animated.View>
               <Text style={{ color: '#fff', marginTop: 10 }}>
                 Sedang masuk...
               </Text>
@@ -313,6 +372,18 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  spinner: {
+    borderRadius: 50,
+    borderColor: '#fff',
+    borderBottomColor: 'transparent',
+    borderLeftColor: 'transparent',
+    borderTopColor: 'transparent',
+    borderRightColor: '#fff',
+    borderWidth: 4,
+    borderStyle: 'solid',
+    animationDuration: '1s',
+    animationName: 'spin',
   },
 });
 

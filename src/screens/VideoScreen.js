@@ -56,7 +56,15 @@ const VideoScreen = ({ navigation }) => {
   const getModul = async () => {
     try {
       const parsedUser = await getUserData();
-      const endpoint = parsedUser?.role === 'mentor' ? '/modul' : '/modul/user';
+      const idKelas = await AsyncStorage.getItem('kelas'); // ambil kelas yang dipilih
+
+      let endpoint = '';
+      if (parsedUser?.role === 'mentor') {
+        endpoint = idKelas ? `/modul/mentor/${idKelas}` : '/modul/mentor';
+      } else {
+        endpoint = idKelas ? `/modul/user/${idKelas}` : '/modul/user';
+      }
+
       const res = await Api.get(endpoint);
 
       const data =
@@ -77,11 +85,7 @@ const VideoScreen = ({ navigation }) => {
       setModulList(formatted);
       setFilteredList(formatted);
     } catch (error) {
-      toast.show({
-        type: 'error',
-        text1: 'Gagal',
-        text2: 'Tidak bisa mengambil data modul',
-      });
+      toast.show('Gagal: Tidak bisa mengambil data modul', 'error');
     } finally {
       setLoading(false);
       setRefreshing(false);

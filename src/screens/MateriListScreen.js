@@ -53,7 +53,11 @@ const MateriListScreen = ({ route, navigation }) => {
         const filtered = res.data.data.filter(
           m => m.id_modul === modulId && m.tipe_materi === 'document',
         );
-        setMateriList(filtered);
+        setMateriList(
+          filtered.filter(
+            (v, i, a) => a.findIndex(t => t.id_materi === v.id_materi) === i,
+          ),
+        );
         setFilteredList(filtered);
       }
     } catch (error) {
@@ -243,9 +247,9 @@ const MateriListScreen = ({ route, navigation }) => {
                       Tidak ada materi tersedia
                     </Text>
                   ) : (
-                    filteredList.map(item => (
+                    filteredList.map((item, index) => (
                       <TouchableOpacity
-                        key={item.id_materi}
+                        key={`${item.id_materi}-${index}`}
                         activeOpacity={0.8}
                         onPress={() =>
                           navigation.navigate('MateriViewer', {

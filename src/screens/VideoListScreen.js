@@ -91,7 +91,11 @@ const VideoListScreen = ({ route, navigation }) => {
         const filtered = res.data.data.filter(
           m => m.id_modul === id_modul && m.tipe_materi === 'video',
         );
-        setMateriList(filtered);
+        setMateriList(
+          filtered.filter(
+            (v, i, a) => a.findIndex(t => t.id_materi === v.id_materi) === i,
+          ),
+        );
         setFilteredList(filtered);
       } else {
         setMateriList([]);
@@ -300,9 +304,9 @@ const VideoListScreen = ({ route, navigation }) => {
                       </Text>
                     </View>
                   ) : (
-                    filteredList.map(item => (
+                    filteredList.map((item, index) => (
                       <TouchableOpacity
-                        key={item.id_materi}
+                        key={`${item.id_materi}-${index}`}
                         onPress={() =>
                           navigation.navigate('VideoViewer', {
                             id_materi: item.id_materi,

@@ -2,7 +2,6 @@ import * as React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { ToastProvider } from './src/context/ToastContext';
-import Toast from 'react-native-toast-message';
 
 import Login from './src/screens/Login';
 import SignUp from './src/screens/SignUp';
@@ -17,9 +16,8 @@ import AboutScreen from './src/screens/AboutScreen';
 import HelpScreen from './src/screens/HelpScreen';
 import ChangePassword from './src/screens/ChangePasswordScreen';
 import EditProfile from './src/screens/EditProfileScreen';
-
-// ⬇️ tambahin ini
 import Onboarding from './src/screens/Onboarding';
+import HomeMentor from './src/screens/HomeMentor';
 
 import { navigationRef } from './src/utils/NavigationService';
 import { KelasProvider } from './src/context/KelasContext';
@@ -47,6 +45,7 @@ function App() {
                 <Stack.Screen name="Detail" component={Detail} />
                 <Stack.Screen name="Paket" component={Paket} />
                 <Stack.Screen name="PaketDetail" component={PaketDetail} />
+                <Stack.Screen name="HomeMentor" component={HomeMentor} />
                 <Stack.Screen name="Main" component={MainTabNavigator} />
                 <Stack.Screen name="Profile" component={Profile} />
                 <Stack.Screen name="AboutScreen" component={AboutScreen} />

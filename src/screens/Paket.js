@@ -51,10 +51,10 @@ const Paket = ({ navigation }) => {
   // 🔹 API /auth/me
   const fetchUserFromAPI = async () => {
     try {
-      const res = await Api.get('/auth/me');
+      const res = await Api.get('/profile');
       return res.data.data;
     } catch (err) {
-      console.error('Error fetch /auth/me:', err);
+      console.error('Error fetch /profile:', err);
       return null;
     }
   };
