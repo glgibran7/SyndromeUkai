@@ -12,13 +12,17 @@ import {
   RefreshControl,
   Keyboard,
   SafeAreaView,
+  BackHandler,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import { NativeModules } from 'react-native';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import Video from 'react-native-video';
 import { WebView } from 'react-native-webview';
 import Api from '../utils/Api';
 import Header from '../components/Header';
 
+const { FlagSecure, ScreenRecord } = NativeModules;
 const { height } = Dimensions.get('window');
 const FIVE_MIN_MS = 5 * 60 * 1000;
 const ROOT_PAGE_SIZE = 8;
@@ -64,6 +68,9 @@ const VideoViewer = ({ route, navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [videoLoading, setVideoLoading] = useState(true);
   const [expandedReplies, setExpandedReplies] = useState({});
+  const [paused, setPaused] = useState(false);
+  const [active, setActive] = useState(true);
+  const [muted, setMuted] = useState(false);
   const inputRef = useRef(null);
 
   const safeFocus = () => {
@@ -87,6 +94,51 @@ const VideoViewer = ({ route, navigation }) => {
 
   const isGoogleDrivePreview = url =>
     url?.includes('drive.google.com') && url?.includes('/preview');
+
+  useEffect(() => {
+    // ✅ blokir screenshot & screen recording
+    FlagSecure.enable();
+    return () => {
+      FlagSecure.disable();
+    };
+  }, []);
+
+  useEffect(() => {
+    // ✅ deteksi jika user sedang merekam layar
+    let interval = setInterval(async () => {
+      try {
+        const rec = await ScreenRecord.isRecording();
+        if (rec) {
+          // misalnya pause video, kasih alert, atau tutup player
+          setPaused(true);
+          Alert.alert(
+            'Peringatan',
+            'Screen recording terdeteksi. Video dihentikan.',
+          );
+        }
+      } catch (e) {
+        console.log('check record err', e);
+      }
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      () => {
+        setActive(false); // 1. unmount player
+        setPaused(true); // 2. pause juga
+        setTimeout(() => {
+          navigation.goBack(); // 3. baru keluar
+        }, 100);
+        return true;
+      },
+    );
+
+    return () => backHandler.remove();
+  }, [navigation]);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -118,6 +170,16 @@ const VideoViewer = ({ route, navigation }) => {
     setDisplayedRoots(rootComments.slice(start, end));
     setHasMoreRoots(rootComments.length > end);
   }, [rootComments, rootPage]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      setActive(true); // fokus → hidupkan player
+      return () => {
+        setActive(false); // blur → matikan player
+        setPaused(true);
+      };
+    }, []),
+  );
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -424,8 +486,9 @@ const VideoViewer = ({ route, navigation }) => {
           }
         >
           <View style={{ height: height * 0.33, backgroundColor: '#000' }}>
-            {isGoogleDrivePreview(url_file) ? (
+            {active && isGoogleDrivePreview(url_file) ? (
               <WebView
+                key={url_file}
                 originWhitelist={['*']}
                 source={{
                   html: `
@@ -435,27 +498,9 @@ const VideoViewer = ({ route, navigation }) => {
           <style>
             body, html { margin:0; padding:0; height:100%; background:black; }
             iframe { width:100%; height:100%; border:0; }
-
-            /* ✅ Overlay tombol pop-out kanan atas */
             .block-popout {
-              position: absolute;
-              top: 0;
-              right: 0;
-              width: 60px;
-              height: 60px;
-              background: transparent;
-              pointer-events: auto; /* blokir klik */
-            }
-
-            /* ✅ Overlay tombol download & share kanan bawah */
-            .block-bottom-right {
-              position: absolute;
-              bottom: 0;
-              right: 0;
-              width: 120px;  /* cover dua tombol */
-              height: 60px;
-              background: transparent;
-              pointer-events: auto; /* blokir klik */
+              position: absolute; top:0; right:0; width:60px; height:60px;
+              background: transparent; pointer-events: auto;
             }
           </style>
         </head>
@@ -467,38 +512,29 @@ const VideoViewer = ({ route, navigation }) => {
               allowfullscreen>
             </iframe>
             <div class="block-popout"></div>
-            <div class="block-bottom-right"></div>
           </div>
         </body>
       </html>
     `,
                 }}
                 style={{ flex: 1, backgroundColor: '#000' }}
-                javaScriptEnabled={true}
-                domStorageEnabled={true}
-                allowsFullscreenVideo={true}
+                javaScriptEnabled
+                domStorageEnabled
+                allowsFullscreenVideo
                 mediaPlaybackRequiresUserAction={false}
-                startInLoadingState={true}
+                startInLoadingState
                 onLoadEnd={() => setVideoLoading(false)}
-                renderLoading={() => (
-                  <ActivityIndicator
-                    size="large"
-                    color="#fff"
-                    style={{
-                      flex: 1,
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                    }}
-                  />
-                )}
               />
             ) : (
               <Video
+                key={url_file} // ✅ force reset player saat screen unmount
                 source={{ uri: url_file }}
                 style={{ width: '100%', height: '100%' }}
                 controls
                 resizeMode="contain"
-                paused={false}
+                paused={paused}
+                playInBackground={false} // ✅ cegah crash
+                playWhenInactive={false} // ✅ cegah crash
                 onLoadStart={() => setVideoLoading(true)}
                 onLoad={() => setVideoLoading(false)}
                 onError={e => {

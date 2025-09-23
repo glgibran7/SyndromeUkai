@@ -143,7 +143,7 @@ const Header = ({ navigation, showBack = false }) => {
               style={styles.kelasAktifContainer}
               onPress={() => setKelasModalVisible(true)}
             >
-              <Ionicons name="school-outline" size={18} color="#fff" />
+              <Ionicons name="school-outline" size={10} color="#fff" />
               <Text style={styles.kelasAktifText}>
                 {kelasAktif?.nama_kelas || 'Pilih Kelas'}
               </Text>
@@ -151,7 +151,7 @@ const Header = ({ navigation, showBack = false }) => {
           ) : (
             // Peserta → ambil dari user.namaKelas
             <View style={styles.kelasAktifContainer}>
-              <Ionicons name="school-outline" size={18} color="#fff" />
+              <Ionicons name="school-outline" size={10} color="#fff" />
               <Text style={styles.kelasAktifText}>
                 {user?.nama_kelas || kelasAktif?.nama_kelas || '-'}
               </Text>
@@ -160,7 +160,7 @@ const Header = ({ navigation, showBack = false }) => {
 
           {/* Notifikasi */}
           <TouchableOpacity
-            style={{ marginHorizontal: 15 }}
+            style={{ marginHorizontal: 12 }}
             onPress={() => setNotifVisible(!notifVisible)}
           >
             <Ionicons name="notifications-outline" size={26} color="#fff" />
@@ -397,14 +397,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.15)',
-    paddingHorizontal: 15,
+    paddingHorizontal: 5,
     paddingVertical: 5,
     borderRadius: 20,
   },
   kelasAktifText: {
     color: '#fff',
     marginLeft: 5,
-    fontSize: 14,
+    fontSize: 10,
     fontWeight: '600',
   },
   avatarInitial: {

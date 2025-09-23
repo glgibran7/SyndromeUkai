@@ -94,6 +94,26 @@ const MateriViewer = ({ route, navigation }) => {
     () => `document.addEventListener('contextmenu', e => e.preventDefault());`,
     [],
   );
+  const disableUIJS = useMemo(
+    () => `
+    // Disable klik kanan
+    document.addEventListener('contextmenu', e => e.preventDefault());
+
+    // Blokir window.open
+    window.open = function() { return null };
+
+    // Coba disable tombol popup GDrive (kanan atas)
+    const observer = new MutationObserver(() => {
+      const btn = document.querySelector('.ndfHFb-c4YZDc-Wrql6b'); 
+      if (btn) {
+        btn.style.pointerEvents = 'none';   // tidak bisa diklik
+        btn.style.opacity = '0.3';          // kasih efek disabled
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+  `,
+    [],
+  );
 
   const shouldStart = req => {
     const u = req?.url || '';
@@ -166,8 +186,10 @@ const MateriViewer = ({ route, navigation }) => {
                   startInLoadingState
                   style={{ flex: 1 }}
                   javaScriptEnabled
-                  injectedJavaScriptBeforeContentLoaded={disableCopyJS}
-                  injectedJavaScript={disableCopyJS}
+                  //injectedJavaScriptBeforeContentLoaded={disableCopyJS}
+                  //injectedJavaScript={disableCopyJS}
+                  injectedJavaScript={disableUIJS}
+                  injectedJavaScriptBeforeContentLoaded={disableUIJS}
                   onShouldStartLoadWithRequest={shouldStart}
                   onFileDownload={onFileDownload}
                   setSupportMultipleWindows={false}

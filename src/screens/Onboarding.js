@@ -37,16 +37,45 @@ const slides = [
     id: '3',
     title: 'Mentor',
     desc: 'Belajar langsung dari mentor berpengalaman',
-    images: MentorList, // ⬅️ langsung pakai list dari file
+    images: MentorList,
   },
 ];
+
+// 👇 Komponen untuk setiap slide
+const SlideItem = ({ item, subIndex }) => {
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 600,
+      useNativeDriver: true,
+    }).start();
+  }, [item, subIndex]);
+
+  return (
+    <Animated.View style={[styles.slide, { opacity: fadeAnim }]}>
+      {item.images ? (
+        item.images[0]?.image ? (
+          <Image source={item.images[subIndex].image} style={styles.image} />
+        ) : (
+          <Image source={item.images[subIndex]} style={styles.image} />
+        )
+      ) : (
+        <Image source={item.image} style={styles.image} />
+      )}
+      <Text style={styles.title}>{item.title}</Text>
+      <Text style={styles.desc}>{item.desc}</Text>
+    </Animated.View>
+  );
+};
 
 const Onboarding = ({ navigation }) => {
   const scrollX = useRef(new Animated.Value(0)).current;
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef(null);
 
-  // Auto-slide untuk gambar di slide Materi & Mentor
+  // auto-slide gambar di dalam slide tertentu
   const [subIndex, setSubIndex] = useState(0);
   useEffect(() => {
     const interval = setInterval(() => {
@@ -72,29 +101,12 @@ const Onboarding = ({ navigation }) => {
     navigation.dispatch(StackActions.replace('Login'));
   };
 
-  const renderItem = ({ item }) => (
-    <View style={styles.slide}>
-      {item.images ? (
-        // cek kalau array isinya object { image: ... }
-        item.images[0]?.image ? (
-          <Image source={item.images[subIndex].image} style={styles.image} />
-        ) : (
-          <Image source={item.images[subIndex]} style={styles.image} />
-        )
-      ) : (
-        <Image source={item.image} style={styles.image} />
-      )}
-      <Text style={styles.title}>{item.title}</Text>
-      <Text style={styles.desc}>{item.desc}</Text>
-    </View>
-  );
-
   return (
     <LinearGradient
-      colors={['#9D2828', '#191919']}
+      colors={['#9D2828', '#1a1a1a']}
       style={styles.container}
       start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 0 }}
+      end={{ x: 1, y: 1 }}
     >
       <FlatList
         ref={flatListRef}
@@ -103,7 +115,7 @@ const Onboarding = ({ navigation }) => {
         pagingEnabled
         showsHorizontalScrollIndicator={false}
         keyExtractor={item => item.id}
-        renderItem={renderItem}
+        renderItem={({ item }) => <SlideItem item={item} subIndex={subIndex} />}
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { x: scrollX } } }],
           { useNativeDriver: false },
@@ -111,12 +123,22 @@ const Onboarding = ({ navigation }) => {
         onMomentumScrollEnd={e => {
           const index = Math.round(e.nativeEvent.contentOffset.x / width);
           setCurrentIndex(index);
-          setSubIndex(0); // reset tiap pindah slide
+          setSubIndex(0);
         }}
       />
 
+      {/* indikator dots */}
       <View style={styles.dotsContainer}>
         {slides.map((_, index) => {
+          const scale = scrollX.interpolate({
+            inputRange: [
+              (index - 1) * width,
+              index * width,
+              (index + 1) * width,
+            ],
+            outputRange: [0.8, 1.4, 0.8],
+            extrapolate: 'clamp',
+          });
           const opacity = scrollX.interpolate({
             inputRange: [
               (index - 1) * width,
@@ -127,11 +149,15 @@ const Onboarding = ({ navigation }) => {
             extrapolate: 'clamp',
           });
           return (
-            <Animated.View key={index} style={[styles.dot, { opacity }]} />
+            <Animated.View
+              key={index}
+              style={[styles.dot, { transform: [{ scale }], opacity }]}
+            />
           );
         })}
       </View>
 
+      {/* tombol bawah */}
       <View style={styles.buttonRow}>
         {currentIndex < slides.length - 1 ? (
           <TouchableOpacity onPress={handleSkip}>
@@ -140,10 +166,18 @@ const Onboarding = ({ navigation }) => {
         ) : (
           <View />
         )}
-        <TouchableOpacity style={styles.nextBtn} onPress={handleNext}>
-          <Text style={styles.nextText}>
-            {currentIndex === slides.length - 1 ? 'Mulai' : 'Lanjut'}
-          </Text>
+
+        <TouchableOpacity onPress={handleNext} activeOpacity={0.8}>
+          <LinearGradient
+            colors={['#ff6b6b', '#d90429']}
+            style={styles.nextBtn}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <Text style={styles.nextText}>
+              {currentIndex === slides.length - 1 ? 'Mulai' : 'Lanjut'}
+            </Text>
+          </LinearGradient>
         </TouchableOpacity>
       </View>
     </LinearGradient>
@@ -160,24 +194,25 @@ const styles = StyleSheet.create({
     paddingTop: 40,
   },
   image: {
-    width: width * 0.65,
-    height: height * 0.32,
+    width: width * 0.7,
+    height: height * 0.35,
     resizeMode: 'contain',
     marginBottom: 40,
   },
   title: {
-    fontSize: 24,
+    fontSize: 26,
     color: '#fff',
-    fontWeight: 'bold',
+    fontWeight: '700',
     textAlign: 'center',
     marginBottom: 12,
+    letterSpacing: 1,
   },
   desc: {
-    fontSize: 15,
-    color: '#eee',
+    fontSize: 16,
+    color: '#ddd',
     textAlign: 'center',
     lineHeight: 22,
-    paddingHorizontal: 15,
+    paddingHorizontal: 20,
   },
   dotsContainer: {
     flexDirection: 'row',
@@ -189,32 +224,34 @@ const styles = StyleSheet.create({
     height: 10,
     borderRadius: 5,
     backgroundColor: '#fff',
-    marginHorizontal: 5,
+    marginHorizontal: 6,
   },
   buttonRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingHorizontal: 25,
-    marginBottom: 35,
+    marginBottom: 40,
+    alignItems: 'center',
   },
   skipText: {
     color: '#fff',
-    paddingVertical: 10,
-    paddingHorizontal: 25,
     fontSize: 16,
-    marginBottom: 20,
+    fontWeight: '500',
   },
   nextBtn: {
-    backgroundColor: '#fff',
-    paddingVertical: 10,
-    paddingHorizontal: 25,
-    borderRadius: 20,
-    marginBottom: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    borderRadius: 25,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
   },
   nextText: {
-    color: '#9D2828',
-    fontWeight: 'bold',
+    color: '#fff',
+    fontWeight: '700',
     fontSize: 16,
+    textAlign: 'center',
   },
 });
 
