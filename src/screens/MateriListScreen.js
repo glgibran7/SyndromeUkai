@@ -46,7 +46,8 @@ const MateriListScreen = ({ route, navigation }) => {
   const fetchMateri = async (role, modulId) => {
     try {
       setLoading(true);
-      const endpoint = role === 'mentor' ? '/materi/mentor' : '/materi/peserta';
+      const endpoint =
+        role === 'mentor' ? '/materi/mentor' : '/materi/mobile/peserta';
       const res = await Api.get(endpoint);
 
       if (res.data.status === 'success') {

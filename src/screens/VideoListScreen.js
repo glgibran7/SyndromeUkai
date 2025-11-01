@@ -83,7 +83,8 @@ const VideoListScreen = ({ route, navigation }) => {
   const getMateri = async role => {
     try {
       setLoading(true);
-      const endpoint = role === 'mentor' ? '/materi/mentor' : '/materi/peserta';
+      const endpoint =
+        role === 'mentor' ? '/materi/mentor' : '/materi/mobile/peserta';
       const res = await Api.get(endpoint);
       console.log('Endpoint dipakai:', endpoint);
 

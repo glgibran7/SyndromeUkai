@@ -96,21 +96,38 @@ const MateriViewer = ({ route, navigation }) => {
   );
   const disableUIJS = useMemo(
     () => `
-    // Disable klik kanan
     document.addEventListener('contextmenu', e => e.preventDefault());
-
-    // Blokir window.open
     window.open = function() { return null };
 
-    // Coba disable tombol popup GDrive (kanan atas)
     const observer = new MutationObserver(() => {
       const btn = document.querySelector('.ndfHFb-c4YZDc-Wrql6b'); 
-      if (btn) {
-        btn.style.pointerEvents = 'none';   // tidak bisa diklik
-        btn.style.opacity = '0.3';          // kasih efek disabled
+      if (btn && !document.querySelector('#overlay-block')) {
+        const rect = btn.getBoundingClientRect();
+        const overlay = document.createElement('div');
+        overlay.id = 'overlay-block';
+        overlay.style.position = 'fixed';
+        overlay.style.left = (rect.left - 20) + 'px';
+        overlay.style.top = (rect.top - 20) + 'px';
+        overlay.style.width = (rect.width + 40) + 'px';
+        overlay.style.height = (rect.height + 40) + 'px';
+        overlay.style.background = 'transparent'; // ✅ transparan
+        overlay.style.zIndex = '999999';
+        overlay.style.pointerEvents = 'auto'; // tetap blok klik di bawahnya
+        document.body.appendChild(overlay);
       }
     });
     observer.observe(document.body, { childList: true, subtree: true });
+
+    // Pastikan overlay ikut bergeser saat scroll
+    window.addEventListener('scroll', () => {
+      const btn = document.querySelector('.ndfHFb-c4YZDc-Wrql6b');
+      const overlay = document.querySelector('#overlay-block');
+      if (btn && overlay) {
+        const rect = btn.getBoundingClientRect();
+        overlay.style.left = (rect.left - 20) + 'px';
+        overlay.style.top = (rect.top - 20) + 'px';
+      }
+    });
   `,
     [],
   );

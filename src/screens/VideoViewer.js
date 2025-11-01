@@ -499,7 +499,7 @@ const VideoViewer = ({ route, navigation }) => {
             body, html { margin:0; padding:0; height:100%; background:black; }
             iframe { width:100%; height:100%; border:0; }
             .block-popout {
-              position: absolute; top:0; right:0; width:60px; height:60px;
+              position: absolute; top:0; right:0; width:120px; height:120px;
               background: transparent; pointer-events: auto;
             }
           </style>
