@@ -1,4 +1,3 @@
-import Mentor1 from '../img/mentor/1.png';
 import Mentor2 from '../img/mentor/2.png';
 import Mentor3 from '../img/mentor/3.png';
 import Mentor4 from '../img/mentor/4.png';
@@ -38,9 +37,6 @@ import Mentor37 from '../img/mentor/37.png';
 import Mentor38 from '../img/mentor/38.png';
 
 const MentorList = [
-  {
-    image: Mentor1,
-  },
   {
     image: Mentor2,
   },
