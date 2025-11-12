@@ -256,7 +256,7 @@ const Login = ({ navigation }) => {
               </TouchableOpacity>
             </View>
 
-            <View style={styles.buttonContainerSignUp}>
+            {/* <View style={styles.buttonContainerSignUp}>
               <TouchableOpacity
                 style={styles.tombolSignUp}
                 onPress={() => navigation.navigate('SignUp')}
@@ -264,7 +264,7 @@ const Login = ({ navigation }) => {
               >
                 <Text style={styles.loginButtonText}>Sign Up</Text>
               </TouchableOpacity>
-            </View>
+            </View> */}
           </Animated.View>
 
           <Modal visible={loading} transparent animationType="fade">
