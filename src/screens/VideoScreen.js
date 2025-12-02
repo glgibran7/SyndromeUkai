@@ -24,6 +24,7 @@ import AddModulModal from '../components/AddModulModal';
 import Video from 'react-native-video';
 
 const { width, height } = Dimensions.get('window');
+const isTablet = width >= 768;
 
 const VideoScreen = ({ navigation }) => {
   const toast = useToast();
@@ -79,7 +80,6 @@ const VideoScreen = ({ navigation }) => {
         id_paketkelas: item.id_paketkelas,
         icon: require('../../src/img/icon_folder.png'),
         backgroundColor: '#FFF8E3',
-        wave: require('../../src/img/wave1.png'),
       }));
 
       setModulList(formatted);
@@ -292,7 +292,6 @@ const VideoScreen = ({ navigation }) => {
                     <View style={styles.menuIconContainer}>
                       <Image source={item.icon} style={styles.menuIcon} />
                     </View>
-                    <Image source={item.wave} style={styles.waveImage} />
                   </TouchableOpacity>
 
                   {user?.role === 'mentor' && (
@@ -403,53 +402,44 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#000' },
+
   menuGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start', // SELALU rata kiri
   },
+
   menuItem: {
-    width: width * 0.42,
+    width: isTablet ? width * 0.28 : width * 0.4,
+    // Tablet: ideal untuk 3 tetapi kalau datanya kurang tetap 2 karena masih lebar
     borderRadius: 15,
     padding: 15,
+    marginRight: 10,
     marginBottom: 20,
     overflow: 'hidden',
     position: 'relative',
   },
+
   menuTitle: {
     fontWeight: 'bold',
     fontSize: 16,
     color: '#700101',
     textTransform: 'capitalize',
   },
-  menuIcon: {
-    width: 50,
-    height: 50,
-    resizeMode: 'contain',
-    alignSelf: 'flex-end',
-    marginTop: 10,
-  },
-  waveImage: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 80,
-    width: 'auto',
-    resizeMode: 'stretch',
-    borderBottomLeftRadius: 15,
-    borderBottomRightRadius: 15,
-    zIndex: -1,
-  },
+
+  menuIconContainer: { alignSelf: 'flex-end' },
+  menuIcon: { width: 50, height: 50, resizeMode: 'contain', marginTop: 10 },
+
   dropdownContainer: { flexDirection: 'row', marginTop: 5 },
   option: {
-    padding: width * 0.005,
+    padding: width * 0.002,
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 5,
     alignItems: 'center',
-    marginRight: 5,
+    marginRight: 2,
   },
+
   editButton: {
     marginTop: 8,
     padding: 8,
@@ -463,16 +453,8 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 6,
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    color: '#fff',
-    marginTop: 10,
-    fontSize: 16,
-  },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  loadingText: { color: '#fff', marginTop: 10, fontSize: 16 },
 });
 
 export default VideoScreen;

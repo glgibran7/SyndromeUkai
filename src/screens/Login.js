@@ -23,6 +23,7 @@ import { useToast } from '../context/ToastContext';
 import { AuthContext } from '../context/AuthContext';
 
 const { width } = Dimensions.get('window');
+const isTablet = width >= 768;
 
 const Login = ({ navigation }) => {
   const { setUser } = useContext(AuthContext);
@@ -297,82 +298,123 @@ const Login = ({ navigation }) => {
 const styles = StyleSheet.create({
   tombol: {
     backgroundColor: '#a81414',
-    marginVertical: 10,
-    paddingVertical: 15,
+    marginVertical: 15,
+    paddingVertical: isTablet ? 20 : 15,
     paddingHorizontal: 40,
-    width: width * 0.4,
+    width: isTablet ? width * 0.25 : width * 0.4,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 20,
     alignSelf: 'center',
   },
+
   tombolSignUp: {
     backgroundColor: '#feb600',
-    marginVertical: 10,
-    paddingVertical: 15,
+    marginVertical: 15,
+    paddingVertical: isTablet ? 20 : 15,
     paddingHorizontal: 40,
-    width: width * 0.4,
+    width: isTablet ? width * 0.25 : width * 0.4,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 20,
     alignSelf: 'center',
   },
+
   buttonContainer: {
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: isTablet ? 30 : 20,
   },
+
   buttonContainerSignUp: {
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: isTablet ? 20 : 10,
   },
-  inputtext: { flex: 1, color: '#000', paddingHorizontal: 10, fontSize: 14 },
+
+  inputtext: {
+    flex: 1,
+    color: '#000',
+    paddingHorizontal: isTablet ? 15 : 10,
+    fontSize: isTablet ? 18 : 14,
+  },
+
   inputWrapper: {
     backgroundColor: 'white',
     borderRadius: 20,
-    marginHorizontal: 10,
-    marginVertical: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    marginHorizontal: isTablet ? 30 : 10,
+    marginVertical: isTablet ? 10 : 5,
+    paddingHorizontal: isTablet ? 20 : 10,
+    paddingVertical: isTablet ? 14 : 5,
     flexDirection: 'row',
     alignItems: 'center',
   },
-  icon: { marginLeft: 5 },
-  iconPassword: { marginLeft: 9 },
-  iconRight: { marginRight: 5 },
+
+  icon: { marginLeft: isTablet ? 10 : 5 },
+
+  iconPassword: { marginLeft: isTablet ? 15 : 9 },
+
+  iconRight: { marginRight: isTablet ? 10 : 5 },
+
   loginTitle: {
     paddingHorizontal: 10,
-    fontSize: 32,
+    fontSize: isTablet ? 45 : 32,
     fontWeight: 'bold',
     color: '#000',
-    textAlign: 'center',
-    marginTop: -25,
+    textAlign: isTablet ? 'center' : 'center',
+    marginTop: isTablet ? 10 : -25,
   },
+
   label: {
     color: '#000',
-    textAlign: 'center',
-    marginBottom: 10,
+    textAlign: isTablet ? 'center' : 'center',
+    marginBottom: isTablet ? 20 : 10,
     paddingHorizontal: 10,
-    fontSize: 12,
+    fontSize: isTablet ? 18 : 12,
+    width: isTablet ? '95%' : '100%',
   },
+
   forgotPassword: {
     color: '#000',
-    fontSize: 13,
-    textAlign: 'right',
-    marginRight: 20,
-    marginTop: 2,
+    fontSize: isTablet ? 18 : 13,
+    textAlign: isTablet ? 'right' : 'right',
+    marginRight: isTablet ? 0 : 20,
+    marginTop: 5,
+    width: isTablet ? '95%' : '100%',
   },
-  loginButtonText: { color: 'white', fontWeight: 'bold', fontSize: 18 },
-  imageContainer: { alignItems: 'center', marginTop: 40 },
-  image: { width: width * 0.7, height: width * 0.7, resizeMode: 'contain' },
-  content: { flex: 1, paddingHorizontal: 30, marginTop: 20 },
+
+  loginButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: isTablet ? 24 : 18,
+  },
+
+  imageContainer: {
+    alignItems: 'center',
+    marginTop: isTablet ? 20 : 40,
+  },
+
+  image: {
+    width: isTablet ? width * 0.35 : width * 0.7,
+    height: isTablet ? width * 0.35 : width * 0.7,
+    resizeMode: 'contain',
+  },
+
+  content: {
+    flex: 1,
+    paddingHorizontal: isTablet ? 80 : 30,
+    marginTop: isTablet ? 40 : 20,
+    alignSelf: 'center',
+    width: isTablet ? '60%' : '100%',
+  },
+
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'center',
     alignItems: 'center',
   },
+
   spinner: {
     borderRadius: 50,
     borderColor: '#fff',

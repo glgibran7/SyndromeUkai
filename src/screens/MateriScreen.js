@@ -24,21 +24,7 @@ import EditModulModal from '../components/EditModulModal';
 import AddModulModal from '../components/AddModulModal';
 
 const { width, height } = Dimensions.get('window');
-const isTablet = width >= 768;
-
-// ==== SOLID RANDOM COLORS ====
-const cardColors = [
-  '#FFEBEE',
-  '#E3F2FD',
-  '#E8F5E9',
-  '#FFF3E0',
-  '#EDE7F6',
-  '#F3E5F5',
-  '#D1C4E9',
-  '#FFE0B2',
-  '#B3E5FC',
-  '#DCEDC8',
-];
+const isTablet = width >= 768; // **RESPONSIVE CHECK**
 
 const MateriScreen = ({ navigation }) => {
   const toast = useToast();
@@ -74,19 +60,19 @@ const MateriScreen = ({ navigation }) => {
       const parsedUser = await getUserData();
       const idKelas = await AsyncStorage.getItem('kelas');
 
-      let endpoint =
-        parsedUser?.role === 'mentor'
-          ? idKelas
-            ? `/modul/mentor/${idKelas}`
-            : '/modul/mentor'
-          : idKelas
-          ? `/modul/user/${idKelas}`
-          : '/modul/user';
+      let endpoint = '';
+      if (parsedUser?.role === 'mentor') {
+        endpoint = idKelas ? `/modul/mentor/${idKelas}` : '/modul/mentor';
+      } else {
+        endpoint = idKelas ? `/modul/user/${idKelas}` : '/modul/user';
+      }
 
       const res = await Api.get(endpoint);
-      const data = res.data?.data || [];
 
-      const formatted = data.map((item, index) => ({
+      const data =
+        res.data?.status === 'success' ? res.data.data : res.data?.data || [];
+
+      const formatted = data.map(item => ({
         id_modul: item.id_modul,
         title: item.judul,
         desc: item.deskripsi,
@@ -94,7 +80,7 @@ const MateriScreen = ({ navigation }) => {
         order: item.urutan_modul,
         id_paketkelas: item.id_paketkelas,
         icon: require('../../src/img/icon_folder.png'),
-        color: cardColors[index % cardColors.length],
+        backgroundColor: '#FFF8E3',
       }));
 
       setModulList(formatted);
@@ -122,13 +108,14 @@ const MateriScreen = ({ navigation }) => {
   }, [kelasAktif, isWaliKelas]);
 
   useEffect(() => {
-    setFilteredList(
-      !searchQuery
-        ? modulList
-        : modulList.filter(item =>
-            item.title.toLowerCase().includes(searchQuery.toLowerCase()),
-          ),
-    );
+    if (!searchQuery) {
+      setFilteredList(modulList);
+    } else {
+      const filtered = modulList.filter(item =>
+        item.title.toLowerCase().includes(searchQuery.toLowerCase()),
+      );
+      setFilteredList(filtered);
+    }
   }, [searchQuery, modulList]);
 
   const handleChangeVisibility = async (id_modul, newStatus) => {
@@ -140,14 +127,69 @@ const MateriScreen = ({ navigation }) => {
         ),
       );
       toast.show(`Visibility modul diubah ke ${newStatus}`, 'success');
-    } catch {
+    } catch (err) {
       toast.show('Tidak bisa mengubah visibility modul', 'error');
     }
   };
 
+  const openEditModal = modul => {
+    setSelectedModul(modul);
+    setEditModal(true);
+  };
+
+  const handleEditSubmit = async updated => {
+    if (!updated) return;
+    try {
+      setSaving(true);
+      const payload = {
+        id_paketkelas: updated.id_paketkelas,
+        judul: updated.title,
+        deskripsi: updated.desc,
+      };
+      await Api.put(`/modul/${updated.id_modul}`, payload);
+      await Api.put(`/modul/${updated.id_modul}/visibility`, {
+        visibility: updated.visibility,
+      });
+      setEditModal(false);
+      getModul();
+      toast.show('Modul berhasil diperbarui', 'success');
+    } catch (err) {
+      toast.show('Tidak bisa menyimpan modul', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async modul => {
+    if (!modul) return;
+    Alert.alert(
+      'Konfirmasi',
+      `Apakah Anda yakin ingin menghapus modul "${modul.title}"?`,
+      [
+        { text: 'Batal', style: 'cancel' },
+        {
+          text: 'Hapus',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await Api.delete(`/modul/${modul.id_modul}`);
+              setEditModal(false);
+              getModul();
+              toast.show('Modul berhasil dihapus', 'success');
+            } catch (err) {
+              toast.show('Tidak bisa menghapus modul', 'error');
+            }
+          },
+        },
+      ],
+    );
+  };
+
   const handleAddSubmit = async data => {
-    if (!data?.title || !data?.desc)
-      return toast.show('Harap isi semua field', 'warning');
+    if (!data?.title || !data?.desc) {
+      toast.show('Harap isi semua field', 'warning');
+      return;
+    }
     try {
       setAdding(true);
       await Api.post('/modul/mentor', {
@@ -158,7 +200,7 @@ const MateriScreen = ({ navigation }) => {
       setAddModal(false);
       getModul();
       toast.show('Modul baru berhasil ditambahkan', 'success');
-    } catch {
+    } catch (err) {
       toast.show('Tidak bisa menambah modul', 'error');
     } finally {
       setAdding(false);
@@ -185,6 +227,7 @@ const MateriScreen = ({ navigation }) => {
       end={{ x: 1, y: 0 }}
     >
       <ScrollView
+        style={{ flex: 1 }}
         stickyHeaderIndices={[0]}
         refreshControl={
           <RefreshControl
@@ -203,11 +246,11 @@ const MateriScreen = ({ navigation }) => {
 
           <View style={styles.searchContainer}>
             <TextInput
+              style={styles.searchInput}
               placeholder="Cari modul..."
               placeholderTextColor="#fff"
               value={searchQuery}
               onChangeText={setSearchQuery}
-              style={styles.searchInput}
             />
             <Ionicons name="search-outline" size={18} color="#fff" />
           </View>
@@ -235,27 +278,42 @@ const MateriScreen = ({ navigation }) => {
               </Text>
             ) : (
               filteredList.map((item, index) => (
-                <TouchableOpacity
+                <View
                   key={index}
-                  style={[styles.menuItem, { backgroundColor: item.color }]}
-                  onPress={() =>
-                    navigation.navigate('MateriList', {
-                      id_modul: item.id_modul,
-                    })
-                  }
+                  style={[
+                    styles.menuItem,
+                    { backgroundColor: item.backgroundColor },
+                  ]}
                 >
-                  <Text style={styles.menuTitle}>{item.title}</Text>
-                  <Image source={item.icon} style={styles.menuIcon} />
+                  <TouchableOpacity
+                    onPress={() =>
+                      navigation.navigate('MateriList', {
+                        id_modul: item.id_modul,
+                      })
+                    }
+                  >
+                    <Text style={styles.menuTitle}>{item.title}</Text>
+                    <View style={styles.menuIconContainer}>
+                      <Image source={item.icon} style={styles.menuIcon} />
+                    </View>
+                  </TouchableOpacity>
 
                   {user?.role === 'mentor' && (
-                    <>
+                    <View style={{ marginTop: 10 }}>
                       <View style={styles.dropdownContainer}>
                         {['open', 'hold', 'close'].map(opt => (
                           <TouchableOpacity
                             key={opt}
                             style={[
                               styles.option,
-                              item.visibility === opt && styles[`opt_${opt}`],
+                              item.visibility === opt && {
+                                backgroundColor:
+                                  opt === 'open'
+                                    ? '#4CAF50'
+                                    : opt === 'hold'
+                                    ? '#FFEB3B'
+                                    : '#F44336',
+                              },
                             ]}
                             onPress={() =>
                               handleChangeVisibility(item.id_modul, opt)
@@ -263,9 +321,15 @@ const MateriScreen = ({ navigation }) => {
                           >
                             <Text
                               style={{
-                                fontWeight: 'bold',
                                 color:
-                                  item.visibility === opt ? '#fff' : '#333',
+                                  item.visibility === opt
+                                    ? '#fff'
+                                    : opt === 'open'
+                                    ? '#4CAF50'
+                                    : opt === 'hold'
+                                    ? '#FBC02D'
+                                    : '#F44336',
+                                fontWeight: 'bold',
                               }}
                             >
                               {opt.toUpperCase()}
@@ -275,30 +339,34 @@ const MateriScreen = ({ navigation }) => {
                       </View>
 
                       <TouchableOpacity
-                        onPress={() => setEditModal(item)}
+                        onPress={() => openEditModal(item)}
                         style={styles.editButton}
                       >
                         <Text style={{ color: '#fff' }}>Edit</Text>
                       </TouchableOpacity>
-                    </>
+                    </View>
                   )}
-                </TouchableOpacity>
+                </View>
               ))
             )}
           </View>
         </View>
       </ScrollView>
+
       <AddModulModal
         visible={addModal}
         onClose={() => setAddModal(false)}
         onSave={handleAddSubmit}
         loading={adding}
       />
+
       <EditModulModal
         visible={editModal}
         modul={selectedModul}
         onClose={() => setEditModal(false)}
-        onSave={() => {}}
+        onSave={handleEditSubmit}
+        onDelete={handleDelete}
+        loading={saving}
       />
     </LinearGradient>
   );
@@ -313,27 +381,22 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   subtext: { fontSize: 13, color: '#fff', marginTop: 5, textAlign: 'center' },
-
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#ffffff40',
+    backgroundColor: '#f0f0f0b1',
     borderRadius: 15,
     paddingHorizontal: 10,
     marginTop: 15,
   },
-  searchInput: { flex: 1, color: '#fff', height: 40 },
-
+  searchInput: { flex: 1, height: 40, color: '#000' },
   mainContent: {
     backgroundColor: 'white',
     paddingVertical: 20,
     paddingHorizontal: 20,
     marginTop: 30,
     minHeight: height - 200,
-    borderTopLeftRadius: 35,
-    borderTopRightRadius: 35,
   },
-
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -342,53 +405,56 @@ const styles = StyleSheet.create({
   },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#000' },
 
-  menuGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  menuGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-start', // SELALU rata kiri
+  },
 
   menuItem: {
-    width: isTablet ? width * 0.28 : width * 0.42,
-    borderRadius: 18,
-    padding: 18,
+    width: isTablet ? width * 0.28 : width * 0.4,
+    // Tablet: ideal untuk 3 tetapi kalau datanya kurang tetap 2 karena masih lebar
+    borderRadius: 15,
+    padding: 15,
+    marginRight: 10,
     marginBottom: 20,
-    shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 8,
-    elevation: 6,
+    overflow: 'hidden',
+    position: 'relative',
   },
 
-  menuTitle: { fontWeight: 'bold', fontSize: 17, color: '#700101' },
-  menuIcon: {
-    width: 45,
-    height: 45,
-    resizeMode: 'contain',
-    alignSelf: 'flex-end',
-    marginTop: 10,
+  menuTitle: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    color: '#700101',
+    textTransform: 'capitalize',
   },
 
-  dropdownContainer: { flexDirection: 'row', marginTop: 10 },
+  menuIconContainer: { alignSelf: 'flex-end' },
+  menuIcon: { width: 50, height: 50, resizeMode: 'contain', marginTop: 10 },
+
+  dropdownContainer: { flexDirection: 'row', marginTop: 5 },
   option: {
+    padding: width * 0.002,
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 5,
-    paddingVertical: 5,
-    paddingHorizontal: 8,
-    marginRight: 5,
+    alignItems: 'center',
+    marginRight: 2,
   },
-
-  opt_open: { backgroundColor: '#4CAF50' },
-  opt_hold: { backgroundColor: '#FFB300' },
-  opt_close: { backgroundColor: '#E53935' },
 
   editButton: {
     marginTop: 8,
     padding: 8,
     backgroundColor: '#007bff',
-    borderRadius: 6,
+    borderRadius: 5,
     alignItems: 'center',
   },
-
-  addButton: { backgroundColor: '#28a745', padding: 8, borderRadius: 6 },
-
+  addButton: {
+    backgroundColor: '#28a745',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   loadingText: { color: '#fff', marginTop: 10, fontSize: 16 },
 });
