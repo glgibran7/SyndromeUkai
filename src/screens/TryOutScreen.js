@@ -16,6 +16,7 @@ import Ionicons from '@react-native-vector-icons/ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Header from '../components/Header';
 import Api from '../utils/Api'; // sesuaikan path
+import ToastMessage from '../components/ToastMessage';
 
 const { height, width } = Dimensions.get('window');
 
@@ -128,18 +129,60 @@ const TryoutScreen = ({ navigation }) => {
     }
   };
 
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState('info');
+
+  // fungsi untuk tampilkan toast
+  const showToast = (message, type = 'info') => {
+    setToastMessage(message);
+    setToastType(type);
+    setToastVisible(true);
+  };
+
+  // fungsi untuk sembunyikan toast
+  const hideToast = () => {
+    setToastVisible(false);
+    setToastMessage('');
+  };
+
   const confirmStart = async () => {
     if (!selectedTryout) return;
     setIsStarting(true);
     try {
-      // Start attempt
       const startRes = await Api.post(
         `/tryout/${selectedTryout.id_tryout}/attempts/start`,
       );
 
+      const statusCode = startRes.status;
+
+      // Handle toast berdasarkan status code
+      switch (statusCode) {
+        case 200:
+          showToast(
+            'Melanjutkan attempt lama / attempt lama disubmit otomatis',
+            'success',
+          );
+          break;
+        case 201:
+          showToast('Attempt baru dimulai', 'success');
+          break;
+        case 400:
+          showToast('Gagal memulai attempt', 'error');
+          break;
+        case 404:
+          showToast('Tryout tidak ditemukan', 'error');
+          break;
+        case 500:
+          showToast('Internal server error', 'error');
+          break;
+        default:
+          showToast(`Status tidak dikenal: ${statusCode}`, 'info');
+          break;
+      }
+
       const attemptData = startRes.data.data;
 
-      // Setelah dapat attempt_token, fetch detail attempt pakai token
       const attemptDetail = await fetchAttemptByToken(
         selectedTryout.id_tryout,
         attemptData.attempt_token,
@@ -150,15 +193,16 @@ const TryoutScreen = ({ navigation }) => {
 
       navigation.navigate('ExamScreen', {
         tryout: selectedTryout,
-        attempt: attemptDetail, // pake data lengkap dari token
+        attempt: attemptDetail,
       });
     } catch (error) {
       setIsStarting(false);
-      Alert.alert(
-        'Error',
+
+      const message =
         error.response?.data?.message ||
-          'Gagal memulai tryout. Silakan coba lagi.',
-      );
+        'Gagal memulai tryout. Silakan coba lagi.';
+
+      showToast(message, 'error');
     }
   };
 
@@ -295,6 +339,14 @@ const TryoutScreen = ({ navigation }) => {
           )}
         </View>
       </ScrollView>
+
+      <ToastMessage
+        visible={toastVisible}
+        message={toastMessage}
+        type={toastType}
+        onHide={hideToast}
+        position="top"
+      />
 
       {/* Modal konfirmasi start tryout */}
       <Modal

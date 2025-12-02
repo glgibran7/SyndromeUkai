@@ -29,7 +29,6 @@ const ExamScreen = ({ navigation, route }) => {
   const [markDoubt, setMarkDoubt] = useState(false);
   const [listVisible, setListVisible] = useState(false);
   const [calcVisible, setCalcVisible] = useState(false);
-  const [reviewMode, setReviewMode] = useState(false);
   const [userName, setUserName] = useState('Peserta');
 
   const [questions, setQuestions] = useState([]);
@@ -37,6 +36,10 @@ const ExamScreen = ({ navigation, route }) => {
 
   const [answersStatus, setAnswersStatus] = useState([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+
+  // State baru untuk modal hasil tryout
+  const [result, setResult] = useState(null);
+  const [resultModalVisible, setResultModalVisible] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -78,13 +81,11 @@ const ExamScreen = ({ navigation, route }) => {
 
         setQuestions(fetchedQuestions);
 
-        // Ambil jawaban user dari attempt.jawaban_user yang sudah ada di params
         const jawabanUser = attempt.jawaban_user || {};
 
         const newAnswersStatus = fetchedQuestions.map(q => {
           const opsiKeys = Object.keys(q.opsi || {});
 
-          // Format key di jawaban_user adalah "soal_1", "soal_2", ...
           const key = `soal_${q.nomor_urut}`;
 
           const jawaban = jawabanUser[key]?.jawaban || null;
@@ -119,8 +120,6 @@ const ExamScreen = ({ navigation, route }) => {
   const [timeLeft, setTimeLeft] = useState(tryout.durasi * 60 || 0);
 
   useEffect(() => {
-    if (reviewMode) return; // jangan jalankan timer saat review
-
     if (timeLeft <= 0) {
       // waktu habis, submit otomatis
       const autoSubmit = async () => {
@@ -136,7 +135,7 @@ const ExamScreen = ({ navigation, route }) => {
 
     const timer = setInterval(() => setTimeLeft(t => t - 1), 1000);
     return () => clearInterval(timer);
-  }, [timeLeft, reviewMode]);
+  }, [timeLeft]);
 
   const formatTime = sec => {
     const h = Math.floor(sec / 3600);
@@ -148,20 +147,16 @@ const ExamScreen = ({ navigation, route }) => {
   };
 
   useEffect(() => {
-    if (!reviewMode) {
-      setMarkDoubt(answersStatus[currentQuestionIndex]?.doubt || false);
-    }
-  }, [currentQuestionIndex, reviewMode, answersStatus]);
+    setMarkDoubt(answersStatus[currentQuestionIndex]?.doubt || false);
+  }, [currentQuestionIndex, answersStatus]);
 
   useEffect(() => {
-    if (!reviewMode) {
-      const newStatus = [...answersStatus];
-      newStatus[currentQuestionIndex] = {
-        ...newStatus[currentQuestionIndex],
-        doubt: markDoubt,
-      };
-      setAnswersStatus(newStatus);
-    }
+    const newStatus = [...answersStatus];
+    newStatus[currentQuestionIndex] = {
+      ...newStatus[currentQuestionIndex],
+      doubt: markDoubt,
+    };
+    setAnswersStatus(newStatus);
   }, [markDoubt]);
 
   const currentQuestion = questions[currentQuestionIndex] || {};
@@ -176,8 +171,6 @@ const ExamScreen = ({ navigation, route }) => {
 
   // Pilih opsi dan kirim ke API
   const selectOption = async idx => {
-    if (reviewMode) return;
-
     const newStatus = [...answersStatus];
     newStatus[currentQuestionIndex] = {
       ...newStatus[currentQuestionIndex],
@@ -202,38 +195,20 @@ const ExamScreen = ({ navigation, route }) => {
 
   const submitAttempt = async () => {
     try {
-      await Api.post('/tryout/attempts/submit', {
+      const response = await Api.post('/tryout/attempts/submit', {
         attempt_token: attempt.attempt_token,
       });
-      Alert.alert('Berhasil', 'Jawaban berhasil disubmit.', [
-        {
-          text: 'OK',
-          onPress: () => {
-            setReviewMode(true);
-            setScoreVisible(false);
-            setCurrentQuestionIndex(0);
-          },
-        },
-      ]);
+
+      if (response.data.status === 'success') {
+        setResult(response.data.result);
+        setResultModalVisible(true);
+      } else {
+        Alert.alert('Error', 'Gagal submit jawaban, coba lagi.');
+      }
     } catch (error) {
       console.error('Gagal submit jawaban:', error.response || error.message);
       Alert.alert('Error', 'Gagal submit jawaban, coba lagi.');
     }
-  };
-
-  const calculateScore = () => {
-    let s = 0;
-    answersStatus.forEach((status, idx) => {
-      const correctKey = questions[idx]?.correct;
-      const correctIndex = Object.keys(questions[idx]?.opsi || {}).indexOf(
-        correctKey,
-      );
-      if (status.selectedOption === correctIndex) {
-        s += 1;
-      }
-    });
-    setScore(s);
-    setScoreVisible(true);
   };
 
   const watermarkText = `${userName} • ${userName} • ${userName}`;
@@ -280,14 +255,10 @@ const ExamScreen = ({ navigation, route }) => {
         <StatusBar barStyle="light-content" backgroundColor="#9D2828" />
         <View style={{ flex: 1 }}>
           <View style={styles.header}>
-            <Text style={styles.title}>
-              {reviewMode ? 'Pembahasan' : tryout.judul || 'Tryout'}
-            </Text>
-            {!reviewMode && (
-              <View style={styles.timerBox}>
-                <Text style={styles.timerText}>{formatTime(timeLeft)}</Text>
-              </View>
-            )}
+            <Text style={styles.title}>{tryout.judul || 'Tryout'}</Text>
+            <View style={styles.timerBox}>
+              <Text style={styles.timerText}>{formatTime(timeLeft)}</Text>
+            </View>
           </View>
 
           <ScrollView style={styles.container}>
@@ -299,19 +270,17 @@ const ExamScreen = ({ navigation, route }) => {
                 Soal Nomor {currentQuestionIndex + 1}
               </Text>
               <View style={styles.buttonsRow}>
-                {!reviewMode && (
-                  <TouchableOpacity
-                    style={styles.calcButton}
-                    onPress={() => setCalcVisible(true)}
-                  >
-                    <Ionicons
-                      name="calculator-outline"
-                      size={16}
-                      color="#2E7D32"
-                    />
-                    <Text style={styles.calcText}>Kalkulator</Text>
-                  </TouchableOpacity>
-                )}
+                <TouchableOpacity
+                  style={styles.calcButton}
+                  onPress={() => setCalcVisible(true)}
+                >
+                  <Ionicons
+                    name="calculator-outline"
+                    size={16}
+                    color="#2E7D32"
+                  />
+                  <Text style={styles.calcText}>Kalkulator</Text>
+                </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.listButton}
                   onPress={() => setListVisible(true)}
@@ -354,7 +323,7 @@ const ExamScreen = ({ navigation, route }) => {
               return (
                 <TouchableOpacity
                   key={opt.key}
-                  disabled={reviewMode}
+                  disabled={false}
                   style={[
                     styles.optionBox,
                     isSelected && styles.optionSelected,
@@ -369,37 +338,14 @@ const ExamScreen = ({ navigation, route }) => {
               );
             })}
 
-            {reviewMode && (
-              <View
-                style={{
-                  backgroundColor: '#FFF9C4',
-                  marginHorizontal: 16,
-                  padding: 12,
-                  borderRadius: 8,
-                  borderWidth: 1,
-                  borderColor: '#FBC02D',
-                  marginTop: 10,
-                }}
-              >
-                <Text style={{ fontWeight: 'bold', marginBottom: 4 }}>
-                  Pembahasan:
-                </Text>
-                <Text style={{ fontSize: 13, lineHeight: 18 }}>
-                  {currentQuestion.explanation}
-                </Text>
-              </View>
-            )}
-
-            {!reviewMode && (
-              <View style={styles.doubtRow}>
-                <CheckBox
-                  value={markDoubt}
-                  onValueChange={setMarkDoubt}
-                  tintColors={{ true: '#FFA000', false: '#FFA000' }}
-                />
-                <Text style={styles.doubtText}>Tandai Ragu-ragu</Text>
-              </View>
-            )}
+            <View style={styles.doubtRow}>
+              <CheckBox
+                value={markDoubt}
+                onValueChange={setMarkDoubt}
+                tintColors={{ true: '#FFA000', false: '#FFA000' }}
+              />
+              <Text style={styles.doubtText}>Tandai Ragu-ragu</Text>
+            </View>
           </ScrollView>
 
           <SafeAreaView edges={['bottom']} style={styles.footerSafeArea}>
@@ -407,6 +353,7 @@ const ExamScreen = ({ navigation, route }) => {
               <TouchableOpacity
                 style={styles.backButton}
                 onPress={() => setCurrentQuestionIndex(i => Math.max(0, i - 1))}
+                disabled={currentQuestionIndex === 0}
               >
                 <Text style={styles.backText}>Soal Sebelumnya</Text>
               </TouchableOpacity>
@@ -416,21 +363,14 @@ const ExamScreen = ({ navigation, route }) => {
                 onPress={() => {
                   if (currentQuestionIndex < questions.length - 1) {
                     setCurrentQuestionIndex(i => i + 1);
-                  } else if (!reviewMode) {
-                    submitAttempt();
                   } else {
-                    navigation.reset({
-                      index: 0,
-                      routes: [{ name: 'TryOutScreen' }],
-                    });
+                    submitAttempt();
                   }
                 }}
               >
                 <Text style={styles.nextText}>
                   {currentQuestionIndex < questions.length - 1
                     ? 'Soal Selanjutnya'
-                    : reviewMode
-                    ? 'Selesai Pembahasan'
                     : 'Selesai'}
                 </Text>
               </TouchableOpacity>
@@ -465,16 +405,8 @@ const ExamScreen = ({ navigation, route }) => {
                   {questions.map((q, idx) => {
                     const status = answersStatus[idx];
                     let bgColor = '#fff';
-                    if (reviewMode) {
-                      const correctKey = q.correct;
-                      const correctIndex = Object.keys(q.opsi).indexOf(
-                        correctKey,
-                      );
-                      bgColor = idx === correctIndex ? '#C8E6C9' : '#fff';
-                    } else {
-                      if (status?.doubt) bgColor = '#FFF9C4';
-                      else if (status?.answered) bgColor = '#C8E6C9';
-                    }
+                    if (status?.doubt) bgColor = '#FFF9C4';
+                    else if (status?.answered) bgColor = '#C8E6C9';
 
                     return (
                       <TouchableOpacity
@@ -507,48 +439,51 @@ const ExamScreen = ({ navigation, route }) => {
             </View>
           </Modal>
 
-          {/* Modal Skor */}
+          {/* Modal Hasil Tryout */}
           <Modal
-            visible={scoreVisible}
+            visible={resultModalVisible}
             transparent
             animationType="fade"
-            onRequestClose={() => setScoreVisible(false)}
+            onRequestClose={() => setResultModalVisible(false)}
           >
-            <View style={styles.modalContainer}>
-              <View style={styles.modalContent}>
-                <Text
-                  style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 12 }}
-                >
-                  Skor Anda
-                </Text>
-                <Text style={{ fontSize: 16, marginBottom: 16 }}>
-                  Anda mendapatkan {score} / {questions.length} poin
-                </Text>
+            <View style={styles.modalOverlay}>
+              <View style={styles.resultModalContent}>
+                <Text style={styles.resultModalTitle}>Hasil Tryout Anda</Text>
+
+                <Text style={styles.resultScore}>{result?.nilai ?? '-'}</Text>
+
+                <View style={styles.resultSummaryGrid}>
+                  <View style={styles.resultSummaryItem}>
+                    <Text style={styles.resultSummaryLabel}>Total Soal</Text>
+                    <Text style={styles.resultSummaryValue}>
+                      {result?.total_soal ?? '-'}
+                    </Text>
+                  </View>
+                  <View style={styles.resultSummaryItem}>
+                    <Text style={styles.resultSummaryLabel}>Benar</Text>
+                    <Text style={styles.resultSummaryValue}>
+                      {result?.benar ?? '-'}
+                    </Text>
+                  </View>
+                  <View style={styles.resultSummaryItem}>
+                    <Text style={styles.resultSummaryLabel}>Salah</Text>
+                    <Text style={styles.resultSummaryValue}>
+                      {result?.salah ?? '-'}
+                    </Text>
+                  </View>
+                </View>
+
                 <TouchableOpacity
-                  style={styles.closeButton}
+                  style={styles.resultCloseButton}
                   onPress={() => {
-                    setScoreVisible(false);
-                    setReviewMode(true);
-                    setCurrentQuestionIndex(0);
-                  }}
-                >
-                  <Text style={{ color: '#fff', fontWeight: 'bold' }}>
-                    Lihat Pembahasan
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.closeButton, { backgroundColor: '#9E9E9E' }]}
-                  onPress={() => {
-                    setScoreVisible(false);
+                    setResultModalVisible(false);
                     navigation.reset({
                       index: 0,
                       routes: [{ name: 'TryOutScreen' }],
                     });
                   }}
                 >
-                  <Text style={{ color: '#fff', fontWeight: 'bold' }}>
-                    Tutup
-                  </Text>
+                  <Text style={styles.resultCloseButtonText}>Tutup</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -639,80 +574,57 @@ const styles = StyleSheet.create({
   doubtRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 16,
-    marginTop: 8,
+    paddingHorizontal: 16,
+    marginBottom: 20,
   },
-  doubtText: { fontSize: 13, marginLeft: 6, color: '#000' },
+  doubtText: { marginLeft: 8, fontSize: 14, color: '#333' },
+  footerSafeArea: {
+    backgroundColor: '#9D2828',
+  },
   footer: {
     flexDirection: 'row',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    justifyContent: 'space-between',
-    backgroundColor: '#fff',
-    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#9D2828',
   },
   backButton: {
     flex: 1,
-    minWidth: 120, // supaya tombol tidak terlalu kecil
-    backgroundColor: '#E0E0E0',
-    paddingVertical: 14, // buat tombol lebih tinggi dan mudah ditekan
+    backgroundColor: '#FFC107',
+    paddingVertical: 10,
     borderRadius: 8,
+    marginRight: 8,
     alignItems: 'center',
-    marginRight: 8, // jarak kanan ke tombol selanjutnya
-  },
-  backText: {
-    color: '#000',
-    fontWeight: 'bold',
-    fontSize: 16,
   },
   nextButton: {
     flex: 1,
-    minWidth: 120,
     backgroundColor: '#9D2828',
-    paddingVertical: 14,
+    paddingVertical: 10,
     borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#fff',
     alignItems: 'center',
-    marginLeft: 8, // jarak kiri ke tombol sebelumnya
   },
-  nextText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-
+  backText: { color: '#000', fontWeight: 'bold' },
+  nextText: { color: '#fff', fontWeight: 'bold' },
   modalContainer: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: 'rgba(0,0,0,0.4)',
     justifyContent: 'center',
-    paddingHorizontal: 30,
+    alignItems: 'center',
+    paddingHorizontal: 24,
   },
   modalContent: {
     backgroundColor: '#fff',
-    borderRadius: 12,
+    borderRadius: 10,
     padding: 20,
-    maxHeight: '80%',
-  },
-  numberButton: {
-    width: 40,
-    height: 40,
-    margin: 5,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#9D2828',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  numberButtonActive: {
-    backgroundColor: '#9D2828',
-  },
-  numberText: {
-    fontWeight: 'bold',
-    color: '#000',
+    width: '100%',
+    maxWidth: 320,
   },
   closeButton: {
-    marginTop: 15,
+    marginTop: 20,
     backgroundColor: '#9D2828',
-    paddingVertical: 10,
+    paddingVertical: 12,
     borderRadius: 8,
     alignItems: 'center',
   },
@@ -721,21 +633,118 @@ const styles = StyleSheet.create({
     top: 50,
     left: 10,
     right: 10,
+    bottom: 0,
     flexWrap: 'wrap',
     flexDirection: 'row',
     opacity: 0.06,
     zIndex: 0,
-    justifyContent: 'center',
   },
   watermarkText: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#9D2828',
+    marginRight: 20,
+    marginBottom: 8,
+  },
+  numberButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    margin: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#555',
+  },
+  numberButtonActive: {
+    backgroundColor: '#9D2828',
+  },
+  numberText: {
+    color: '#000',
+    fontWeight: 'bold',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  resultModalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    paddingVertical: 30,
+    paddingHorizontal: 28,
+    width: '90%',
+    maxWidth: 340,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 15,
+    alignItems: 'center',
+  },
+  resultModalTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 18,
+    color: '#9D2828',
+    letterSpacing: 1,
+  },
+  resultScore: {
+    fontSize: 64,
+    fontWeight: '900',
+    color: '#000', // merah tua tanpa shadow
+    marginBottom: 28,
+  },
+  resultSummaryGrid: {
+    width: '100%',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom: 28,
+  },
+  resultSummaryItem: {
+    width: '48%',
+    marginBottom: 12,
+    backgroundColor: '#F7F1F1',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  resultSummaryLabel: {
     fontSize: 14,
-    marginHorizontal: 6,
-    marginVertical: 2,
+    color: '#555',
+    marginBottom: 6,
+  },
+  resultSummaryValue: {
+    fontSize: 20,
+    fontWeight: 'bold',
     color: '#9D2828',
   },
-  footerSafeArea: {
-    backgroundColor: '#fff',
-    paddingBottom: 16, // ekstra padding supaya aman di semua device
+  resultCloseButton: {
+    backgroundColor: '#9D2828',
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 40,
+    width: '100%',
+    alignItems: 'center',
+    shadowColor: '#9D2828',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  resultCloseButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 18,
+    letterSpacing: 0.8,
   },
 });
 
