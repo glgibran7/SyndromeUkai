@@ -1,16 +1,53 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
   StatusBar,
+  Modal,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
+import Api from '../utils/Api'; // pastikan pathnya sesuai
 
 const TryOutDetailScreen = ({ route, navigation }) => {
-  const { tryout } = route.params; // { nama, waktuMulai, waktuSelesai, mentor, deskripsi }
+  const { tryout } = route.params; // harus ada id_tryout di sini
+  const [modalVisible, setModalVisible] = useState(false);
+  const [loadingStart, setLoadingStart] = useState(false);
+
+  const handleStartPress = () => {
+    setModalVisible(true);
+  };
+
+  const confirmStart = async () => {
+    setLoadingStart(true);
+    try {
+      // Panggil API mulai attempt
+      const startRes = await Api.post(`/tryout/${tryout.id}/attempts/start`);
+      const attempt_token = startRes.data.data.attempt_token;
+
+      // Ambil detail attempt
+      const detailRes = await Api.get(
+        `/tryout/${tryout.id}/attempts/${attempt_token}`,
+      );
+      const attemptData = detailRes.data.data;
+
+      setModalVisible(false);
+      setLoadingStart(false);
+
+      // Navigasi ke ExamScreen dengan data tryout + attempt
+      navigation.navigate('ExamScreen', {
+        tryout: { ...tryout, attempt: attemptData },
+      });
+    } catch (error) {
+      setLoadingStart(false);
+      Alert.alert('Error', 'Gagal memulai tryout. Silakan coba lagi.');
+      console.error('Gagal memulai tryout:', error);
+    }
+  };
 
   return (
     <LinearGradient colors={['#9D2828', '#191919']} style={{ flex: 1 }}>
@@ -57,11 +94,56 @@ const TryOutDetailScreen = ({ route, navigation }) => {
       <View style={styles.footer}>
         <TouchableOpacity
           style={styles.startButton}
-          onPress={() => navigation.navigate('ExamScreen', { tryout })}
+          onPress={handleStartPress}
+          disabled={loadingStart}
         >
-          <Text style={styles.startText}>Mulai</Text>
+          {loadingStart ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.startText}>Mulai</Text>
+          )}
         </TouchableOpacity>
       </View>
+
+      {/* Modal Konfirmasi */}
+      <Modal
+        visible={modalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => !loadingStart && setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Konfirmasi</Text>
+            <Text style={styles.modalMessage}>
+              Setelah menekan Mulai, waktu pengerjaan akan berjalan dan mode
+              fullscreen aktif. Pastikan Anda siap.
+            </Text>
+
+            <View style={styles.modalButtonRow}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalCancel]}
+                onPress={() => !loadingStart && setModalVisible(false)}
+                disabled={loadingStart}
+              >
+                <Text style={styles.modalCancelText}>Batal</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalConfirm]}
+                onPress={confirmStart}
+                disabled={loadingStart}
+              >
+                {loadingStart ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.modalConfirmText}>Mulai</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </LinearGradient>
   );
 };
@@ -136,6 +218,60 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    width: '80%',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 20,
+    elevation: 10,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#B71C1C',
+    textAlign: 'center',
+  },
+  modalMessage: {
+    fontSize: 16,
+    marginBottom: 20,
+    textAlign: 'center',
+    color: '#333',
+  },
+  modalButtonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 10,
+    marginHorizontal: 5,
+  },
+  modalCancel: {
+    backgroundColor: '#ccc',
+  },
+  modalCancelText: {
+    color: '#555',
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  modalConfirm: {
+    backgroundColor: '#B71C1C',
+  },
+  modalConfirmText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
 });
 
