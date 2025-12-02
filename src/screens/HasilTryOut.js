@@ -1,330 +1,448 @@
-// import React, { useEffect, useState } from 'react';
-// import {
-//   View,
-//   Text,
-//   ScrollView,
-//   Image,
-//   TouchableOpacity,
-//   StyleSheet,
-//   Dimensions,
-//   StatusBar,
-// } from 'react-native';
-// import LinearGradient from 'react-native-linear-gradient';
-// import AsyncStorage from '@react-native-async-storage/async-storage';
-
-// const { width } = Dimensions.get('window');
-
-// const videoList = [
-//   {
-//     title: 'Bahan Bakar',
-//     desc: 'dan Kimfar',
-//     icon: require('../../src/img/icon_folder.png'),
-//     backgroundColor: '#FFF8E3',
-//     wave: require('../../src/img/wave1.png'),
-//   },
-//   {
-//     title: 'CPOB',
-//     desc: '',
-//     icon: require('../../src/img/icon_folder.png'),
-//     backgroundColor: '#FFF8E3',
-//     wave: require('../../src/img/wave2.png'),
-//   },
-//   {
-//     title: 'Ilmu Resep',
-//     desc: '',
-//     icon: require('../../src/img/icon_folder.png'),
-//     backgroundColor: '#FFF8E3',
-//     wave: require('../../src/img/wave3.png'),
-//   },
-//   {
-//     title: 'Infeksi',
-//     desc: '',
-//     icon: require('../../src/img/icon_folder.png'),
-//     backgroundColor: '#FFF8E3',
-//     wave: require('../../src/img/wave4.png'),
-//   },
-// ];
-
-// const HasilTryOut = () => {
-//   const [user, setUser] = useState({
-//     name: 'Peserta',
-//     paket: 'Premium',
-//   });
-
-//   useEffect(() => {
-//     const getUserData = async () => {
-//       try {
-//         const storedUser = await AsyncStorage.getItem('user');
-//         if (storedUser) {
-//           const parsedUser = JSON.parse(storedUser);
-//           setUser({
-//             name: parsedUser.nama || 'Peserta',
-//             paket: 'Premium',
-//           });
-//         }
-//       } catch (error) {
-//         console.error('Gagal mengambil data user:', error);
-//       }
-//     };
-
-//     getUserData();
-//   }, []);
-
-//   return (
-//     <LinearGradient
-//       colors={['#9D2828', '#191919']}
-//       style={{ flex: 1 }}
-//       start={{ x: 0, y: 0 }}
-//       end={{ x: 1, y: 1 }}
-//     >
-//       <StatusBar barStyle="light-content" backgroundColor="#a10505" />
-//       <ScrollView style={{ flex: 1 }}>
-//         {/* Header */}
-//         <View style={styles.header}>
-//           <View style={{ flex: 1 }}>
-//             <Image
-//               source={require('../../src/img/logo_putih.png')}
-//               style={styles.logo}
-//             />
-//           </View>
-
-//           <View style={styles.userInfo}>
-//             <View style={styles.paketBadge}>
-//               <Text style={styles.paketText}>🥇 {user.paket}</Text>
-//             </View>
-//             <View style={styles.avatarInitial}>
-//               <Text style={styles.avatarText}>
-//                 {user.name.split(' ')[0][0]}
-//               </Text>
-//             </View>
-//           </View>
-//         </View>
-
-//         {/* Title */}
-//         <View style={styles.greetingBox}>
-//           <Text style={styles.greeting}>Ini Hasil TryOut</Text>
-//           <Text style={styles.subtext}>Kumpulan materi berupa video</Text>
-//         </View>
-
-//         {/* Grid */}
-//         <View style={styles.mainContent}>
-//           <Text style={styles.sectionTitle}>Daftar Video</Text>
-//           <View style={styles.menuGrid}>
-//             {videoList.map((item, index) => (
-//               <TouchableOpacity
-//                 key={index}
-//                 style={[
-//                   styles.menuItem,
-//                   { backgroundColor: item.backgroundColor },
-//                 ]}
-//               >
-//                 <Text style={styles.menuTitle}>{item.title}</Text>
-//                 <Text style={styles.menuDesc}>{item.desc}</Text>
-
-//                 <View style={styles.menuIconContainer}>
-//                   <Image source={item.icon} style={styles.menuIcon} />
-//                 </View>
-//                 <Image source={item.wave} style={styles.waveImage} />
-//               </TouchableOpacity>
-//             ))}
-//           </View>
-//         </View>
-//       </ScrollView>
-//     </LinearGradient>
-//   );
-// };
-
-// const styles = StyleSheet.create({
-//   header: {
-//     flexDirection: 'row',
-//     paddingHorizontal: 10,
-//     paddingTop: 20,
-//     alignItems: 'center',
-//   },
-//   logo: {
-//     width: width * 0.3,
-//     height: width * 0.3,
-//     resizeMode: 'contain',
-//   },
-//   userInfo: {
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//     gap: 8,
-//   },
-//   avatarInitial: {
-//     width: 35,
-//     height: 35,
-//     borderRadius: 999,
-//     backgroundColor: '#0b62e4ff',
-//     justifyContent: 'center',
-//     alignItems: 'center',
-//   },
-//   avatarText: {
-//     color: '#fff',
-//     fontWeight: 'bold',
-//     textTransform: 'capitalize',
-//   },
-//   paketBadge: {
-//     backgroundColor: '#feb600',
-//     paddingHorizontal: 8,
-//     paddingVertical: 3,
-//     borderRadius: 12,
-//   },
-//   paketText: {
-//     fontSize: 12,
-//     color: '#fff',
-//     fontWeight: 'bold',
-//   },
-//   greetingBox: {
-//     marginTop: -5,
-//     paddingHorizontal: 20,
-//   },
-//   greeting: {
-//     fontSize: 22,
-//     color: '#fff',
-//     fontWeight: 'bold',
-//     textAlign: 'center',
-//   },
-//   subtext: {
-//     fontSize: 13,
-//     color: '#fff',
-//     marginTop: 5,
-//     textAlign: 'center',
-//   },
-//   mainContent: {
-//     backgroundColor: 'white',
-//     paddingVertical: 25,
-//     paddingHorizontal: 20,
-//     marginTop: 30,
-//   },
-//   sectionTitle: {
-//     fontSize: 18,
-//     fontWeight: 'bold',
-//     marginBottom: 15,
-//     color: '#000',
-//   },
-//   menuGrid: {
-//     flexDirection: 'row',
-//     flexWrap: 'wrap',
-//     justifyContent: 'space-between',
-//   },
-//   menuItem: {
-//     width: width * 0.42,
-//     borderRadius: 15,
-//     padding: 15,
-//     marginBottom: 20,
-//     overflow: 'hidden',
-//     position: 'relative',
-//   },
-//   menuTitle: {
-//     fontWeight: 'bold',
-//     fontSize: 16,
-//     color: '#700101',
-//   },
-//   menuDesc: {
-//     fontSize: 13,
-//     color: '#555',
-//     marginTop: 5,
-//   },
-//   menuIcon: {
-//     width: 50,
-//     height: 50,
-//     resizeMode: 'contain',
-//     alignSelf: 'flex-end',
-//     marginTop: 10,
-//   },
-//   waveImage: {
-//     position: 'absolute',
-//     bottom: 0,
-//     left: 0,
-//     right: 0,
-//     width: 'auto',
-//     height: 80,
-//     resizeMode: 'cover',
-//     borderBottomLeftRadius: 15,
-//     borderBottomRightRadius: 15,
-//     zIndex: -1,
-//   },
-// });
-
-// export default HasilTryOut;
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
-  Image,
+  ScrollView,
   TouchableOpacity,
-  SafeAreaView,
-  StatusBar,
+  StyleSheet,
+  Dimensions,
+  TextInput,
+  ActivityIndicator,
+  Alert,
+  Modal,
+  FlatList,
 } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
-import { useNavigation } from '@react-navigation/native';
+import Header from '../components/Header';
+import Api from '../utils/Api';
+import moment from 'moment';
 
-const HasilTryOut = () => {
-  const navigation = useNavigation();
+const { height } = Dimensions.get('window');
+
+const HasilTryoutScreen = ({ navigation }) => {
+  const [hasilList, setHasilList] = useState([]);
+  const [filteredList, setFilteredList] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterType, setFilterType] = useState('Semua');
+  const [isLoading, setIsLoading] = useState(false);
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+
+  // Ambil daftar id_tryout unik untuk filter + judul tryout
+  const uniqueTryoutIds = [
+    { id: 'Semua', title: 'Semua' },
+    ...Array.from(new Set(hasilList.map(i => i.id_tryout))).map(id => {
+      const firstItem = hasilList.find(item => item.id_tryout === id);
+      return { id: id, title: firstItem?.judul_tryout || `Tryout ${id}` };
+    }),
+  ];
+
+  useEffect(() => {
+    fetchHasilTryout();
+  }, []);
+
+  useEffect(() => {
+    let data = hasilList;
+
+    if (searchQuery) {
+      data = data.filter(item =>
+        item.judul_tryout.toLowerCase().includes(searchQuery.toLowerCase()),
+      );
+    }
+
+    if (filterType !== 'Semua') {
+      data = data.filter(item => item.id_tryout === filterType);
+    }
+
+    setFilteredList(data);
+  }, [searchQuery, filterType, hasilList]);
+
+  const fetchHasilTryout = async () => {
+    setIsLoading(true);
+    try {
+      const response = await Api.get('/hasil-tryout/peserta');
+      setHasilList(response.data.data || []);
+      setFilteredList(response.data.data || []);
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Error', 'Gagal memuat hasil tryout');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const selectFilter = id => {
+    setFilterType(id);
+    setFilterModalVisible(false);
+  };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#9D2828' }}>
-      {/* <StatusBar barStyle={'dark-content'} backgroundColor="#000" /> */}
+    <LinearGradient
+      colors={['#9D2828', '#191919']}
+      style={{ flex: 1 }}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 0 }}
+    >
+      <ScrollView style={{ flex: 1 }} stickyHeaderIndices={[0]}>
+        <Header navigation={navigation} />
 
-      <View style={styles.container}>
-        {/* Tombol Back */}
+        <View style={styles.greetingBox}>
+          <Text style={styles.sectionTitle}>Hasil Tryout</Text>
+          <View style={styles.searchContainer}>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Cari judul tryout..."
+              placeholderTextColor="#fff"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+            <Ionicons name="search-outline" size={18} color="#fff" />
+          </View>
+        </View>
+
+        <View style={styles.mainContent}>
+          <View style={styles.filterContainer}>
+            <Text style={styles.sectionTitle2}>Filter Tryout</Text>
+
+            <TouchableOpacity
+              style={[styles.filterButton, styles.filterActive]}
+              onPress={() => setFilterModalVisible(true)}
+            >
+              <Text style={[styles.filterText, styles.filterTextActive]}>
+                {filterType === 'Semua'
+                  ? 'Semua'
+                  : uniqueTryoutIds.find(f => f.id === filterType)?.title ||
+                    filterType}
+              </Text>
+              <Ionicons
+                name="chevron-down"
+                size={18}
+                color="#fff"
+                style={{ marginLeft: 5 }}
+              />
+            </TouchableOpacity>
+          </View>
+
+          {isLoading ? (
+            <View style={{ marginTop: 40 }}>
+              <ActivityIndicator size="large" color="#B71C1C" />
+              <Text
+                style={{ textAlign: 'center', marginTop: 10, color: '#fff' }}
+              >
+                Memuat hasil tryout...
+              </Text>
+            </View>
+          ) : filteredList.length === 0 ? (
+            <Text style={{ textAlign: 'center', marginTop: 40, color: '#fff' }}>
+              Tidak ada hasil tryout ditemukan.
+            </Text>
+          ) : (
+            filteredList.map(item => (
+              <TouchableOpacity
+                key={item.id_hasiltryout}
+                activeOpacity={0.8}
+                style={styles.card}
+                onPress={() =>
+                  navigation.navigate('TryoutDetail', { id: item.id_tryout })
+                }
+              >
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <Text style={styles.cardTitle}>{item.judul_tryout}</Text>
+                  <Text style={styles.attemptText}>
+                    Attempt Ke: {item.attempt_ke}
+                  </Text>
+                </View>
+
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    marginTop: 10,
+                  }}
+                >
+                  <Text style={styles.score}>
+                    {item.nilai?.toFixed(2) ?? '-'}
+                  </Text>
+                  <View style={styles.statusBadge}>
+                    <Text style={styles.statusText}>
+                      {item.status_pengerjaan.toUpperCase()}
+                    </Text>
+                  </View>
+                </View>
+
+                <Text style={styles.dateText}>
+                  {moment(item.tanggal_pengerjaan).format('DD MMM YYYY, HH:mm')}
+                </Text>
+
+                <View style={styles.detailRow}>
+                  <View style={styles.detailItem}>
+                    <Text style={styles.detailLabel}>Benar</Text>
+                    <Text style={[styles.detailValue, { color: '#4CAF50' }]}>
+                      {item.benar}
+                    </Text>
+                  </View>
+                  <View style={styles.detailItem}>
+                    <Text style={styles.detailLabel}>Salah</Text>
+                    <Text style={[styles.detailValue, { color: '#F44336' }]}>
+                      {item.salah}
+                    </Text>
+                  </View>
+                  <View style={styles.detailItem}>
+                    <Text style={styles.detailLabel}>Kosong</Text>
+                    <Text style={[styles.detailValue, { color: '#9E9E9E' }]}>
+                      {item.kosong}
+                    </Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))
+          )}
+        </View>
+      </ScrollView>
+      // ... kode sama seperti sebelumnya, hanya bagian modal dan style yang
+      diupdate
+      <Modal
+        visible={filterModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setFilterModalVisible(false)}
+      >
         <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
+          style={styles.modalBackdrop}
+          activeOpacity={1}
+          onPressOut={() => setFilterModalVisible(false)}
         >
-          <Ionicons name="arrow-back" size={24} color="#000" />
-        </TouchableOpacity>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Pilih Tryout</Text>
+              <TouchableOpacity onPress={() => setFilterModalVisible(false)}>
+                <Ionicons name="close" size={24} color="#333" />
+              </TouchableOpacity>
+            </View>
 
-        <Image
-          source={require('../img/dokter_mobile.png')}
-          style={styles.image}
-        />
-        <Text style={styles.title}>Sedang Dalam Pengembangan</Text>
-        <Text style={styles.subtitle}>
-          Fitur Hasil akan segera hadir di update berikutnya
-        </Text>
-      </View>
-    </SafeAreaView>
+            <FlatList
+              data={uniqueTryoutIds}
+              keyExtractor={item => item.id.toString()}
+              showsVerticalScrollIndicator={false}
+              style={styles.modalList}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[
+                    styles.modalItem,
+                    filterType === item.id && styles.modalItemSelected,
+                  ]}
+                  onPress={() => selectFilter(item.id)}
+                  activeOpacity={0.7}
+                >
+                  <Text
+                    style={[
+                      styles.modalItemText,
+                      filterType === item.id && styles.modalItemTextSelected,
+                    ]}
+                  >
+                    {item.title}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </TouchableOpacity>
+      </Modal>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#9D2828',
-    padding: 20,
+  greetingBox: {
+    paddingHorizontal: 10,
+    paddingTop: 10,
   },
-  backButton: {
-    position: 'absolute',
-    top: 40,
-    left: 20, // ujung kanan
-    padding: 8,
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    elevation: 3, // biar ada shadow di Android
-  },
-  image: {
-    width: 250,
-    height: 250,
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
     marginBottom: 10,
-    resizeMode: 'contain',
+    color: '#fff',
   },
-  title: {
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0b1',
+    borderRadius: 15,
+    paddingHorizontal: 10,
+  },
+  searchInput: {
+    flex: 1,
+    height: 40,
+    color: '#000',
+  },
+  mainContent: {
+    backgroundColor: 'white',
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+    marginTop: 30,
+    minHeight: height - 200,
+    height: '100%',
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+  },
+  filterContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+    gap: 10,
+    flexWrap: 'wrap',
+  },
+  sectionTitle2: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#000',
+    marginRight: 10,
+  },
+  filterButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 25,
+    borderWidth: 1,
+    borderColor: '#000000ff',
+    marginRight: 8,
+    minWidth: 90,
+  },
+
+  filterText: {
+    color: '#000000ff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginRight: 6,
+  },
+
+  filterActive: {
+    backgroundColor: '#000000ff',
+  },
+  filterTextActive: {
+    color: '#fff',
+  },
+  card: {
+    backgroundColor: '#FAFAFA',
+    borderRadius: 15,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 4,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#9D2828',
+    flex: 1,
+  },
+  attemptText: {
+    fontSize: 14,
+    color: '#777',
+    alignSelf: 'center',
+  },
+  score: {
+    fontSize: 46,
+    fontWeight: '900',
+    color: '#9D2828',
+  },
+  statusBadge: {
+    backgroundColor: '#9D2828',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    marginLeft: 12,
+  },
+  statusText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 12,
+  },
+  dateText: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 8,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 16,
+  },
+  detailItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  detailLabel: {
+    fontSize: 14,
+    color: '#999',
+    marginBottom: 4,
+  },
+  detailValue: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 8,
   },
-  subtitle: {
-    fontSize: 14,
+
+  // Modal styles untuk filter dropdown sebagai modal
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'center',
+    paddingHorizontal: 30,
+  },
+  modalContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    maxHeight: 350,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 10,
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#9D2828',
+  },
+  modalList: {
+    // opsional styling jika ingin
+  },
+  modalItem: {
+    paddingVertical: 14,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    marginVertical: 4,
+    backgroundColor: '#F7F7F7',
+  },
+  modalItemSelected: {
+    backgroundColor: '#9D2828',
+  },
+  modalItemText: {
+    fontSize: 16,
+    color: '#333',
+  },
+  modalItemTextSelected: {
     color: '#fff',
-    textAlign: 'center',
-    lineHeight: 20,
+    fontWeight: 'bold',
   },
 });
 
-export default HasilTryOut;
+export default HasilTryoutScreen;
