@@ -21,6 +21,7 @@ import Api from '../utils/Api';
 import { CommonActions } from '@react-navigation/native';
 
 const { width } = Dimensions.get('window');
+const isTablet = width >= 768; // 🔥 Breakpoint responsif
 
 const Header = ({ navigation, showBack = false }) => {
   const { user, handleLogout, isLoggingOut } = useContext(AuthContext);
@@ -387,7 +388,11 @@ const styles = StyleSheet.create({
   backButton: { padding: 8, marginRight: 10 },
   logoContainer: { flex: 1, alignItems: 'flex-start' },
   logoCenter: {},
-  logo: { width: width * 0.3, height: width * 0.2, resizeMode: 'contain' },
+  logo: {
+    width: isTablet ? 150 : width * 0.3,
+    height: isTablet ? 120 : width * 0.2,
+    resizeMode: 'contain',
+  },
   rightSection: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -404,12 +409,12 @@ const styles = StyleSheet.create({
   kelasAktifText: {
     color: '#fff',
     marginLeft: 5,
-    fontSize: 10,
+    fontSize: isTablet ? 14 : 10,
     fontWeight: '600',
   },
   avatarInitial: {
-    width: 35,
-    height: 35,
+    width: isTablet ? 45 : 35,
+    height: isTablet ? 45 : 35,
     borderRadius: 999,
     backgroundColor: '#fff',
     justifyContent: 'center',

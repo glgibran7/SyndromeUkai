@@ -13,27 +13,26 @@ import {
 import LinearGradient from 'react-native-linear-gradient';
 import { FlatList } from 'react-native';
 import MentorList from '../components/MentorList';
-import { AuthContext } from '../context/AuthContext'; // 🔥 gunakan context
+import { AuthContext } from '../context/AuthContext';
 import Header from '../components/Header';
 
 const { width } = Dimensions.get('window');
+const isTablet = width >= 768;
 
 const Home = ({ navigation }) => {
   const flatListRef = useRef(null);
   const [refreshing, setRefreshing] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  const { user } = useContext(AuthContext); // 🔥 ambil langsung dari AuthContext
+  const { user } = useContext(AuthContext);
 
   useEffect(() => {
     const interval = setInterval(() => {
       const nextIndex = (currentIndex + 1) % MentorList.length;
-
       flatListRef.current?.scrollToIndex({
         index: nextIndex,
         animated: true,
       });
-
       setCurrentIndex(nextIndex);
     }, 3000);
 
@@ -42,7 +41,6 @@ const Home = ({ navigation }) => {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    // kalau mau sync dari API, bisa panggil ulang di AuthContext
     setRefreshing(false);
   };
 
@@ -52,7 +50,6 @@ const Home = ({ navigation }) => {
       desc: 'Kumpulan Materi',
       icon: require('../../src/img/icon_folder.png'),
       backgroundColor: '#FFF8E3',
-      wave: require('../../src/img/wave2.png'),
       to: 'Materi',
     },
     {
@@ -60,7 +57,6 @@ const Home = ({ navigation }) => {
       desc: 'Kumpulan Materi Video',
       icon: require('../../src/img/icon_video.png'),
       backgroundColor: '#FFF8E3',
-      wave: require('../../src/img/wave3.png'),
       to: 'Video',
     },
     {
@@ -68,7 +64,6 @@ const Home = ({ navigation }) => {
       desc: 'Kumpulan soal-soal',
       icon: require('../../src/img/icon_file.png'),
       backgroundColor: '#FFF8F8',
-      wave: require('../../src/img/wave1.png'),
       to: 'TryOut',
     },
     {
@@ -76,7 +71,6 @@ const Home = ({ navigation }) => {
       desc: 'Kumpulan Hasil Try Out',
       icon: require('../../src/img/icon_pesan.png'),
       backgroundColor: '#FFEAEA',
-      wave: require('../../src/img/wave4.png'),
       to: 'Hasil',
     },
   ];
@@ -95,14 +89,13 @@ const Home = ({ navigation }) => {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
         >
-          {/* Header */}
           <Header navigation={navigation} />
 
           {/* Greeting */}
           <View style={styles.greetingBox}>
             <Text style={styles.greeting}>Hi, {user?.name}</Text>
             <Text style={styles.subtext}>
-              Langkah kecil hari ini, lompatan besar untuk hari esok.
+              Langkah kecil hari ini menjadi lompatan besar esok hari.
             </Text>
           </View>
 
@@ -110,6 +103,7 @@ const Home = ({ navigation }) => {
           <View style={styles.mainContent}>
             {/* Menu */}
             <Text style={styles.sectionTitle}>Daftar Menu</Text>
+
             <View style={styles.menuGrid}>
               {menus.map((item, index) => (
                 <TouchableOpacity
@@ -122,16 +116,15 @@ const Home = ({ navigation }) => {
                 >
                   <Text style={styles.menuTitle}>{item.title}</Text>
                   <Text style={styles.menuDesc}>{item.desc}</Text>
-                  <View style={styles.menuIconContainer}>
-                    <Image source={item.icon} style={styles.menuIcon} />
-                  </View>
-                  <Image source={item.wave} style={styles.waveImage} />
+
+                  <Image source={item.icon} style={styles.menuIcon} />
                 </TouchableOpacity>
               ))}
             </View>
 
             {/* Mentor */}
             <Text style={styles.sectionTitle}>Daftar Mentor</Text>
+
             <FlatList
               ref={flatListRef}
               data={MentorList}
@@ -143,8 +136,8 @@ const Home = ({ navigation }) => {
                   <Image
                     source={item.image}
                     style={{
-                      width: width * 0.4,
-                      height: width * 0.5,
+                      width: isTablet ? width * 0.22 : width * 0.45,
+                      height: isTablet ? width * 0.28 : width * 0.55,
                       resizeMode: 'contain',
                     }}
                   />
@@ -160,33 +153,34 @@ const Home = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   greetingBox: {
-    paddingVertical: 10,
-    paddingHorizontal: 10,
+    paddingVertical: isTablet ? 25 : 12,
+    paddingHorizontal: 15,
   },
   greeting: {
-    fontSize: 22,
+    fontSize: isTablet ? 34 : 22,
     color: '#fff',
     fontWeight: 'bold',
     textAlign: 'center',
     textTransform: 'capitalize',
   },
   subtext: {
-    fontSize: 13,
+    fontSize: isTablet ? 18 : 13,
     color: '#fff',
-    marginTop: 5,
+    marginTop: 6,
     textAlign: 'center',
   },
   mainContent: {
     backgroundColor: 'white',
-    paddingVertical: 25,
-    paddingHorizontal: 20,
+    paddingVertical: isTablet ? 45 : 25,
+    paddingHorizontal: isTablet ? 40 : 20,
     marginTop: 20,
-    height: '100%',
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: isTablet ? 28 : 18,
     fontWeight: 'bold',
-    marginBottom: 15,
+    marginBottom: isTablet ? 28 : 15,
     color: '#000',
   },
   menuGrid: {
@@ -195,41 +189,27 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   menuItem: {
-    width: width * 0.42,
-    borderRadius: 15,
-    padding: 15,
-    marginBottom: 20,
-    overflow: 'hidden',
-    position: 'relative',
+    width: isTablet ? width * 0.28 : width * 0.44,
+    borderRadius: 20,
+    padding: isTablet ? 25 : 15,
+    marginBottom: isTablet ? 30 : 18,
   },
   menuTitle: {
     fontWeight: 'bold',
-    fontSize: 16,
+    fontSize: isTablet ? 22 : 16,
     color: '#700101',
   },
   menuDesc: {
-    fontSize: 13,
+    fontSize: isTablet ? 18 : 13,
     color: '#555',
     marginTop: 5,
   },
   menuIcon: {
-    width: 50,
-    height: 50,
+    width: isTablet ? 75 : 50,
+    height: isTablet ? 75 : 50,
     resizeMode: 'contain',
     alignSelf: 'flex-end',
-    marginTop: 10,
-  },
-  waveImage: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    width: 'auto',
-    height: 80,
-    resizeMode: 'cover',
-    borderBottomLeftRadius: 15,
-    borderBottomRightRadius: 15,
-    zIndex: -1,
+    marginTop: isTablet ? 15 : 10,
   },
 });
 
