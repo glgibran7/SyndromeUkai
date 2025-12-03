@@ -29,12 +29,15 @@ const TryoutScreen = ({ navigation }) => {
     name: 'Peserta',
     paket: 'Premium',
   });
+
   const [isLoading, setIsLoading] = useState(false);
 
   // Modal states
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedTryout, setSelectedTryout] = useState(null);
   const [isStarting, setIsStarting] = useState(false);
+  const [filterTryoutModal, setFilterTryoutModal] = useState(false);
+  const [selectedTryoutFilter, setSelectedTryoutFilter] = useState('all');
 
   useEffect(() => {
     const getUserData = async () => {
@@ -44,7 +47,8 @@ const TryoutScreen = ({ navigation }) => {
           const parsedUser = JSON.parse(storedUser);
           setUser({
             name: parsedUser.nama || 'Peserta',
-            paket: 'Premium',
+            paket: parsedUser.paket || 'Premium',
+            role: parsedUser.role || 'peserta',
           });
         }
       } catch (error) {
@@ -113,6 +117,9 @@ const TryoutScreen = ({ navigation }) => {
 
   // Saat user pilih tryout, buka modal
   const handleTryoutPress = tryout => {
+    if (user.role === 'mentor') {
+      return; // mentor tidak bisa membuka modal
+    }
     setSelectedTryout(tryout);
     setModalVisible(true);
   };
@@ -275,7 +282,9 @@ const TryoutScreen = ({ navigation }) => {
                   key={item.id_tryout}
                   activeOpacity={0.8}
                   onPress={() => handleTryoutPress(item)}
-                  disabled={item.remaining_attempts === 0} // disable kalau ga ada attempt
+                  disabled={
+                    item.remaining_attempts === 0 || user.role === 'mentor'
+                  } // disable kalau ga ada attempt
                 >
                   <LinearGradient
                     colors={
@@ -316,19 +325,39 @@ const TryoutScreen = ({ navigation }) => {
                         <View
                           style={{ flexDirection: 'row', marginTop: 6, gap: 8 }}
                         >
+                          {/* Max attempt tetap ada untuk semua role */}
                           <Text style={styles.attemptInfo}>
                             Max Attempt: {item.max_attempt}
                           </Text>
-                          <Text
-                            style={[
-                              styles.attemptInfo,
-                              item.remaining_attempts === 0
-                                ? styles.attemptZero
-                                : styles.attemptAvailable,
-                            ]}
-                          >
-                            Sisa: {item.remaining_attempts ?? '-'}
-                          </Text>
+
+                          {/* Jika peserta → tampilkan sisa attempt */}
+                          {user.role !== 'mentor' && (
+                            <Text
+                              style={[
+                                styles.attemptInfo,
+                                item.remaining_attempts === 0
+                                  ? styles.attemptZero
+                                  : styles.attemptAvailable,
+                              ]}
+                            >
+                              Sisa: {item.remaining_attempts ?? '-'}
+                            </Text>
+                          )}
+
+                          {/* Jika mentor → ganti menjadi visibility */}
+                          {user.role === 'mentor' && (
+                            <Text
+                              style={[
+                                styles.attemptInfo,
+                                {
+                                  backgroundColor: '#e3f2fd',
+                                  color: '#0d47a1',
+                                },
+                              ]}
+                            >
+                              Visibility: {item.visibility}
+                            </Text>
+                          )}
                         </View>
                       </View>
                     </View>

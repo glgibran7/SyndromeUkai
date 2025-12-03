@@ -117,30 +117,52 @@ const ExamScreen = ({ navigation, route }) => {
   // Timer dan lainnya (tetap sama)
   const [scoreVisible, setScoreVisible] = useState(false);
   const [score, setScore] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(tryout.durasi * 60 || 0);
+  // Timer State
+  const [timeLeft, setTimeLeft] = useState(null);
+  const [serverOffset, setServerOffset] = useState(0);
 
   useEffect(() => {
+    if (!attempt?.start_time || !attempt?.end_time) return;
+
+    // Parsing timestamp API (ISO format, sudah aman)
+    const serverNow = new Date(
+      attempt.updated_at || attempt.start_time,
+    ).getTime();
+    const deviceNow = Date.now();
+
+    // Hitung selisih waktu antara jam server & device (anti manipulasi zona waktu)
+    setServerOffset(serverNow - deviceNow);
+
+    const endTime = new Date(attempt.end_time).getTime();
+    const remainSeconds = Math.max(Math.floor((endTime - serverNow) / 1000), 0);
+
+    setTimeLeft(remainSeconds);
+  }, [attempt]);
+
+  useEffect(() => {
+    if (timeLeft === null) return;
+
     if (timeLeft <= 0) {
-      // waktu habis, submit otomatis
-      const autoSubmit = async () => {
-        try {
-          await submitAttempt();
-        } catch (e) {
-          console.error('Gagal submit otomatis:', e);
-        }
-      };
-      autoSubmit();
+      submitAttempt();
       return;
     }
 
-    const timer = setInterval(() => setTimeLeft(t => t - 1), 1000);
-    return () => clearInterval(timer);
+    const interval = setInterval(() => {
+      const nowCorrected = Date.now() + serverOffset;
+      const endTime = new Date(attempt.end_time).getTime();
+      const remain = Math.max(Math.floor((endTime - nowCorrected) / 1000), 0);
+
+      setTimeLeft(remain);
+    }, 1000);
+
+    return () => clearInterval(interval);
   }, [timeLeft]);
 
   const formatTime = sec => {
     const h = Math.floor(sec / 3600);
     const m = Math.floor((sec % 3600) / 60);
     const s = sec % 60;
+
     return `${h.toString().padStart(2, '0')}:${m
       .toString()
       .padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
@@ -257,7 +279,14 @@ const ExamScreen = ({ navigation, route }) => {
           <View style={styles.header}>
             <Text style={styles.title}>{tryout.judul || 'Tryout'}</Text>
             <View style={styles.timerBox}>
-              <Text style={styles.timerText}>{formatTime(timeLeft)}</Text>
+              <Text
+                style={[
+                  styles.timerText,
+                  timeLeft < 300 && { color: '#FF3B30' },
+                ]}
+              >
+                {formatTime(timeLeft)}
+              </Text>
             </View>
           </View>
 
