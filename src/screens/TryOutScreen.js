@@ -10,6 +10,7 @@ import {
   Alert,
   ActivityIndicator,
   Modal,
+  RefreshControl,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
@@ -21,6 +22,7 @@ import ToastMessage from '../components/ToastMessage';
 const { height, width } = Dimensions.get('window');
 
 const TryoutScreen = ({ navigation }) => {
+  const [refreshing, setRefreshing] = useState(false);
   const [tryoutList, setTryoutList] = useState([]);
   const [filteredList, setFilteredList] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -94,6 +96,16 @@ const TryoutScreen = ({ navigation }) => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await fetchTryouts();
+    } catch (e) {
+      console.log('Refresh error:', e);
+    }
+    setRefreshing(false);
   };
 
   // Filter & search
@@ -220,11 +232,22 @@ const TryoutScreen = ({ navigation }) => {
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 0 }}
     >
-      <ScrollView style={{ flex: 1 }} stickyHeaderIndices={[0]}>
+      <ScrollView
+        style={{ flex: 1 }}
+        stickyHeaderIndices={[0]}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#fff"
+            colors={['#B71C1C']}
+          />
+        }
+      >
         <Header navigation={navigation} />
 
         <View style={styles.greetingBox}>
-          <Text style={styles.sectionTitle}>Tryout (Beta Tester)</Text>
+          <Text style={styles.sectionTitle}>Tryout</Text>
           <View style={styles.searchContainer}>
             <TextInput
               style={styles.searchInput}
@@ -387,22 +410,35 @@ const TryoutScreen = ({ navigation }) => {
         }}
       >
         <View style={styles.modalBackdrop}>
-          <View style={styles.modalContainer}>
+          <View style={styles.modalCard}>
+            <View style={styles.iconCircle}>
+              <Ionicons name="alert-circle-outline" size={45} color="#B71C1C" />
+            </View>
+
+            <Text style={styles.modalTitle}>Konfirmasi</Text>
+
             {selectedTryout && (
               <>
-                <Text style={styles.modalTitle}>Mulai Tryout?</Text>
-                <Text style={styles.modalTryoutTitle}>
-                  {selectedTryout.judul}
+                <Text style={styles.modalSubtitle}>
+                  Mulai Tryout:{' '}
+                  <Text style={{ fontWeight: 'bold' }}>
+                    {selectedTryout.judul}
+                  </Text>{' '}
+                  ?
                 </Text>
-                <Text style={styles.modalInfo}>
-                  📝 Soal: {selectedTryout.jumlah_soal}
-                </Text>
-                <Text style={styles.modalInfo}>
-                  ⏳ Durasi: {selectedTryout.durasi} Menit
-                </Text>
-                <Text style={styles.modalInfo}>
-                  Sisa Attempt: {selectedTryout.remaining_attempts ?? '-'}
-                </Text>
+
+                <View style={styles.detailBox}>
+                  <Text style={styles.modalInfo}>
+                    📝 {selectedTryout.jumlah_soal} Soal
+                  </Text>
+                  <Text style={styles.modalInfo}>
+                    ⏳ Durasi: {selectedTryout.durasi} Menit
+                  </Text>
+                  <Text style={styles.modalInfo}>
+                    🎯 Attempt Tersisa:{' '}
+                    {selectedTryout.remaining_attempts ?? '-'}
+                  </Text>
+                </View>
 
                 {isStarting ? (
                   <ActivityIndicator
@@ -411,20 +447,22 @@ const TryoutScreen = ({ navigation }) => {
                     style={{ marginTop: 15 }}
                   />
                 ) : (
-                  <View style={styles.modalButtonContainer}>
+                  <View style={styles.btnRow}>
                     <TouchableOpacity
-                      style={[styles.modalButton, styles.cancelButton]}
+                      style={styles.btnOutline}
                       onPress={() => setModalVisible(false)}
                     >
-                      <Text style={styles.modalButtonTextCancel}>Batal</Text>
+                      <Text style={styles.textOutline}>Batal</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity
-                      style={[styles.modalButton, styles.startButton]}
-                      onPress={confirmStart}
+                    <LinearGradient
+                      colors={['#B71C1C', '#7B0D0D']}
+                      style={styles.btnStart}
                     >
-                      <Text style={styles.modalButtonTextStart}>Mulai</Text>
-                    </TouchableOpacity>
+                      <TouchableOpacity onPress={confirmStart}>
+                        <Text style={styles.textStart}>Mulai</Text>
+                      </TouchableOpacity>
+                    </LinearGradient>
                   </View>
                 )}
               </>
@@ -537,58 +575,100 @@ const styles = StyleSheet.create({
   // Modal styles
   modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.65)',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    padding: 25,
   },
-  modalContainer: {
-    backgroundColor: 'white',
-    borderRadius: 15,
-    padding: 20,
+
+  modalCard: {
     width: '100%',
-    maxWidth: 400,
+    maxWidth: 390,
+    backgroundColor: '#fff',
+    padding: 25,
+    borderRadius: 25,
     alignItems: 'center',
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    transform: [{ translateY: -10 }],
   },
+
+  iconCircle: {
+    width: 65,
+    height: 65,
+    backgroundColor: '#FDECEA',
+    borderRadius: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 12,
+    color: '#B71C1C',
+    marginBottom: 8,
   },
-  modalTryoutTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 12,
+
+  modalSubtitle: {
+    fontSize: 16,
+    color: '#333',
     textAlign: 'center',
+    marginBottom: 15,
   },
+
+  detailBox: {
+    width: '100%',
+    backgroundColor: '#fafafa',
+    padding: 15,
+    borderRadius: 15,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+
   modalInfo: {
     fontSize: 14,
-    marginBottom: 8,
-    color: '#333',
+    marginBottom: 5,
+    color: '#444',
   },
-  modalButtonContainer: {
+
+  btnRow: {
     flexDirection: 'row',
-    marginTop: 20,
-    gap: 15,
+    width: '100%',
+    justifyContent: 'space-between',
+    gap: 12,
   },
-  modalButton: {
+
+  btnOutline: {
+    flex: 1,
+    borderWidth: 2,
+    borderColor: '#B71C1C',
     paddingVertical: 12,
-    paddingHorizontal: 25,
-    borderRadius: 20,
+    borderRadius: 12,
+    alignItems: 'center',
   },
-  cancelButton: {
-    backgroundColor: '#ccc',
-  },
-  startButton: {
-    backgroundColor: '#B71C1C',
-  },
-  modalButtonTextCancel: {
-    color: '#333',
+
+  textOutline: {
+    color: '#B71C1C',
     fontWeight: 'bold',
+    fontSize: 15,
   },
-  modalButtonTextStart: {
-    color: 'white',
+
+  btnStart: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+
+  textStart: {
+    color: '#fff',
     fontWeight: 'bold',
+    fontSize: 15,
   },
 });
 

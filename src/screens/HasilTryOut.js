@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
     paddingTop: 10,
   },
   sectionTitle: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 10,
     color: '#fff',

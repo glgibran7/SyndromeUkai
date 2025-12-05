@@ -12,6 +12,7 @@ import {
   Dimensions,
   Alert,
   RefreshControl,
+  BackHandler,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
@@ -20,14 +21,15 @@ import CalculatorModal from './CalculatorModal';
 import Api from '../utils/Api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import RenderHtml from 'react-native-render-html';
+import AppModal from './AppModal';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const ExamScreen = ({ navigation, route }) => {
   const [refreshing, setRefreshing] = useState(false);
 
-  const [updatedAttemptData, setUpdatedAttemptData] = useState(attempt);
   const { tryout, attempt } = route.params;
+  const [updatedAttemptData, setUpdatedAttemptData] = useState(attempt);
 
   const [showCalc, setShowCalc] = useState(false);
   const [markDoubt, setMarkDoubt] = useState(false);
@@ -50,6 +52,12 @@ const ExamScreen = ({ navigation, route }) => {
   // State baru untuk modal hasil tryout
   const [result, setResult] = useState(null);
   const [resultModalVisible, setResultModalVisible] = useState(false);
+
+  const [confirmModalVisible, setConfirmModalVisible] = useState(false);
+  const [emptyCount, setEmptyCount] = useState(0);
+  const [doubtCount, setDoubtCount] = useState(0);
+
+  const [confirmExitVisible, setConfirmExitVisible] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -191,6 +199,20 @@ const ExamScreen = ({ navigation, route }) => {
 
     setTimeLeft(remainSeconds);
   }, [updatedAttemptData]);
+
+  useEffect(() => {
+    const backAction = () => {
+      setConfirmExitVisible(true);
+      return true; // cegah keluar langsung
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      backAction,
+    );
+
+    return () => backHandler.remove();
+  }, []);
 
   useEffect(() => {
     if (timeLeft === null) return;
@@ -459,7 +481,15 @@ const ExamScreen = ({ navigation, route }) => {
                   if (currentQuestionIndex < questions.length - 1) {
                     setCurrentQuestionIndex(i => i + 1);
                   } else {
-                    submitAttempt();
+                    // hitung sisa kosong & ragu
+                    const empty = answersStatus.filter(
+                      a => !a?.answered,
+                    ).length;
+                    const doubt = answersStatus.filter(a => a?.doubt).length;
+
+                    setEmptyCount(empty);
+                    setDoubtCount(doubt);
+                    setConfirmModalVisible(true);
                   }
                 }}
               >
@@ -534,55 +564,59 @@ const ExamScreen = ({ navigation, route }) => {
             </View>
           </Modal>
 
+          {/* Modal Konfirmasi Submit */}
+          <AppModal
+            visible={confirmModalVisible}
+            type="submitConfirm"
+            title="Selesaikan Tryout?"
+            message={`Ada ${emptyCount} soal kosong dan ${doubtCount} ragu - yakin selesai?`}
+            onClose={() => setConfirmModalVisible(false)}
+            onConfirm={() => {
+              setConfirmModalVisible(false);
+              submitAttempt();
+            }}
+          />
+
+          {/* Modal Konfirmasi Keluar */}
+          <AppModal
+            visible={confirmExitVisible}
+            type="exitConfirm"
+            title="Keluar dari tryout?"
+            message="Tekan Lanjut jika ingin mengakhiri tryout dan mengirim jawaban Anda."
+            onClose={() => setConfirmExitVisible(false)}
+            onConfirm={() => {
+              setConfirmExitVisible(false);
+              submitAttempt();
+            }}
+          />
+
           {/* Modal Hasil Tryout */}
-          <Modal
+          <AppModal
             visible={resultModalVisible}
-            transparent
-            animationType="fade"
-            onRequestClose={() => setResultModalVisible(false)}
+            type="result"
+            title="Hasil Tryout"
+            onConfirm={() => {
+              setResultModalVisible(false);
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'TryOutScreen' }],
+              });
+            }}
           >
-            <View style={styles.modalOverlay}>
-              <View style={styles.resultModalContent}>
-                <Text style={styles.resultModalTitle}>Hasil Tryout Anda</Text>
+            <View style={{ marginTop: 12, alignItems: 'center' }}>
+              <Text
+                style={{ fontSize: 40, fontWeight: 'bold', color: '#9D2828' }}
+              >
+                {result?.nilai ?? '-'}
+              </Text>
 
-                <Text style={styles.resultScore}>{result?.nilai ?? '-'}</Text>
-
-                <View style={styles.resultSummaryGrid}>
-                  <View style={styles.resultSummaryItem}>
-                    <Text style={styles.resultSummaryLabel}>Total Soal</Text>
-                    <Text style={styles.resultSummaryValue}>
-                      {result?.total_soal ?? '-'}
-                    </Text>
-                  </View>
-                  <View style={styles.resultSummaryItem}>
-                    <Text style={styles.resultSummaryLabel}>Benar</Text>
-                    <Text style={styles.resultSummaryValue}>
-                      {result?.benar ?? '-'}
-                    </Text>
-                  </View>
-                  <View style={styles.resultSummaryItem}>
-                    <Text style={styles.resultSummaryLabel}>Salah</Text>
-                    <Text style={styles.resultSummaryValue}>
-                      {result?.salah ?? '-'}
-                    </Text>
-                  </View>
-                </View>
-
-                <TouchableOpacity
-                  style={styles.resultCloseButton}
-                  onPress={() => {
-                    setResultModalVisible(false);
-                    navigation.reset({
-                      index: 0,
-                      routes: [{ name: 'TryOutScreen' }],
-                    });
-                  }}
-                >
-                  <Text style={styles.resultCloseButtonText}>Tutup</Text>
-                </TouchableOpacity>
+              <View style={{ marginTop: 16 }}>
+                <Text>Benar: {result?.benar}</Text>
+                <Text>Salah: {result?.salah}</Text>
+                <Text>Total Soal: {result?.total_soal}</Text>
               </View>
             </View>
-          </Modal>
+          </AppModal>
         </View>
       </LinearGradient>
     </SafeAreaView>
@@ -845,6 +879,82 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginRight: 6,
     color: '#000',
+  },
+  confirmModal: {
+    backgroundColor: '#fff',
+    padding: 25,
+    borderRadius: 18,
+    width: '85%',
+    alignItems: 'center',
+  },
+  confirmTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 12,
+  },
+  warningText: {
+    fontSize: 14,
+    color: '#D32F2F',
+    marginBottom: 6,
+    textAlign: 'center',
+  },
+  confirmMessage: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginVertical: 10,
+    color: '#333',
+  },
+  confirmButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginTop: 20,
+  },
+  cancelBtn: {
+    flex: 1,
+    backgroundColor: '#555',
+    paddingVertical: 12,
+    borderRadius: 10,
+    marginRight: 10,
+    alignItems: 'center',
+  },
+  submitBtn: {
+    flex: 1,
+    backgroundColor: '#9D2828',
+    paddingVertical: 12,
+    borderRadius: 10,
+    marginLeft: 10,
+    alignItems: 'center',
+  },
+
+  warningModalBox: {
+    backgroundColor: '#fff',
+    padding: 25,
+    width: '85%',
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  warningTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#9D2828',
+    marginBottom: 10,
+  },
+  warningMessage: {
+    textAlign: 'center',
+    fontSize: 14,
+    color: '#333',
+    marginBottom: 20,
+  },
+  warningButtonRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  warningBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
   },
 });
 
