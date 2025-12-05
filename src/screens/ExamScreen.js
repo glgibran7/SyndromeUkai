@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   Dimensions,
   Alert,
+  RefreshControl,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
@@ -23,6 +24,9 @@ import RenderHtml from 'react-native-render-html';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const ExamScreen = ({ navigation, route }) => {
+  const [refreshing, setRefreshing] = useState(false);
+
+  const [updatedAttemptData, setUpdatedAttemptData] = useState(attempt);
   const { tryout, attempt } = route.params;
 
   const [showCalc, setShowCalc] = useState(false);
@@ -37,7 +41,12 @@ const ExamScreen = ({ navigation, route }) => {
   const [answersStatus, setAnswersStatus] = useState([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [isPrefilled, setIsPrefilled] = useState(false);
-
+  // Timer dan lainnya (tetap sama)
+  const [scoreVisible, setScoreVisible] = useState(false);
+  const [score, setScore] = useState(0);
+  // Timer State
+  const [timeLeft, setTimeLeft] = useState(null);
+  const [serverOffset, setServerOffset] = useState(0);
   // State baru untuk modal hasil tryout
   const [result, setResult] = useState(null);
   const [resultModalVisible, setResultModalVisible] = useState(false);
@@ -90,6 +99,7 @@ const ExamScreen = ({ navigation, route }) => {
       try {
         // 🔥 Always fetch latest attempt data
         const updatedAttempt = await refreshAttempt();
+        setUpdatedAttemptData(updatedAttempt);
 
         const response = await Api.get(`/tryout/${tryout.id_tryout}/questions`);
         const fetchedQuestions = response.data.data || [];
@@ -129,30 +139,58 @@ const ExamScreen = ({ navigation, route }) => {
     fetchQuestions();
   }, []);
 
-  // Timer dan lainnya (tetap sama)
-  const [scoreVisible, setScoreVisible] = useState(false);
-  const [score, setScore] = useState(0);
-  // Timer State
-  const [timeLeft, setTimeLeft] = useState(null);
-  const [serverOffset, setServerOffset] = useState(0);
+  const onRefresh = async () => {
+    setRefreshing(true);
+
+    try {
+      const updatedAttempt = await refreshAttempt();
+      setUpdatedAttemptData(updatedAttempt);
+
+      const response = await Api.get(`/tryout/${tryout.id_tryout}/questions`);
+      const fetchedQuestions = response.data.data || [];
+      setQuestions(fetchedQuestions);
+
+      const jawabanUser = updatedAttempt.jawaban_user || {};
+
+      const newAnswersStatus = fetchedQuestions.map(q => {
+        const opsiKeys = Object.keys(q.opsi || {});
+        const key = `soal_${q.nomor_urut}`;
+
+        const jawaban = jawabanUser[key]?.jawaban?.toUpperCase() || null;
+        const ragu = jawabanUser[key]?.ragu === 1;
+
+        const selectedIndex = opsiKeys.findIndex(o => o === jawaban);
+
+        return {
+          answered: selectedIndex !== -1,
+          doubt: ragu,
+          selectedOption: selectedIndex !== -1 ? selectedIndex : null,
+        };
+      });
+
+      setAnswersStatus(newAnswersStatus);
+    } catch (err) {
+      console.log('Refresh gagal:', err);
+    }
+
+    setRefreshing(false);
+  };
 
   useEffect(() => {
-    if (!attempt?.start_time || !attempt?.end_time) return;
+    if (!updatedAttemptData) return; // <-- pakai state baru
 
-    // Parsing timestamp API (ISO format, sudah aman)
     const serverNow = new Date(
-      attempt.updated_at || attempt.start_time,
+      updatedAttemptData.updated_at || updatedAttemptData.start_time,
     ).getTime();
-    const deviceNow = Date.now();
 
-    // Hitung selisih waktu antara jam server & device (anti manipulasi zona waktu)
+    const deviceNow = Date.now();
     setServerOffset(serverNow - deviceNow);
 
-    const endTime = new Date(attempt.end_time).getTime();
+    const endTime = new Date(updatedAttemptData.end_time).getTime();
     const remainSeconds = Math.max(Math.floor((endTime - serverNow) / 1000), 0);
 
     setTimeLeft(remainSeconds);
-  }, [attempt]);
+  }, [updatedAttemptData]);
 
   useEffect(() => {
     if (timeLeft === null) return;
@@ -305,7 +343,17 @@ const ExamScreen = ({ navigation, route }) => {
             </View>
           </View>
 
-          <ScrollView style={styles.container}>
+          <ScrollView
+            style={styles.container}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                tintColor="#fff"
+                colors={['#9D2828']}
+              />
+            }
+          >
             <View pointerEvents="none" style={styles.watermarkOverlay}>
               {watermarks}
             </View>
