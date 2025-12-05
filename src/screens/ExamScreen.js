@@ -308,7 +308,7 @@ const ExamScreen = ({ navigation, route }) => {
     }
   };
 
-  const watermarkText = `${userName} • ${userName} • ${userName}`;
+  const watermarkText = `${userName} • ${userName} • ${userName}• ${userName}• ${userName}`;
   const watermarks = Array.from({ length: 48 }, (_, i) => (
     <Text key={i} style={styles.watermarkText}>
       {watermarkText}
@@ -418,14 +418,13 @@ const ExamScreen = ({ navigation, route }) => {
                     textAlign: 'justify',
                   },
                   img: {
-                    maxWidth: 300,
-                    maxHeight: 200,
-                    width: '100%',
-                    height: 'auto',
-                    marginVertical: 8,
-                    resizeMode: 'contain',
+                    width: '100%', // selalu full width container
+                    maxWidth: SCREEN_WIDTH - 32, // batas maksimal lebar
+                    maxHeight: 220, // batasi tinggi gambar
+                    marginVertical: 10,
                   },
                 }}
+                enableExperimentalMarginCollapsing={true}
                 enableExperimentalBRCollapsing={true}
               />
             </View>
@@ -511,22 +510,14 @@ const ExamScreen = ({ navigation, route }) => {
           <Modal
             visible={listVisible}
             transparent
-            animationType="fade"
+            animationType="slide"
             onRequestClose={() => setListVisible(false)}
           >
             <View style={styles.modalContainer}>
-              <View style={styles.modalContent}>
-                <Text
-                  style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 12 }}
-                >
-                  Pilih Nomor Soal
-                </Text>
-                <ScrollView
-                  contentContainerStyle={{
-                    flexDirection: 'row',
-                    flexWrap: 'wrap',
-                  }}
-                >
+              <View style={styles.listModal}>
+                <Text style={styles.listTitle}>Pilih Nomor Soal</Text>
+
+                <ScrollView contentContainerStyle={styles.gridContainer}>
                   {questions.map((q, idx) => {
                     const status = answersStatus[idx];
                     let bgColor = '#fff';
@@ -537,23 +528,35 @@ const ExamScreen = ({ navigation, route }) => {
                       <TouchableOpacity
                         key={idx}
                         style={[
-                          styles.numberButton,
+                          styles.gridItem,
                           { backgroundColor: bgColor },
-                          idx === currentQuestionIndex &&
-                            styles.numberButtonActive,
+                          idx === currentQuestionIndex && {
+                            backgroundColor: '#1565C0', // << WARNA BARU
+                            borderWidth: 2,
+                            borderColor: '#000',
+                          },
                         ]}
                         onPress={() => {
                           setCurrentQuestionIndex(idx);
                           setListVisible(false);
                         }}
                       >
-                        <Text style={styles.numberText}>{idx + 1}</Text>
+                        <Text
+                          style={{
+                            fontWeight: 'bold',
+                            color:
+                              idx === currentQuestionIndex ? '#fff' : '#000', // auto adjust
+                          }}
+                        >
+                          {idx + 1}
+                        </Text>
                       </TouchableOpacity>
                     );
                   })}
                 </ScrollView>
+
                 <TouchableOpacity
-                  style={styles.closeButton}
+                  style={styles.closeGridBtn}
                   onPress={() => setListVisible(false)}
                 >
                   <Text style={{ color: '#fff', fontWeight: 'bold' }}>
@@ -954,6 +957,51 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 12,
     borderRadius: 8,
+    alignItems: 'center',
+  },
+  listModal: {
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    padding: 20,
+    width: '92%',
+    maxHeight: '80%', // <-- agar aman walaupun 200 soal
+  },
+
+  listTitle: {
+    fontWeight: 'bold',
+    fontSize: 18,
+    marginBottom: 14,
+    textAlign: 'center',
+  },
+
+  gridContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    paddingBottom: 10,
+  },
+
+  gridItem: {
+    width: 45,
+    height: 45,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    margin: 6,
+    borderWidth: 1,
+    borderColor: '#999',
+  },
+
+  gridNumber: () => ({
+    color: '#000',
+    fontWeight: 'bold',
+  }),
+
+  closeGridBtn: {
+    marginTop: 20,
+    backgroundColor: '#9D2828',
+    paddingVertical: 12,
+    borderRadius: 10,
     alignItems: 'center',
   },
 });

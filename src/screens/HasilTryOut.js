@@ -17,6 +17,7 @@ import Ionicons from '@react-native-vector-icons/ionicons';
 import Header from '../components/Header';
 import Api from '../utils/Api';
 import moment from 'moment';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { height } = Dimensions.get('window');
 
@@ -27,20 +28,60 @@ const HasilTryoutScreen = ({ navigation }) => {
   const [filterType, setFilterType] = useState('Semua');
   const [isLoading, setIsLoading] = useState(false);
   const [filterModalVisible, setFilterModalVisible] = useState(false);
-
-  // Ambil daftar id_tryout unik untuk filter + judul tryout
-  const uniqueTryoutIds = [
-    { id: 'Semua', title: 'Semua' },
-    ...Array.from(new Set(hasilList.map(i => i.id_tryout))).map(id => {
-      const firstItem = hasilList.find(item => item.id_tryout === id);
-      return { id: id, title: firstItem?.judul_tryout || `Tryout ${id}` };
-    }),
-  ];
+  const [role, setRole] = useState(null);
 
   useEffect(() => {
-    fetchHasilTryout();
+    getRole();
   }, []);
 
+  const getRole = async () => {
+    const userData = await AsyncStorage.getItem('user');
+    const parsedUser = userData ? JSON.parse(userData) : null;
+
+    const userRole = parsedUser?.role || 'peserta';
+
+    setRole(userRole);
+    fetchHasilTryout(userRole);
+  };
+
+  const fetchHasilTryout = async userRole => {
+    setIsLoading(true);
+
+    try {
+      const endpoint =
+        userRole === 'mentor'
+          ? '/hasil-tryout/mentor'
+          : '/hasil-tryout/peserta';
+
+      const response = await Api.get(endpoint);
+
+      setHasilList(response.data.data || []);
+      setFilteredList(response.data.data || []);
+    } catch (error) {
+      console.log('API ERROR:', error.response?.data);
+
+      if (error.response?.status === 403) {
+        Alert.alert(
+          'Akses Ditolak',
+          'Role kamu tidak diizinkan untuk membuka halaman ini.',
+        );
+      } else {
+        Alert.alert(
+          'Error',
+          error.response?.data?.message || 'Gagal memuat data.',
+        );
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const selectFilter = id => {
+    setFilterType(id);
+    setFilterModalVisible(false);
+  };
+
+  // FILTER & SEARCH
   useEffect(() => {
     let data = hasilList;
 
@@ -57,24 +98,14 @@ const HasilTryoutScreen = ({ navigation }) => {
     setFilteredList(data);
   }, [searchQuery, filterType, hasilList]);
 
-  const fetchHasilTryout = async () => {
-    setIsLoading(true);
-    try {
-      const response = await Api.get('/hasil-tryout/peserta');
-      setHasilList(response.data.data || []);
-      setFilteredList(response.data.data || []);
-    } catch (error) {
-      console.error(error);
-      Alert.alert('Error', 'Gagal memuat hasil tryout');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const selectFilter = id => {
-    setFilterType(id);
-    setFilterModalVisible(false);
-  };
+  // LIST TRYOUT
+  const uniqueTryoutIds = [
+    { id: 'Semua', title: 'Semua' },
+    ...Array.from(new Set(hasilList.map(i => i.id_tryout))).map(id => {
+      const firstItem = hasilList.find(item => item.id_tryout === id);
+      return { id: id, title: firstItem?.judul_tryout || `Tryout ${id}` };
+    }),
+  ];
 
   return (
     <LinearGradient
@@ -87,7 +118,11 @@ const HasilTryoutScreen = ({ navigation }) => {
         <Header navigation={navigation} />
 
         <View style={styles.greetingBox}>
-          <Text style={styles.sectionTitle}>Hasil Tryout</Text>
+          <Text style={styles.sectionTitle}>
+            {role === 'mentor' ? 'Hasil Peserta' : 'Hasil Tryout'}
+          </Text>
+
+          {/* 🔍 Search */}
           <View style={styles.searchContainer}>
             <TextInput
               style={styles.searchInput}
@@ -100,7 +135,9 @@ const HasilTryoutScreen = ({ navigation }) => {
           </View>
         </View>
 
+        {/* MAIN CONTENT */}
         <View style={styles.mainContent}>
+          {/* FILTER */}
           <View style={styles.filterContainer}>
             <Text style={styles.sectionTitle2}>Filter Tryout</Text>
 
@@ -114,22 +151,18 @@ const HasilTryoutScreen = ({ navigation }) => {
                   : uniqueTryoutIds.find(f => f.id === filterType)?.title ||
                     filterType}
               </Text>
-              <Ionicons
-                name="chevron-down"
-                size={18}
-                color="#fff"
-                style={{ marginLeft: 5 }}
-              />
+              <Ionicons name="chevron-down" size={18} color="#fff" />
             </TouchableOpacity>
           </View>
 
+          {/* LIST RESULT */}
           {isLoading ? (
             <View style={{ marginTop: 40 }}>
               <ActivityIndicator size="large" color="#B71C1C" />
               <Text
                 style={{ textAlign: 'center', marginTop: 10, color: '#fff' }}
               >
-                Memuat hasil tryout...
+                Memuat data...
               </Text>
             </View>
           ) : filteredList.length === 0 ? (
@@ -146,6 +179,7 @@ const HasilTryoutScreen = ({ navigation }) => {
                   navigation.navigate('TryoutDetail', { id: item.id_tryout })
                 }
               >
+                {/* 🔹 Judul & Attempt */}
                 <View
                   style={{
                     flexDirection: 'row',
@@ -158,6 +192,20 @@ const HasilTryoutScreen = ({ navigation }) => {
                   </Text>
                 </View>
 
+                {/* 👤 Nama User (Hanya kalau role mentor) */}
+                {role === 'mentor' && (
+                  <View style={styles.userContainer}>
+                    <Ionicons
+                      name="person-circle"
+                      size={14}
+                      color="#746969ff"
+                      style={{ marginRight: 2 }}
+                    />
+                    <Text style={styles.userName}>{item.nama_user}</Text>
+                  </View>
+                )}
+
+                {/* Score & Badge */}
                 <View
                   style={{
                     flexDirection: 'row',
@@ -168,17 +216,26 @@ const HasilTryoutScreen = ({ navigation }) => {
                   <Text style={styles.score}>
                     {item.nilai?.toFixed(2) ?? '-'}
                   </Text>
-                  <View style={styles.statusBadge}>
+                  <View
+                    style={[
+                      styles.statusBadge,
+                      {
+                        backgroundColor: getStatusColor(item.status_pengerjaan),
+                      },
+                    ]}
+                  >
                     <Text style={styles.statusText}>
-                      {item.status_pengerjaan.toUpperCase()}
+                      {item.status_pengerjaan.replace('_', ' ').toUpperCase()}
                     </Text>
                   </View>
                 </View>
 
+                {/* Date */}
                 <Text style={styles.dateText}>
                   {moment(item.tanggal_pengerjaan).format('DD MMM YYYY, HH:mm')}
                 </Text>
 
+                {/* Detail */}
                 <View style={styles.detailRow}>
                   <View style={styles.detailItem}>
                     <Text style={styles.detailLabel}>Benar</Text>
@@ -204,8 +261,6 @@ const HasilTryoutScreen = ({ navigation }) => {
           )}
         </View>
       </ScrollView>
-      // ... kode sama seperti sebelumnya, hanya bagian modal dan style yang
-      diupdate
       <Modal
         visible={filterModalVisible}
         animationType="slide"
@@ -255,6 +310,18 @@ const HasilTryoutScreen = ({ navigation }) => {
       </Modal>
     </LinearGradient>
   );
+};
+const getStatusColor = status => {
+  switch (status?.toLowerCase()) {
+    case 'submitted':
+      return '#4CAF50'; // Hijau
+    case 'ongoing':
+      return '#FFC107'; // Kuning
+    case 'time_up':
+      return '#F44336'; // Merah
+    default:
+      return '#9E9E9E'; // Abu-abu
+  }
 };
 
 const styles = StyleSheet.create({
@@ -354,7 +421,7 @@ const styles = StyleSheet.create({
   score: {
     fontSize: 46,
     fontWeight: '900',
-    color: '#9D2828',
+    color: '#000000ff',
   },
   statusBadge: {
     backgroundColor: '#9D2828',
@@ -391,8 +458,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
   },
-
-  // Modal styles untuk filter dropdown sebagai modal
   modalBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.45)',
@@ -442,6 +507,20 @@ const styles = StyleSheet.create({
   modalItemTextSelected: {
     color: '#fff',
     fontWeight: 'bold',
+  },
+  userContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffe5e5',
+    paddingVertical: 4,
+    paddingHorizontal: 4,
+    borderRadius: 6,
+    alignSelf: 'flex-start',
+  },
+  userName: {
+    fontSize: 12,
+    color: '#5f5252ff',
+    fontWeight: '600',
   },
 });
 

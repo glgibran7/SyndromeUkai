@@ -26,7 +26,6 @@ const TryoutScreen = ({ navigation }) => {
   const [tryoutList, setTryoutList] = useState([]);
   const [filteredList, setFilteredList] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterType, setFilterType] = useState('Semua');
   const [user, setUser] = useState({
     name: 'Peserta',
     paket: 'Premium',
@@ -40,6 +39,9 @@ const TryoutScreen = ({ navigation }) => {
   const [isStarting, setIsStarting] = useState(false);
   const [filterTryoutModal, setFilterTryoutModal] = useState(false);
   const [selectedTryoutFilter, setSelectedTryoutFilter] = useState('all');
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [filterType, setFilterType] = useState('Semua');
+  const [tryoutFilterList, setTryoutFilterList] = useState([]);
 
   useEffect(() => {
     const getUserData = async () => {
@@ -91,6 +93,15 @@ const TryoutScreen = ({ navigation }) => {
 
       setTryoutList(updatedList);
       setFilteredList(updatedList);
+      const uniqueTryoutIds = [
+        { id: 'Semua', title: 'Semua' },
+        ...Array.from(new Set(updatedList.map(i => i.id_tryout))).map(id => {
+          const firstItem = updatedList.find(item => item.id_tryout === id);
+          return { id: id, title: firstItem?.judul || `Tryout ${id}` };
+        }),
+      ];
+
+      setTryoutFilterList(uniqueTryoutIds);
     } catch (error) {
       Alert.alert('Error', 'Gagal mengambil data tryout');
     } finally {
@@ -108,7 +119,6 @@ const TryoutScreen = ({ navigation }) => {
     setRefreshing(false);
   };
 
-  // Filter & search
   useEffect(() => {
     let data = tryoutList;
 
@@ -118,10 +128,8 @@ const TryoutScreen = ({ navigation }) => {
       );
     }
 
-    if (filterType === 'Farmasi') {
-      data = data.filter(item => item.kategori === 'Farmasi');
-    } else if (filterType === 'Simulasi') {
-      data = data.filter(item => item.kategori === 'Simulasi');
+    if (filterType !== 'Semua') {
+      data = data.filter(item => item.id_tryout === filterType);
     }
 
     setFilteredList(data);
@@ -264,25 +272,18 @@ const TryoutScreen = ({ navigation }) => {
           <View style={styles.filterContainer}>
             <Text style={styles.sectionTitle2}>Daftar Tryout</Text>
 
-            {['Semua', 'Farmasi', 'Simulasi'].map(type => (
-              <TouchableOpacity
-                key={type}
-                style={[
-                  styles.filterButton,
-                  filterType === type && styles.filterActive,
-                ]}
-                onPress={() => setFilterType(type)}
-              >
-                <Text
-                  style={[
-                    styles.filterText,
-                    filterType === type && styles.filterTextActive,
-                  ]}
-                >
-                  {type}
-                </Text>
-              </TouchableOpacity>
-            ))}
+            <TouchableOpacity
+              style={[styles.filterButton, styles.filterActive]}
+              onPress={() => setFilterModalVisible(true)}
+            >
+              <Text style={[styles.filterText, styles.filterTextActive]}>
+                {filterType === 'Semua'
+                  ? 'Semua'
+                  : tryoutFilterList.find(f => f.id === filterType)?.title ||
+                    filterType}
+              </Text>
+              <Ionicons name="chevron-down" size={18} color="#fff" />
+            </TouchableOpacity>
           </View>
 
           {isLoading ? (
@@ -470,6 +471,50 @@ const TryoutScreen = ({ navigation }) => {
           </View>
         </View>
       </Modal>
+      <Modal
+        visible={filterModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setFilterModalVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalBackdrop}
+          activeOpacity={1}
+          onPressOut={() => setFilterModalVisible(false)}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Pilih Tryout</Text>
+              <TouchableOpacity onPress={() => setFilterModalVisible(false)}>
+                <Ionicons name="close" size={24} color="#333" />
+              </TouchableOpacity>
+            </View>
+
+            {tryoutFilterList.map(item => (
+              <TouchableOpacity
+                key={item.id}
+                style={[
+                  styles.modalItem,
+                  filterType === item.id && styles.modalItemSelected,
+                ]}
+                onPress={() => {
+                  setFilterType(item.id);
+                  setFilterModalVisible(false);
+                }}
+              >
+                <Text
+                  style={[
+                    styles.modalItemText,
+                    filterType === item.id && styles.modalItemTextSelected,
+                  ]}
+                >
+                  {item.title}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </LinearGradient>
   );
 };
@@ -521,15 +566,22 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   filterButton: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 25,
     borderWidth: 1,
     borderColor: '#000000ff',
+    marginRight: 8,
+    minWidth: 90,
   },
   filterText: {
     color: '#000000ff',
-    fontSize: 12,
+    fontSize: 16,
+    fontWeight: '600',
+    marginRight: 6,
   },
   filterActive: {
     backgroundColor: '#000000ff',
@@ -669,6 +721,53 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 15,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'center',
+    paddingHorizontal: 30,
+  },
+  modalContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    maxHeight: 350,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 10,
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#9D2828',
+  },
+  modalItem: {
+    paddingVertical: 14,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    marginVertical: 4,
+    backgroundColor: '#F7F7F7',
+  },
+  modalItemSelected: {
+    backgroundColor: '#9D2828',
+  },
+  modalItemText: {
+    fontSize: 16,
+    color: '#333',
+  },
+  modalItemTextSelected: {
+    color: '#fff',
+    fontWeight: 'bold',
   },
 });
 
