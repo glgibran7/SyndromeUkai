@@ -36,6 +36,7 @@ const ExamScreen = ({ navigation, route }) => {
 
   const [answersStatus, setAnswersStatus] = useState([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [isPrefilled, setIsPrefilled] = useState(false);
 
   // State baru untuk modal hasil tryout
   const [result, setResult] = useState(null);
@@ -72,47 +73,61 @@ const ExamScreen = ({ navigation, route }) => {
     saveProgress();
   }, [answersStatus]);
 
+  const refreshAttempt = async () => {
+    try {
+      const res = await Api.post(`/tryout/${tryout.id_tryout}/attempts/start`);
+      return res.data.data; // balikan attempt fresh dari server
+    } catch (err) {
+      console.error('Gagal refresh attempt:', err);
+      return attempt; // fallback
+    }
+  };
+
   useEffect(() => {
     const fetchQuestions = async () => {
       setIsLoadingQuestions(true);
+
       try {
+        // 🔥 Always fetch latest attempt data
+        const updatedAttempt = await refreshAttempt();
+
         const response = await Api.get(`/tryout/${tryout.id_tryout}/questions`);
         const fetchedQuestions = response.data.data || [];
 
         setQuestions(fetchedQuestions);
 
-        const jawabanUser = attempt.jawaban_user || {};
+        const jawabanUser = updatedAttempt.jawaban_user || {};
 
         const newAnswersStatus = fetchedQuestions.map(q => {
           const opsiKeys = Object.keys(q.opsi || {});
-
           const key = `soal_${q.nomor_urut}`;
 
-          const jawaban = jawabanUser[key]?.jawaban || null;
+          const jawaban = jawabanUser[key]?.jawaban?.toUpperCase() || null;
           const ragu = jawabanUser[key]?.ragu === 1;
 
-          const selectedIndex = opsiKeys.indexOf(jawaban);
+          const selectedIndex = opsiKeys.findIndex(o => o === jawaban);
 
           return {
-            answered: jawaban !== null && jawaban !== '',
+            answered: selectedIndex !== -1,
             doubt: ragu,
-            selectedOption: selectedIndex >= 0 ? selectedIndex : null,
+            selectedOption: selectedIndex !== -1 ? selectedIndex : null,
           };
         });
 
         setAnswersStatus(newAnswersStatus);
+
+        // ⬇️ Pastikan UI langsung reflect jawaban soal pertama
         setCurrentQuestionIndex(0);
+        setMarkDoubt(newAnswersStatus[0]?.doubt || false);
       } catch (error) {
         console.error('Gagal mengambil soal:', error);
-        setQuestions([]);
-        setAnswersStatus([]);
       } finally {
         setIsLoadingQuestions(false);
       }
     };
 
     fetchQuestions();
-  }, [tryout.id_tryout, attempt.attempt_token]);
+  }, []);
 
   // Timer dan lainnya (tetap sama)
   const [scoreVisible, setScoreVisible] = useState(false);
@@ -296,8 +311,9 @@ const ExamScreen = ({ navigation, route }) => {
             </View>
             <View style={styles.questionHeader}>
               <Text style={styles.questionTitle}>
-                Soal Nomor {currentQuestionIndex + 1}
+                Soal {currentQuestionIndex + 1} dari {questions.length}
               </Text>
+
               <View style={styles.buttonsRow}>
                 <TouchableOpacity
                   style={styles.calcButton}
@@ -352,7 +368,6 @@ const ExamScreen = ({ navigation, route }) => {
               return (
                 <TouchableOpacity
                   key={opt.key}
-                  disabled={false}
                   style={[
                     styles.optionBox,
                     isSelected && styles.optionSelected,
@@ -362,7 +377,10 @@ const ExamScreen = ({ navigation, route }) => {
                   <View style={styles.radioCircle}>
                     {isSelected && <View style={styles.radioDot} />}
                   </View>
-                  <Text style={styles.optionText}>{opt.text}</Text>
+                  <Text style={styles.optionText}>
+                    <Text style={styles.optionLabel}>{opt.key}. </Text>
+                    {opt.text}
+                  </Text>
                 </TouchableOpacity>
               );
             })}
@@ -774,6 +792,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 18,
     letterSpacing: 0.8,
+  },
+  optionLabel: {
+    fontWeight: 'bold',
+    marginRight: 6,
+    color: '#000',
   },
 });
 
