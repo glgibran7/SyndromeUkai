@@ -67,38 +67,53 @@ const TryoutScreen = ({ navigation }) => {
   const fetchTryouts = async () => {
     try {
       setIsLoading(true);
+
+      // Ambil user role dulu
+      const storedUser = await AsyncStorage.getItem('user');
+      const parsedUser = storedUser ? JSON.parse(storedUser) : null;
+
       const response = await Api.get('/tryout/list');
       const list = response.data.data || [];
 
-      // Filter only visible tryouts
+      // Hanya tampilkan visibility open
       const openTryouts = list.filter(to => to.visibility === 'open');
 
-      // Fetch remaining attempts per tryout
-      const updatedList = await Promise.all(
-        openTryouts.map(async to => {
-          try {
-            const attemptRes = await Api.get(
-              `/tryout/${to.id_tryout}/remaining-attempts`,
-            );
-            return {
-              ...to,
-              remaining_attempts: attemptRes.data.data.remaining_attempts,
-            };
-          } catch (err) {
-            console.error('Error fetching remaining attempts:', err);
-            return { ...to, remaining_attempts: null };
-          }
-        }),
-      );
+      let updatedList = [];
+
+      if (parsedUser?.role === 'mentor') {
+        // Hapus duplikat berdasarkan id_tryout
+        updatedList = Array.from(
+          new Map(openTryouts.map(item => [item.id_tryout, item])).values(),
+        );
+      } else {
+        // Peserta → ambil remaining attempts
+        updatedList = await Promise.all(
+          openTryouts.map(async to => {
+            try {
+              const attemptRes = await Api.get(
+                `/tryout/${to.id_tryout}/remaining-attempts`,
+              );
+              return {
+                ...to,
+                remaining_attempts: attemptRes.data.data.remaining_attempts,
+              };
+            } catch (err) {
+              return { ...to, remaining_attempts: null };
+            }
+          }),
+        );
+      }
 
       setTryoutList(updatedList);
       setFilteredList(updatedList);
+
+      // Buat filter dropdown unique
       const uniqueTryoutIds = [
         { id: 'Semua', title: 'Semua' },
-        ...Array.from(new Set(updatedList.map(i => i.id_tryout))).map(id => {
-          const firstItem = updatedList.find(item => item.id_tryout === id);
-          return { id: id, title: firstItem?.judul || `Tryout ${id}` };
-        }),
+        ...updatedList.map(i => ({
+          id: i.id_tryout,
+          title: i.judul,
+        })),
       ];
 
       setTryoutFilterList(uniqueTryoutIds);
@@ -256,6 +271,7 @@ const TryoutScreen = ({ navigation }) => {
 
         <View style={styles.greetingBox}>
           <Text style={styles.sectionTitle}>Tryout</Text>
+          <Text style={styles.subtext}>Tryout ukai untuk anda</Text>
           <View style={styles.searchContainer}>
             <TextInput
               style={styles.searchInput}
@@ -521,21 +537,23 @@ const TryoutScreen = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   greetingBox: {
-    paddingHorizontal: 10,
-    paddingTop: 10,
+    paddingHorizontal: 15,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: 'bold',
-    marginBottom: 10,
+    textAlign: 'center',
     color: '#fff',
   },
+  subtext: { fontSize: 13, color: '#fff', marginTop: 5, textAlign: 'center' },
+
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#f0f0f0b1',
     borderRadius: 15,
     paddingHorizontal: 10,
+    marginTop: 15,
   },
   searchInput: {
     flex: 1,

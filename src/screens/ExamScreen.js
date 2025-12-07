@@ -13,6 +13,7 @@ import {
   Alert,
   RefreshControl,
   BackHandler,
+  NativeModules,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from '@react-native-vector-icons/ionicons';
@@ -26,6 +27,8 @@ import AppModal from './AppModal';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const ExamScreen = ({ navigation, route }) => {
+  const { FlagSecure, ScreenRecord } = NativeModules;
+
   const [refreshing, setRefreshing] = useState(false);
 
   const { tryout, attempt } = route.params;
@@ -58,6 +61,29 @@ const ExamScreen = ({ navigation, route }) => {
   const [doubtCount, setDoubtCount] = useState(0);
 
   const [confirmExitVisible, setConfirmExitVisible] = useState(false);
+
+  // ✅ Proteksi screen capture
+  useEffect(() => {
+    FlagSecure.enable();
+    return () => {
+      FlagSecure.disable();
+    };
+  }, []);
+
+  // ✅ Cek recording tiap 2 detik
+  useEffect(() => {
+    let interval = setInterval(async () => {
+      try {
+        const rec = await ScreenRecord.isRecording();
+        if (rec) {
+          // bisa tambahin aksi kalau ketahuan record
+        }
+      } catch (e) {
+        console.log('check record err', e);
+      }
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const fetchProfile = async () => {

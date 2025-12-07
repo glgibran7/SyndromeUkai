@@ -121,6 +121,7 @@ const HasilTryoutScreen = ({ navigation }) => {
           <Text style={styles.sectionTitle}>
             {role === 'mentor' ? 'Hasil Peserta' : 'Hasil Tryout'}
           </Text>
+          <Text style={styles.subtext}>Lihat hasil tryout anda</Text>
 
           {/* 🔍 Search */}
           <View style={styles.searchContainer}>
@@ -326,21 +327,23 @@ const getStatusColor = status => {
 
 const styles = StyleSheet.create({
   greetingBox: {
-    paddingHorizontal: 10,
-    paddingTop: 10,
+    paddingHorizontal: 15,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: 'bold',
-    marginBottom: 10,
+    textAlign: 'center',
     color: '#fff',
   },
+  subtext: { fontSize: 13, color: '#fff', marginTop: 5, textAlign: 'center' },
+
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#f0f0f0b1',
     borderRadius: 15,
     paddingHorizontal: 10,
+    marginTop: 15,
   },
   searchInput: {
     flex: 1,
