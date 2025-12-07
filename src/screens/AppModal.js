@@ -107,7 +107,7 @@ export default AppModal;
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.55)',
+    backgroundColor: 'rgba(0, 0, 0, 0)',
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 20,

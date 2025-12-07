@@ -639,10 +639,140 @@ const ExamScreen = ({ navigation, route }) => {
                 {result?.nilai ?? '-'}
               </Text>
 
-              <View style={{ marginTop: 16 }}>
-                <Text>Benar: {result?.benar}</Text>
-                <Text>Salah: {result?.salah}</Text>
-                <Text>Total Soal: {result?.total_soal}</Text>
+              <View
+                style={{ marginTop: 20, width: '100%', paddingHorizontal: 10 }}
+              >
+                <Text
+                  style={{
+                    fontSize: 18,
+                    fontWeight: '600',
+                    marginBottom: 16,
+                    color: '#111',
+                    textAlign: 'center',
+                  }}
+                >
+                  Ringkasan Jawaban
+                </Text>
+
+                <View
+                  style={{
+                    width: '100%',
+                    backgroundColor: '#fff',
+                    borderRadius: 14,
+                    paddingVertical: 18,
+                    paddingHorizontal: 20,
+                    borderWidth: 1,
+                    borderColor: '#e5e7eb',
+                    shadowColor: '#000',
+                    shadowOpacity: 0.05,
+                    shadowRadius: 6,
+                    elevation: 4,
+                  }}
+                >
+                  {/* ITEM */}
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      justifyContent: 'space-between',
+                      marginBottom: 12,
+                    }}
+                  >
+                    <Text style={{ fontSize: 16, color: '#6b7280' }}>
+                      Total Soal
+                    </Text>
+                    <Text
+                      style={{ fontSize: 17, fontWeight: '600', color: '#111' }}
+                    >
+                      {result?.total_soal}
+                    </Text>
+                  </View>
+
+                  <View
+                    style={{
+                      height: 1,
+                      backgroundColor: '#f2f2f2',
+                      marginVertical: 6,
+                    }}
+                  />
+
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      justifyContent: 'space-between',
+                      marginBottom: 12,
+                    }}
+                  >
+                    <Text style={{ fontSize: 16, color: '#6b7280' }}>
+                      Benar
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 17,
+                        fontWeight: '600',
+                        color: '#22c55e',
+                      }}
+                    >
+                      {result?.benar}
+                    </Text>
+                  </View>
+
+                  <View
+                    style={{
+                      height: 1,
+                      backgroundColor: '#f2f2f2',
+                      marginVertical: 6,
+                    }}
+                  />
+
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      justifyContent: 'space-between',
+                      marginBottom: 12,
+                    }}
+                  >
+                    <Text style={{ fontSize: 16, color: '#6b7280' }}>
+                      Salah
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 17,
+                        fontWeight: '600',
+                        color: '#ef4444',
+                      }}
+                    >
+                      {result?.salah}
+                    </Text>
+                  </View>
+
+                  <View
+                    style={{
+                      height: 1,
+                      backgroundColor: '#f2f2f2',
+                      marginVertical: 6,
+                    }}
+                  />
+
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <Text style={{ fontSize: 16, color: '#6b7280' }}>
+                      Kosong
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 17,
+                        fontWeight: '600',
+                        color: '#f59e0b',
+                      }}
+                    >
+                      {result?.kosong}
+                    </Text>
+                  </View>
+                </View>
               </View>
             </View>
           </AppModal>
