@@ -276,9 +276,7 @@ const MateriListScreen = ({ route, navigation }) => {
 
           {/* Title & Search */}
           <View style={styles.greetingBox}>
-            <Text style={styles.sectionTitle}>
-              Materi ({user.role === 'mentor' ? 'Mentor' : 'Peserta'})
-            </Text>
+            <Text style={styles.sectionTitle}>Materi</Text>
             <View style={styles.searchContainer}>
               <TextInput
                 style={styles.searchInput}

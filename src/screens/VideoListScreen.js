@@ -437,7 +437,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  greetingBox: { paddingHorizontal: 20 },
+  greetingBox: { paddingHorizontal: 15 },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
@@ -456,7 +456,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     paddingVertical: 20,
     paddingHorizontal: 20,
-    marginTop: 30,
+    marginTop: 20,
     minHeight: height - 200,
     height: '100%',
     borderTopLeftRadius: 30,
