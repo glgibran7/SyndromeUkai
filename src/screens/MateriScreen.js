@@ -289,6 +289,7 @@ const MateriScreen = ({ navigation }) => {
                     onPress={() =>
                       navigation.navigate('MateriList', {
                         id_modul: item.id_modul,
+                        nama_modul: item.title,
                       })
                     }
                   >

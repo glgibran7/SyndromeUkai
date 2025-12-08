@@ -19,6 +19,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Api from '../utils/Api';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import Header from '../components/Header';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { Linking } from 'react-native';
 
 const { height } = Dimensions.get('window');
 
@@ -30,6 +32,7 @@ const MateriListScreen = ({ route, navigation }) => {
   const [filterType, setFilterType] = useState('Semua');
   const [user, setUser] = useState({ name: 'Peserta', role: 'peserta' });
   const [dropdownVisible, setDropdownVisible] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -39,7 +42,7 @@ const MateriListScreen = ({ route, navigation }) => {
   const [judul, setJudul] = useState('');
   const [urlFile, setUrlFile] = useState('');
   const [tipeMateri, setTipeMateri] = useState('document');
-  const [viewerOnly, setViewerOnly] = useState(false);
+  const [isDownloadable, setIsDownloadable] = useState(0);
   const [addLoading, setAddLoading] = useState(false);
 
   // === Fetch Materi ===
@@ -69,26 +72,39 @@ const MateriListScreen = ({ route, navigation }) => {
     }
   };
 
+  const fetchNamaModul = async () => {
+    try {
+      const res = await Api.get(`/modul/${id_modul}`);
+      if (res.data?.data?.nama_modul) {
+        setNamaModul(res.data.data.nama_modul);
+      }
+    } catch (err) {
+      console.log('Gagal ambil nama modul:', err);
+    }
+  };
+
   const getUserData = async () => {
     try {
       const storedUser = await AsyncStorage.getItem('user');
       if (storedUser) {
         const parsedUser = JSON.parse(storedUser);
         setUser({
-          name: parsedUser.nama || 'Peserta',
-          role: parsedUser.role || 'peserta',
+          name: parsedUser.name || parsedUser.nama || 'Mentor' || 'Peserta',
+          role: parsedUser.role || 'Peserta',
         });
-        fetchMateri(parsedUser.role || 'peserta', id_modul);
+
+        fetchMateri(parsedUser.role || 'Peserta', id_modul);
       } else {
-        fetchMateri('peserta', id_modul);
+        fetchMateri('Peserta', id_modul);
       }
     } catch (error) {
       console.error('Gagal mengambil data user:', error);
-      fetchMateri('peserta', id_modul);
+      fetchMateri('Peserta', id_modul);
     }
   };
 
   useEffect(() => {
+    fetchNamaModul();
     getUserData();
   }, [id_modul]);
 
@@ -101,7 +117,7 @@ const MateriListScreen = ({ route, navigation }) => {
       );
     }
     if (filterType === 'Baru') {
-      data = data.filter(item => !item.viewer_only);
+      data = data.filter(item => !item.isDownloadable);
     }
     setFilteredList(data);
   }, [searchQuery, filterType, materiList]);
@@ -126,13 +142,13 @@ const MateriListScreen = ({ route, navigation }) => {
         judul,
         url_file: urlFile,
         visibility: 'open',
-        viewer_only: viewerOnly,
+        is_downloadable: isDownloadable,
       };
       await Api.post('/materi/mentor', payload);
       setAddModal(false);
       setJudul('');
       setUrlFile('');
-      setViewerOnly(false);
+      setIsDownloadable(false);
       fetchMateri(user.role, id_modul);
     } catch (err) {
       console.error('Gagal tambah materi:', err.response?.data || err.message);
@@ -140,6 +156,99 @@ const MateriListScreen = ({ route, navigation }) => {
     } finally {
       setAddLoading(false);
     }
+  };
+
+  // Auto generate judul
+  const [tanggalMateri, setTanggalMateri] = useState(new Date());
+  const [nickname, setNickname] = useState('');
+  const [namaModul, setNamaModul] = useState('');
+
+  const formatTanggal = date => {
+    const bulan = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return `${date.getDate()} ${bulan[date.getMonth()]} ${date
+      .getFullYear()
+      .toString()
+      .slice(-2)}`;
+  };
+
+  const generateJudulMateri = () => {
+    const date = tanggalMateri || new Date();
+
+    const bulan = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'Mei',
+      'Jun',
+      'Jul',
+      'Agu',
+      'Sep',
+      'Okt',
+      'Nov',
+      'Des',
+    ];
+
+    const formattedDate = `${String(date.getDate()).padStart(2, '0')} ${
+      bulan[date.getMonth()]
+    } ${String(date.getFullYear()).slice(-2)}`;
+
+    const firstName = user?.name?.trim()?.split(' ')[0] || 'Mentor';
+    const moduleName = namaModul || route.params?.nama_modul || 'Modul';
+
+    return `${formattedDate}_Kak ${firstName}_${moduleName}`.replace(
+      /_+/g,
+      '_',
+    );
+  };
+
+  // Load nickname & modul name
+  useEffect(() => {
+    if (addModal) {
+      setJudul(generateJudulMateri());
+    }
+  }, [tanggalMateri, namaModul, user]);
+
+  const updateDownloadableStatus = async (id_materi, statusSekarang) => {
+    try {
+      const newStatus = statusSekarang ? 0 : 1;
+
+      await Api.put(`/materi/${id_materi}/downloadable`, {
+        is_downloadable: newStatus,
+      });
+
+      fetchMateri(user.role, id_modul);
+    } catch (err) {
+      console.log(err);
+      Alert.alert('Gagal', 'Tidak dapat mengubah status downloadable');
+    }
+  };
+
+  const getDirectDownloadUrl = url => {
+    try {
+      const fileId = url.match(/\/d\/(.*?)\//)[1];
+      return `https://drive.google.com/uc?export=download&id=${fileId}`;
+    } catch {
+      return url;
+    }
+  };
+
+  const handleDownload = item => {
+    const downloadUrl = getDirectDownloadUrl(item.url_file);
+    Linking.openURL(downloadUrl);
   };
 
   return (
@@ -192,7 +301,7 @@ const MateriListScreen = ({ route, navigation }) => {
                 <View style={styles.filterContainer}>
                   <Text style={styles.sectionTitle2}>Daftar Materi</Text>
 
-                  <TouchableOpacity
+                  {/* <TouchableOpacity
                     style={[
                       styles.filterButton,
                       filterType === 'Semua' && styles.filterActive,
@@ -207,24 +316,7 @@ const MateriListScreen = ({ route, navigation }) => {
                     >
                       Semua
                     </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[
-                      styles.filterButton,
-                      filterType === 'Baru' && styles.filterActive,
-                    ]}
-                    onPress={() => setFilterType('Baru')}
-                  >
-                    <Text
-                      style={[
-                        styles.filterText,
-                        filterType === 'Baru' && styles.filterTextActive,
-                      ]}
-                    >
-                      Baru Dibaca
-                    </Text>
-                  </TouchableOpacity>
+                  </TouchableOpacity> */}
 
                   {user.role === 'mentor' && (
                     <TouchableOpacity
@@ -232,7 +324,14 @@ const MateriListScreen = ({ route, navigation }) => {
                         styles.filterButton,
                         { backgroundColor: 'green' },
                       ]}
-                      onPress={() => setAddModal(true)}
+                      onPress={() => {
+                        setNamaModul(route.params?.nama_modul || namaModul);
+                        setAddModal(true);
+
+                        setTimeout(() => {
+                          setJudul(generateJudulMateri());
+                        }, 200);
+                      }}
                     >
                       <Text style={{ color: '#fff', fontSize: 12 }}>
                         + Tambah Materi
@@ -279,9 +378,95 @@ const MateriListScreen = ({ route, navigation }) => {
                             />
                             <View style={{ flex: 1 }}>
                               <Text style={styles.menuTitle}>{item.judul}</Text>
-                              <Text style={styles.menuDesc}>
-                                {item.tipe_materi}
-                              </Text>
+
+                              {/* Subinfo */}
+                              <View
+                                style={{
+                                  flexDirection: 'row',
+                                  alignItems: 'center',
+                                  marginTop: 4,
+                                }}
+                              >
+                                <View
+                                  style={{
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    gap: 8,
+                                    marginTop: 4,
+                                  }}
+                                >
+                                  <Text style={styles.menuDesc}>
+                                    {item.tipe_materi}
+                                  </Text>
+
+                                  {/* Badge clickable */}
+                                  {user.role === 'mentor' ? (
+                                    // Mentor tetap bisa toggle status download
+                                    <TouchableOpacity
+                                      onPress={() =>
+                                        updateDownloadableStatus(
+                                          item.id_materi,
+                                          item.is_downloadable,
+                                        )
+                                      }
+                                      style={[
+                                        styles.downloadBadge,
+                                        {
+                                          backgroundColor: item.is_downloadable
+                                            ? '#1E9E43'
+                                            : '#B81C1C',
+                                        },
+                                      ]}
+                                    >
+                                      <Ionicons
+                                        name={
+                                          item.is_downloadable
+                                            ? 'checkmark-circle-outline'
+                                            : 'close-circle-outline'
+                                        }
+                                        size={13}
+                                        color="#fff"
+                                      />
+                                      <Text style={styles.badgeText}>
+                                        {item.is_downloadable
+                                          ? 'Download On'
+                                          : 'Off'}
+                                      </Text>
+                                    </TouchableOpacity>
+                                  ) : (
+                                    // Peserta: hanya tampilkan tombol download jika boleh
+                                    item.is_downloadable == 1 && (
+                                      <TouchableOpacity
+                                        onPress={() => handleDownload(item)}
+                                        style={{
+                                          backgroundColor: '#1E9E43',
+                                          paddingVertical: 6,
+                                          paddingHorizontal: 10,
+                                          borderRadius: 10,
+                                          flexDirection: 'row',
+                                          alignItems: 'center',
+                                          gap: 6,
+                                        }}
+                                      >
+                                        <Ionicons
+                                          name="download-outline"
+                                          size={16}
+                                          color="#fff"
+                                        />
+                                        <Text
+                                          style={{
+                                            color: '#fff',
+                                            fontSize: 12,
+                                            fontWeight: '600',
+                                          }}
+                                        >
+                                          Download
+                                        </Text>
+                                      </TouchableOpacity>
+                                    )
+                                  )}
+                                </View>
+                              </View>
                             </View>
                           </View>
                         </LinearGradient>
@@ -295,68 +480,96 @@ const MateriListScreen = ({ route, navigation }) => {
         </ScrollView>
 
         {/* Modal Tambah Materi */}
-        <Modal
-          visible={addModal}
-          animationType="slide"
-          transparent={true}
-          onRequestClose={() => setAddModal(false)}
-        >
+        <Modal visible={addModal} transparent animationType="fade">
           <View style={styles.modalOverlay}>
-            <View style={styles.modalBox}>
-              <Text style={styles.modalTitle}>Tambah Materi</Text>
-              <TextInput
-                style={styles.modalInput}
-                placeholder="Judul"
-                value={judul}
-                onChangeText={setJudul}
-              />
-              <TextInput
-                style={styles.modalInput}
-                placeholder="URL File"
-                value={urlFile}
-                onChangeText={setUrlFile}
-              />
+            <View style={styles.newModalContainer}>
+              {/* Header */}
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Tambah Materi</Text>
+              </View>
+
+              {/* Input Tanggal */}
               <TouchableOpacity
-                onPress={() => setViewerOnly(!viewerOnly)}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  marginBottom: 15,
-                }}
+                onPress={() => setShowDatePicker(true)}
+                style={styles.inputField}
               >
-                <Ionicons
-                  name={viewerOnly ? 'checkbox' : 'square-outline'}
-                  size={20}
-                  color="#000"
-                  style={{ marginRight: 8 }}
-                />
-                <Text>Viewer Only</Text>
+                <Text
+                  style={[
+                    styles.inputText,
+                    !tanggalMateri && { color: '#aaa' },
+                  ]}
+                >
+                  {tanggalMateri ? formatTanggal(tanggalMateri) : 'dd/mm/yyyy'}
+                </Text>
+                <Ionicons name="calendar-outline" size={20} color="#555" />
               </TouchableOpacity>
 
-              <View
-                style={{ flexDirection: 'row', justifyContent: 'flex-end' }}
-              >
+              {/* Input URL */}
+              <View style={styles.inputField}>
+                <TextInput
+                  placeholder="URL atau Path File"
+                  placeholderTextColor="#999"
+                  style={styles.inputBox}
+                  value={urlFile}
+                  onChangeText={setUrlFile}
+                />
+              </View>
+
+              {/* Switch Option */}
+              <View style={styles.switchRow}>
+                <Text style={styles.switchLabel}>Dapat di-download?</Text>
                 <TouchableOpacity
-                  onPress={() => setAddModal(false)}
-                  style={[styles.filterButton, { marginRight: 10 }]}
+                  onPress={() => setIsDownloadable(isDownloadable ? 0 : 1)}
                 >
-                  <Text>Batal</Text>
+                  <View
+                    style={[
+                      styles.switchTrack,
+                      isDownloadable && styles.switchActive,
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.switchThumb,
+                        isDownloadable && styles.switchThumbActive,
+                      ]}
+                    />
+                  </View>
                 </TouchableOpacity>
+              </View>
+
+              {showDatePicker && (
+                <DateTimePicker
+                  value={tanggalMateri}
+                  mode="date"
+                  display="calendar"
+                  onChange={(event, selectedDate) => {
+                    setShowDatePicker(false);
+                    if (selectedDate) {
+                      setTanggalMateri(selectedDate);
+                      setJudul(generateJudulMateri());
+                    }
+                  }}
+                />
+              )}
+
+              {/* Buttons */}
+              <View style={styles.modalFooter}>
                 <TouchableOpacity
-                  onPress={handleAddMateri}
+                  style={styles.cancelBtn}
+                  onPress={() => setAddModal(false)}
+                >
+                  <Text style={styles.cancelText}>Batal</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
                   disabled={addLoading}
-                  style={[
-                    styles.filterButton,
-                    {
-                      backgroundColor: '#9D2828',
-                      opacity: addLoading ? 0.7 : 1,
-                    },
-                  ]}
+                  onPress={handleAddMateri}
+                  style={[styles.saveBtn, addLoading && { opacity: 0.6 }]}
                 >
                   {addLoading ? (
                     <ActivityIndicator color="#fff" />
                   ) : (
-                    <Text style={{ color: '#fff' }}>Simpan</Text>
+                    <Text style={styles.saveText}>Simpan</Text>
                   )}
                 </TouchableOpacity>
               </View>
@@ -369,7 +582,7 @@ const MateriListScreen = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  greetingBox: { paddingHorizontal: 20 },
+  greetingBox: { paddingHorizontal: 15 },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
@@ -391,6 +604,8 @@ const styles = StyleSheet.create({
     marginTop: 30,
     minHeight: height - 200,
     height: '100%',
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
   },
   filterContainer: {
     flexDirection: 'row',
@@ -448,6 +663,183 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 10,
     marginBottom: 15,
+  },
+  datePicker: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 15,
+    backgroundColor: '#fff',
+  },
+  checkboxRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  cancelBtn: {
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: '#aaa',
+    width: '48%',
+    alignItems: 'center',
+  },
+  saveBtn: {
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: '#9D2828',
+    width: '48%',
+    alignItems: 'center',
+  },
+  modalBtnText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  newModalContainer: {
+    width: '90%',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    paddingVertical: 20,
+    paddingHorizontal: 15,
+  },
+
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+
+  inputField: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 15,
+  },
+
+  inputText: {
+    fontSize: 14,
+    color: '#000',
+  },
+
+  inputBox: {
+    flex: 1,
+    fontSize: 14,
+    color: '#000',
+  },
+
+  switchRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#f7f7f7',
+    borderRadius: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    marginBottom: 20,
+  },
+
+  switchLabel: {
+    fontSize: 14,
+    color: '#000',
+  },
+
+  switchTrack: {
+    width: 48,
+    height: 26,
+    borderRadius: 20,
+    backgroundColor: '#b5b5b5',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
+
+  switchActive: {
+    backgroundColor: '#4CAF50',
+  },
+
+  switchThumb: {
+    width: 22,
+    height: 22,
+    borderRadius: 50,
+    backgroundColor: '#fff',
+    alignSelf: 'flex-start',
+  },
+
+  switchThumbActive: {
+    alignSelf: 'flex-end',
+  },
+
+  modalFooter: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 10,
+  },
+
+  cancelBtn: {
+    backgroundColor: '#e6e6e6',
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 8,
+  },
+
+  cancelText: {
+    color: '#000',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+
+  saveBtn: {
+    backgroundColor: '#1E6FF9',
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 8,
+  },
+
+  saveText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  badgeDownload: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1E9E43',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+    marginLeft: 8,
+  },
+
+  badgeText: {
+    color: '#fff',
+    fontSize: 10,
+    marginLeft: 4,
+    fontWeight: '600',
+  },
+  downloadBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+  },
+
+  badgeText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '600',
+    marginLeft: 6,
   },
 });
 
