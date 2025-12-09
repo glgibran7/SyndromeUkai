@@ -355,12 +355,39 @@ const TryoutScreen = ({ navigation }) => {
                             marginTop: 4,
                           }}
                         >
-                          <Text style={styles.menuDesc}>
-                            📝 {item.jumlah_soal} Soal
-                          </Text>
-                          <Text style={styles.menuDesc}>
-                            ⏳ {item.durasi} Menit
-                          </Text>
+                          <View
+                            style={{
+                              flexDirection: 'row',
+                              alignItems: 'center',
+                              gap: 4,
+                            }}
+                          >
+                            <Ionicons
+                              name="document-text-outline"
+                              size={14}
+                              color="#fff"
+                            />
+                            <Text style={styles.menuDesc}>
+                              {item.jumlah_soal} Soal
+                            </Text>
+                          </View>
+
+                          <View
+                            style={{
+                              flexDirection: 'row',
+                              alignItems: 'center',
+                              gap: 4,
+                            }}
+                          >
+                            <Ionicons
+                              name="time-outline"
+                              size={14}
+                              color="#fff"
+                            />
+                            <Text style={styles.menuDesc}>
+                              Durasi: {item.durasi} Menit
+                            </Text>
+                          </View>
                         </View>
                         <View
                           style={{ flexDirection: 'row', marginTop: 6, gap: 8 }}
@@ -445,16 +472,53 @@ const TryoutScreen = ({ navigation }) => {
                 </Text>
 
                 <View style={styles.detailBox}>
-                  <Text style={styles.modalInfo}>
-                    📝 {selectedTryout.jumlah_soal} Soal
-                  </Text>
-                  <Text style={styles.modalInfo}>
-                    ⏳ Durasi: {selectedTryout.durasi} Menit
-                  </Text>
-                  <Text style={styles.modalInfo}>
-                    🎯 Attempt Tersisa:{' '}
-                    {selectedTryout.remaining_attempts ?? '-'}
-                  </Text>
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 6,
+                      marginBottom: 5,
+                    }}
+                  >
+                    <Ionicons
+                      name="document-text-outline"
+                      size={18}
+                      color="#444"
+                    />
+                    <Text style={styles.modalInfo}>
+                      {selectedTryout.jumlah_soal} Soal
+                    </Text>
+                  </View>
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 6,
+                      marginBottom: 5,
+                    }}
+                  >
+                    <Ionicons name="time-outline" size={18} color="#444" />
+                    <Text style={styles.modalInfo}>
+                      Durasi: {selectedTryout.durasi} Menit
+                    </Text>
+                  </View>
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 6,
+                    }}
+                  >
+                    <Ionicons
+                      name="checkmark-done-outline"
+                      size={18}
+                      color="#444"
+                    />
+                    <Text style={styles.modalInfo}>
+                      Attempt Tersisa:{' '}
+                      {selectedTryout.remaining_attempts ?? '-'}
+                    </Text>
+                  </View>
                 </View>
 
                 {isStarting ? (

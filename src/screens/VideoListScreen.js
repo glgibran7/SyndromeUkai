@@ -25,22 +25,38 @@ import Header from '../components/Header';
 
 const { height } = Dimensions.get('window');
 
-const Avatar = ({ size = 35, initial = 'U' }) => (
-  <View
-    style={{
-      width: size,
-      height: size,
-      borderRadius: size / 2,
-      backgroundColor: '#0b62e4',
-      justifyContent: 'center',
-      alignItems: 'center',
-    }}
-  >
-    <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>
-      {initial}
-    </Text>
-  </View>
-);
+const Avatar = ({ size = 35, imageUrl = null, fallback = 'U' }) => {
+  return (
+    <View>
+      {imageUrl ? (
+        <Image
+          source={{ uri: imageUrl }}
+          style={{
+            width: size,
+            height: size,
+            borderRadius: size / 2,
+            backgroundColor: '#ddd',
+          }}
+        />
+      ) : (
+        <View
+          style={{
+            width: size,
+            height: size,
+            borderRadius: size / 2,
+            backgroundColor: '#0b62e4',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 14 }}>
+            {fallback}
+          </Text>
+        </View>
+      )}
+    </View>
+  );
+};
 
 const VideoListScreen = ({ route, navigation }) => {
   const { id_modul } = route.params;
@@ -248,7 +264,7 @@ const VideoListScreen = ({ route, navigation }) => {
               <View style={styles.mainContent}>
                 <View style={styles.filterContainer}>
                   <Text style={styles.sectionTitle2}>Daftar Video</Text>
-                  <TouchableOpacity
+                  {/* <TouchableOpacity
                     style={[
                       styles.filterButton,
                       filterType === 'Semua' && styles.filterActive,
@@ -279,7 +295,7 @@ const VideoListScreen = ({ route, navigation }) => {
                     >
                       Baru di Tonton
                     </Text>
-                  </TouchableOpacity>
+                  </TouchableOpacity> */}
 
                   {user.role === 'mentor' && (
                     <TouchableOpacity
@@ -330,7 +346,7 @@ const VideoListScreen = ({ route, navigation }) => {
                             <Text style={styles.videoTitle} numberOfLines={2}>
                               {item.judul}
                             </Text>
-                            <Text style={styles.videoMeta}>UKAI SYNDROME</Text>
+                            <Text style={styles.videoMeta}>Ukai Syndrome</Text>
                           </View>
                           <Ionicons
                             name="ellipsis-vertical"
@@ -485,13 +501,13 @@ const styles = StyleSheet.create({
   filterText: { color: '#000000ff', fontSize: 12 },
   filterActive: { backgroundColor: '#000000ff' },
   filterTextActive: { color: '#fff' },
-  videoList: { flexDirection: 'column', gap: 20 },
+  videoList: { flexDirection: 'column', gap: 12 },
   thumbnailWrapper: { position: 'relative' },
   thumbnail: {
     width: '100%',
-    height: 200,
+    height: 120,
     resizeMode: 'contain',
-    borderRadius: 8,
+    borderRadius: 10,
     backgroundColor: '#9D2828',
   },
   videoInfoRow: {
@@ -501,12 +517,12 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   videoTitle: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
     color: '#000',
     textTransform: 'capitalize',
   },
-  videoMeta: { fontSize: 12, color: '#555', marginTop: 2 },
+  videoMeta: { fontSize: 11, color: '#555', marginTop: 2 },
   scrollTopBtn: {
     position: 'absolute',
     bottom: 20,

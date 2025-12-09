@@ -238,12 +238,11 @@ const MateriListScreen = ({ route, navigation }) => {
   };
 
   const getDirectDownloadUrl = url => {
-    try {
-      const fileId = url.match(/\/d\/(.*?)\//)[1];
-      return `https://drive.google.com/uc?export=download&id=${fileId}`;
-    } catch {
-      return url;
+    const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if (match && match[1]) {
+      return `https://drive.google.com/u/0/uc?id=${match[1]}&export=download`;
     }
+    return url;
   };
 
   const handleDownload = item => {
