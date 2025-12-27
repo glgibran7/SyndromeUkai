@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useContext } from 'react';
 import {
   View,
   Text,
@@ -21,6 +21,7 @@ import Video from 'react-native-video';
 import { WebView } from 'react-native-webview';
 import Api from '../utils/Api';
 import Header from '../components/Header';
+import { ThemeContext } from '../context/ThemeContext';
 
 const { FlagSecure, ScreenRecord } = NativeModules;
 const { height } = Dimensions.get('window');
@@ -51,9 +52,9 @@ const VideoViewer = ({ route, navigation }) => {
     id_paketkelas,
     url_file,
     title = '',
-    channel = 'UKAI',
+    channel = 'Syndrome Ukai',
   } = route?.params || {};
-
+  const { theme } = useContext(ThemeContext);
   const [user, setUser] = useState({ id_user: null, nama: 'Peserta' });
   const [rawComments, setRawComments] = useState([]);
   const [rootComments, setRootComments] = useState([]);
@@ -328,13 +329,19 @@ const VideoViewer = ({ route, navigation }) => {
       <Avatar name={r.nama} size={28} />
       <View style={{ flex: 1, marginLeft: 10 }}>
         <View style={styles.rowSpace}>
-          <Text style={styles.commentName}>{r.nama}</Text>
+          <Text style={[styles.commentName, { color: theme.textPrimary }]}>
+            {r.nama}
+          </Text>
           <Text style={styles.commentTime}>
             {new Date(r.created_at).toLocaleString()}
           </Text>
         </View>
         <Text
-          style={[styles.commentText, r.is_deleted && styles.commentDeleted]}
+          style={[
+            styles.commentText,
+            r.is_deleted && styles.commentDeleted,
+            { color: theme.textSecondary },
+          ]}
         >
           {r.is_deleted
             ? r.deleted_by_mentor
@@ -389,12 +396,14 @@ const VideoViewer = ({ route, navigation }) => {
     const repliesCount = item.replies?.length || 0;
     const expanded = !!expandedReplies[item.id_komentarmateri];
     return (
-      <View style={styles.rootBox}>
+      <View style={[styles.rootBox]}>
         <View style={styles.commentRow}>
           <Avatar name={item.nama} size={28} />
           <View style={{ flex: 1, marginLeft: 12 }}>
             <View style={styles.rowSpace}>
-              <Text style={styles.commentName}>{item.nama}</Text>
+              <Text style={[styles.commentName, { color: theme.textPrimary }]}>
+                {item.nama}
+              </Text>
               <Text style={styles.commentTime}>
                 {new Date(item.created_at).toLocaleString()}
               </Text>
@@ -403,6 +412,7 @@ const VideoViewer = ({ route, navigation }) => {
               style={[
                 styles.commentText,
                 item.is_deleted && styles.commentDeleted,
+                { color: theme.textSecondary },
               ]}
             >
               {item.is_deleted
@@ -475,7 +485,7 @@ const VideoViewer = ({ route, navigation }) => {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#9D2828' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <View style={{ flex: 1 }}>
         <Header navigation={navigation} showBack={true} />
 
@@ -492,30 +502,30 @@ const VideoViewer = ({ route, navigation }) => {
                 originWhitelist={['*']}
                 source={{
                   html: `
-      <html>
-        <head>
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <style>
-            body, html { margin:0; padding:0; height:100%; background:black; }
-            iframe { width:100%; height:100%; border:0; }
-            .block-popout {
-              position: absolute; top:0; right:0; width:120px; height:120px;
-              background: transparent; pointer-events: auto;
-            }
-          </style>
-        </head>
-        <body>
-          <div style="position:relative;width:100%;height:100%;">
-            <iframe 
-              src="${url_file}" 
-              allow="autoplay; fullscreen; encrypted-media" 
-              allowfullscreen>
-            </iframe>
-            <div class="block-popout"></div>
-          </div>
-        </body>
-      </html>
-    `,
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+      body, html { margin:0; padding:0; height:100%; background:black; }
+      iframe { width:100%; height:100%; border:0; }
+      .block-popout {
+        position: absolute; top:0; right:0; width:120px; height:120px;
+        background: transparent; pointer-events: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div style="position:relative;width:100%;height:100%;">
+      <iframe 
+        src="${url_file}" 
+        allow="autoplay; fullscreen; encrypted-media" 
+        allowfullscreen>
+      </iframe>
+      <div class="block-popout"></div>
+    </div>
+  </body>
+</html>
+                `,
                 }}
                 style={{ flex: 1, backgroundColor: '#000' }}
                 javaScriptEnabled
@@ -527,14 +537,14 @@ const VideoViewer = ({ route, navigation }) => {
               />
             ) : (
               <Video
-                key={url_file} // ✅ force reset player saat screen unmount
+                key={url_file}
                 source={{ uri: url_file }}
                 style={{ width: '100%', height: '100%' }}
                 controls
                 resizeMode="contain"
                 paused={paused}
-                playInBackground={false} // ✅ cegah crash
-                playWhenInactive={false} // ✅ cegah crash
+                playInBackground={false}
+                playWhenInactive={false}
                 onLoadStart={() => setVideoLoading(true)}
                 onLoad={() => setVideoLoading(false)}
                 onError={e => {
@@ -551,16 +561,36 @@ const VideoViewer = ({ route, navigation }) => {
             )}
           </View>
 
-          <View style={styles.whiteWrapper}>
-            <View style={styles.infoBox}>
-              <Text style={styles.videoTitle}>{title}</Text>
-              <Text style={styles.videoMeta}>{channel}</Text>
+          <View style={[styles.whiteWrapper, { backgroundColor: theme.card }]}>
+            <View
+              style={[
+                styles.infoBox,
+                {
+                  backgroundColor: theme.card,
+                  borderBottomColor: theme.mode === 'dark' ? '#333' : '#eee',
+                },
+              ]}
+            >
+              <Text style={[styles.videoTitle, { color: theme.textPrimary }]}>
+                {title}
+              </Text>
+              <Text style={[styles.videoMeta, { color: theme.textSecondary }]}>
+                {channel}
+              </Text>
             </View>
 
             <View style={styles.commentInput}>
               <TextInput
                 ref={inputRef}
-                style={styles.commentTextInput}
+                style={[
+                  styles.commentTextInput,
+                  {
+                    backgroundColor:
+                      theme.mode === 'dark' ? '#2A2A2A' : '#f9f9f9',
+                    color: theme.textPrimary,
+                    borderColor: theme.mode === 'dark' ? '#444' : '#ddd',
+                  },
+                ]}
                 placeholder={
                   editingComment
                     ? 'Edit komentar...'
@@ -568,6 +598,7 @@ const VideoViewer = ({ route, navigation }) => {
                     ? `Balas ke ${replyingTo.nama}...`
                     : 'Tulis komentar...'
                 }
+                placeholderTextColor={theme.textSecondary}
                 value={composeText}
                 onChangeText={setComposeText}
                 editable={!sending}
@@ -601,15 +632,28 @@ const VideoViewer = ({ route, navigation }) => {
               )}
             </View>
 
-            <View style={styles.commentsSection}>
+            <View
+              style={[styles.commentsSection, { backgroundColor: theme.card }]}
+            >
               <View style={styles.commentsHeader}>
-                <Text style={styles.commentsTitle}>Komentar</Text>
-                <Text style={styles.commentsCount}>{rawComments.length}</Text>
+                <Text
+                  style={[styles.commentsTitle, { color: theme.textPrimary }]}
+                >
+                  Komentar
+                </Text>
+                <Text
+                  style={[styles.commentsCount, { color: theme.textSecondary }]}
+                >
+                  {rawComments.length}
+                </Text>
               </View>
+
               {loading ? (
                 <ActivityIndicator style={{ marginVertical: 20 }} />
               ) : displayedRoots.length === 0 ? (
-                <Text style={{ color: '#666', paddingVertical: 12 }}>
+                <Text
+                  style={{ color: theme.textSecondary, paddingVertical: 12 }}
+                >
                   Belum ada komentar.
                 </Text>
               ) : (

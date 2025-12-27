@@ -14,6 +14,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import { FlatList } from 'react-native';
 import MentorList from '../components/MentorList';
 import { AuthContext } from '../context/AuthContext';
+import { ThemeContext } from '../context/ThemeContext';
 import Header from '../components/Header';
 
 const { width } = Dimensions.get('window');
@@ -23,6 +24,7 @@ const Home = ({ navigation }) => {
   const flatListRef = useRef(null);
   const [refreshing, setRefreshing] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const { theme } = useContext(ThemeContext);
 
   const { user } = useContext(AuthContext);
 
@@ -76,12 +78,12 @@ const Home = ({ navigation }) => {
   ];
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#9D2828' }}>
+    <SafeAreaView style={{ flex: 1 }}>
       <LinearGradient
-        colors={['#9D2828', '#191919']}
+        colors={theme.gradient.colors}
+        start={theme.gradient.start}
+        end={theme.gradient.end}
         style={{ flex: 1 }}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
       >
         <ScrollView
           style={{ flex: 1 }}
@@ -93,16 +95,21 @@ const Home = ({ navigation }) => {
 
           {/* Greeting */}
           <View style={styles.greetingBox}>
-            <Text style={styles.greeting}>Hi, {user?.name}</Text>
-            <Text style={styles.subtext}>
+            <Text style={[styles.greeting, { color: theme.greetingText }]}>
+              Hi, {user?.name}
+            </Text>
+
+            <Text style={[styles.subtext, { color: theme.greetingText }]}>
               Langkah kecil hari ini menjadi lompatan besar esok hari.
             </Text>
           </View>
 
           {/* Content */}
-          <View style={styles.mainContent}>
+          <View style={[styles.mainContent, { backgroundColor: theme.card }]}>
             {/* Menu */}
-            <Text style={styles.sectionTitle}>Daftar Menu</Text>
+            <Text style={[styles.sectionTitle, { color: theme.sectionTitle }]}>
+              Daftar Menu
+            </Text>
 
             <View style={styles.menuGrid}>
               {menus.map((item, index) => (
@@ -123,7 +130,9 @@ const Home = ({ navigation }) => {
             </View>
 
             {/* Mentor */}
-            <Text style={styles.sectionTitle}>Daftar Mentor</Text>
+            <Text style={[styles.sectionTitle, { color: theme.sectionTitle }]}>
+              Daftar Mentor
+            </Text>
 
             <FlatList
               ref={flatListRef}

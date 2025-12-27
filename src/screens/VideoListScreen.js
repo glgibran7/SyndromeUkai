@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useContext } from 'react';
 import {
   View,
   Text,
@@ -22,6 +22,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Api from '../utils/Api';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import Header from '../components/Header';
+import { ThemeContext } from '../context/ThemeContext';
 
 const { height } = Dimensions.get('window');
 
@@ -59,6 +60,7 @@ const Avatar = ({ size = 35, imageUrl = null, fallback = 'U' }) => {
 };
 
 const VideoListScreen = ({ route, navigation }) => {
+  const { theme } = useContext(ThemeContext);
   const { id_modul } = route.params;
   const [materiList, setMateriList] = useState([]);
   const [filteredList, setFilteredList] = useState([]);
@@ -261,9 +263,18 @@ const VideoListScreen = ({ route, navigation }) => {
               </View>
 
               {/* Filter */}
-              <View style={styles.mainContent}>
+              <View
+                style={[styles.mainContent, { backgroundColor: theme.card }]}
+              >
                 <View style={styles.filterContainer}>
-                  <Text style={styles.sectionTitle2}>Daftar Video</Text>
+                  <Text
+                    style={[
+                      styles.sectionTitle2,
+                      { color: theme.sectionTitle },
+                    ]}
+                  >
+                    Daftar Video
+                  </Text>
                   {/* <TouchableOpacity
                     style={[
                       styles.filterButton,
@@ -343,10 +354,23 @@ const VideoListScreen = ({ route, navigation }) => {
                         <View style={styles.videoInfoRow}>
                           <Avatar size={35} initial="U" />
                           <View style={{ flex: 1 }}>
-                            <Text style={styles.videoTitle} numberOfLines={2}>
+                            <Text
+                              style={[
+                                styles.videoTitle,
+                                { color: theme.sectionTitle },
+                              ]}
+                              numberOfLines={2}
+                            >
                               {item.judul}
                             </Text>
-                            <Text style={styles.videoMeta}>Ukai Syndrome</Text>
+                            <Text
+                              style={[
+                                styles.videoMeta,
+                                { color: theme.sectionTitle },
+                              ]}
+                            >
+                              Ukai Syndrome
+                            </Text>
                           </View>
                           <Ionicons
                             name="ellipsis-vertical"

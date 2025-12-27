@@ -19,6 +19,7 @@ import Header from '../components/Header';
 import { useToast } from '../context/ToastContext';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import { KelasContext } from '../context/KelasContext';
+import { ThemeContext } from '../context/ThemeContext';
 
 import EditModulModal from '../components/EditModulModal';
 import AddModulModal from '../components/AddModulModal';
@@ -28,6 +29,7 @@ const isTablet = width >= 768; // **RESPONSIVE CHECK**
 
 const MateriScreen = ({ navigation }) => {
   const toast = useToast();
+  const { theme } = useContext(ThemeContext);
   const { kelasAktif, isWaliKelas } = useContext(KelasContext);
   const [modulList, setModulList] = useState([]);
   const [filteredList, setFilteredList] = useState([]);
@@ -256,9 +258,11 @@ const MateriScreen = ({ navigation }) => {
           </View>
         </View>
 
-        <View style={styles.mainContent}>
+        <View style={[styles.mainContent, { backgroundColor: theme.card }]}>
           <View style={styles.headerRow}>
-            <Text style={styles.sectionTitle}>Daftar Modul</Text>
+            <Text style={[styles.sectionTitle, { color: theme.sectionTitle }]}>
+              Daftar Modul
+            </Text>
             {user?.role === 'mentor' && (
               <TouchableOpacity
                 onPress={() => setAddModal(true)}

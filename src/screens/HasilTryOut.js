@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import {
   View,
   Text,
@@ -18,10 +18,12 @@ import Header from '../components/Header';
 import Api from '../utils/Api';
 import moment from 'moment';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ThemeContext } from '../context/ThemeContext';
 
 const { height } = Dimensions.get('window');
 
 const HasilTryoutScreen = ({ navigation }) => {
+  const { theme } = useContext(ThemeContext);
   const [hasilList, setHasilList] = useState([]);
   const [filteredList, setFilteredList] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -137,10 +139,12 @@ const HasilTryoutScreen = ({ navigation }) => {
         </View>
 
         {/* MAIN CONTENT */}
-        <View style={styles.mainContent}>
+        <View style={[styles.mainContent, { backgroundColor: theme.card }]}>
           {/* FILTER */}
           <View style={styles.filterContainer}>
-            <Text style={styles.sectionTitle2}>Filter Tryout</Text>
+            <Text style={[styles.sectionTitle2, { color: theme.sectionTitle }]}>
+              Filter Tryout
+            </Text>
 
             <TouchableOpacity
               style={[styles.filterButton, styles.filterActive]}
@@ -161,13 +165,23 @@ const HasilTryoutScreen = ({ navigation }) => {
             <View style={{ marginTop: 40 }}>
               <ActivityIndicator size="large" color="#B71C1C" />
               <Text
-                style={{ textAlign: 'center', marginTop: 10, color: '#fff' }}
+                style={{
+                  textAlign: 'center',
+                  marginTop: 10,
+                  color: theme.textPrimary,
+                }}
               >
                 Memuat data...
               </Text>
             </View>
           ) : filteredList.length === 0 ? (
-            <Text style={{ textAlign: 'center', marginTop: 40, color: '#fff' }}>
+            <Text
+              style={{
+                textAlign: 'center',
+                marginTop: 40,
+                color: theme.textSecondary,
+              }}
+            >
               Tidak ada hasil tryout ditemukan.
             </Text>
           ) : (

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useContext } from 'react';
 import {
   View,
   Text,
@@ -21,10 +21,12 @@ import Ionicons from '@react-native-vector-icons/ionicons';
 import Header from '../components/Header';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Linking } from 'react-native';
+import { ThemeContext } from '../context/ThemeContext';
 
 const { height } = Dimensions.get('window');
 
 const MateriListScreen = ({ route, navigation }) => {
+  const { theme } = useContext(ThemeContext);
   const { id_modul } = route.params;
   const [materiList, setMateriList] = useState([]);
   const [filteredList, setFilteredList] = useState([]);
@@ -289,14 +291,21 @@ const MateriListScreen = ({ route, navigation }) => {
           </View>
 
           {/* Main Content */}
-          <View style={styles.mainContent}>
+          <View style={[styles.mainContent, { backgroundColor: theme.card }]}>
             {loading ? (
               <ActivityIndicator size="large" color="#9D2828" />
             ) : (
               <>
                 {/* Filter + Tambah Materi */}
                 <View style={styles.filterContainer}>
-                  <Text style={styles.sectionTitle2}>Daftar Materi</Text>
+                  <Text
+                    style={[
+                      styles.sectionTitle2,
+                      { color: theme.sectionTitle },
+                    ]}
+                  >
+                    Daftar Materi
+                  </Text>
 
                   {/* <TouchableOpacity
                     style={[

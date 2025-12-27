@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import {
   View,
   Text,
@@ -18,10 +18,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Header from '../components/Header';
 import Api from '../utils/Api'; // sesuaikan path
 import ToastMessage from '../components/ToastMessage';
+import { ThemeContext } from '../context/ThemeContext';
 
 const { height, width } = Dimensions.get('window');
 
 const TryoutScreen = ({ navigation }) => {
+  const { theme } = useContext(ThemeContext);
   const [refreshing, setRefreshing] = useState(false);
   const [tryoutList, setTryoutList] = useState([]);
   const [filteredList, setFilteredList] = useState([]);
@@ -284,9 +286,11 @@ const TryoutScreen = ({ navigation }) => {
           </View>
         </View>
 
-        <View style={styles.mainContent}>
+        <View style={[styles.mainContent, { backgroundColor: theme.card }]}>
           <View style={styles.filterContainer}>
-            <Text style={styles.sectionTitle2}>Daftar Tryout</Text>
+            <Text style={[styles.sectionTitle2, { color: theme.sectionTitle }]}>
+              Daftar Tryout
+            </Text>
 
             <TouchableOpacity
               style={[styles.filterButton, styles.filterActive]}

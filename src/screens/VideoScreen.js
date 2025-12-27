@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useContext } from 'react';
 import {
   View,
   Text,
@@ -18,15 +18,16 @@ import Api from '../utils/Api';
 import Header from '../components/Header';
 import { useToast } from '../context/ToastContext';
 import Ionicons from '@react-native-vector-icons/ionicons';
+import { ThemeContext } from '../context/ThemeContext';
 
 import EditModulModal from '../components/EditModulModal';
 import AddModulModal from '../components/AddModulModal';
-import Video from 'react-native-video';
 
 const { width, height } = Dimensions.get('window');
 const isTablet = width >= 768;
 
 const VideoScreen = ({ navigation }) => {
+  const { theme } = useContext(ThemeContext);
   const toast = useToast();
   const [modulList, setModulList] = useState([]);
   const [filteredList, setFilteredList] = useState([]);
@@ -252,9 +253,11 @@ const VideoScreen = ({ navigation }) => {
           </View>
         </View>
 
-        <View style={styles.mainContent}>
+        <View style={[styles.mainContent, { backgroundColor: theme.card }]}>
           <View style={styles.headerRow}>
-            <Text style={styles.sectionTitle}>Daftar Modul</Text>
+            <Text style={[styles.sectionTitle, { color: theme.sectionTitle }]}>
+              Daftar Modul
+            </Text>
             {user?.role === 'mentor' && (
               <TouchableOpacity
                 onPress={() => setAddModal(true)}
