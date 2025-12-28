@@ -21,6 +21,32 @@ import ToastMessage from '../components/ToastMessage';
 import { ThemeContext } from '../context/ThemeContext';
 
 const { height, width } = Dimensions.get('window');
+const formatTanggalIndo = dateString => {
+  if (!dateString) return '-';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  });
+};
+
+const getTryoutStatus = to => {
+  // sementara: null = boleh diakses
+  if (!to.access_start_at || !to.access_end_at) return 'ongoing';
+
+  const now = new Date();
+
+  const start = new Date(to.access_start_at);
+  start.setHours(0, 0, 0, 0);
+
+  const end = new Date(to.access_end_at);
+  end.setHours(23, 59, 59, 999);
+
+  if (now >= start && now <= end) return 'ongoing';
+  if (now < start) return 'not_started';
+  return 'ended';
+};
 
 const TryoutScreen = ({ navigation }) => {
   const { theme } = useContext(ThemeContext);
@@ -153,12 +179,41 @@ const TryoutScreen = ({ navigation }) => {
   }, [searchQuery, filterType, tryoutList]);
 
   // Saat user pilih tryout, buka modal
-  const handleTryoutPress = tryout => {
-    if (user.role === 'mentor') {
-      return; // mentor tidak bisa membuka modal
+  const handleTryoutPress = async tryout => {
+    if (user.role === 'mentor') return;
+
+    const status = getTryoutStatus(tryout);
+
+    if (status === 'not_started') {
+      showToast(
+        `Tryout belum berlangsung.\nMulai: ${formatTanggalIndo(
+          tryout.access_start_at,
+        )}`,
+        'info',
+      );
+      return;
     }
-    setSelectedTryout(tryout);
-    setModalVisible(true);
+
+    if (status === 'ended') {
+      showToast('Tryout ini sudah berakhir.', 'error');
+      return;
+    }
+
+    try {
+      // fetch ulang remaining attempt (SAMA seperti web)
+      const res = await Api.get(
+        `/tryout/${tryout.id_tryout}/remaining-attempts`,
+      );
+
+      setSelectedTryout({
+        ...tryout,
+        remaining_attempts: res.data.data.remaining_attempts,
+      });
+
+      setModalVisible(true);
+    } catch {
+      showToast('Gagal memuat data attempt.', 'error');
+    }
   };
 
   const fetchAttemptByToken = async (id_tryout, attempt_token) => {
@@ -321,120 +376,197 @@ const TryoutScreen = ({ navigation }) => {
             </Text>
           ) : (
             <View style={styles.menuGrid}>
-              {filteredList.map(item => (
-                <TouchableOpacity
-                  key={item.id_tryout}
-                  activeOpacity={0.8}
-                  onPress={() => handleTryoutPress(item)}
-                  disabled={
-                    item.remaining_attempts === 0 || user.role === 'mentor'
-                  } // disable kalau ga ada attempt
-                >
-                  <LinearGradient
-                    colors={
-                      item.remaining_attempts === 0
-                        ? ['#666', '#444']
-                        : ['#B71C1C', '#7B0D0D']
-                    }
-                    style={styles.menuItem}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
+              {filteredList.map(item => {
+                const status = getTryoutStatus(item);
+
+                return (
+                  <TouchableOpacity
+                    key={item.id_tryout}
+                    activeOpacity={0.8}
+                    onPress={() => {
+                      const status = getTryoutStatus(item);
+
+                      if (user.role === 'mentor') return;
+
+                      if (status === 'not_started') {
+                        showToast(
+                          `Tryout belum dimulai\nMulai: ${formatTanggalIndo(
+                            item.access_start_at,
+                          )}`,
+                          'info',
+                        );
+                        return;
+                      }
+
+                      if (status === 'ended') {
+                        showToast('Tryout ini sudah berakhir.', 'error');
+                        return;
+                      }
+
+                      if (item.remaining_attempts === 0) {
+                        showToast('Attempt tryout sudah habis.', 'error');
+                        return;
+                      }
+
+                      handleTryoutPress(item);
+                    }}
                   >
-                    <View
-                      style={{ flexDirection: 'row', alignItems: 'center' }}
+                    <LinearGradient
+                      colors={
+                        status !== 'ongoing' || item.remaining_attempts === 0
+                          ? ['#666', '#444']
+                          : ['#B71C1C', '#7B0D0D']
+                      }
+                      style={styles.menuItem}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
                     >
-                      <Ionicons
-                        name="document-text-outline"
-                        size={28}
-                        color="#fff"
-                        style={{ marginRight: 12 }}
-                      />
+                      <View
+                        style={{ flexDirection: 'row', alignItems: 'center' }}
+                      >
+                        <Ionicons
+                          name="document-text-outline"
+                          size={28}
+                          color="#fff"
+                          style={{ marginRight: 12 }}
+                        />
 
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.menuTitle}>{item.judul}</Text>
-                        <View
-                          style={{
-                            flexDirection: 'row',
-                            gap: 10,
-                            marginTop: 4,
-                          }}
-                        >
-                          <View
-                            style={{
-                              flexDirection: 'row',
-                              alignItems: 'center',
-                              gap: 4,
-                            }}
-                          >
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.menuTitle}>{item.judul}</Text>
+                          {(() => {
+                            const status = getTryoutStatus(item);
+                            return (
+                              <Text
+                                style={{
+                                  alignSelf: 'flex-start',
+                                  marginTop: 6,
+                                  paddingHorizontal: 10,
+                                  paddingVertical: 3,
+                                  borderRadius: 12,
+                                  fontSize: 12,
+                                  color:
+                                    status === 'ongoing'
+                                      ? '#155724'
+                                      : status === 'not_started'
+                                      ? '#856404'
+                                      : '#721c24',
+                                  backgroundColor:
+                                    status === 'ongoing'
+                                      ? '#d4edda'
+                                      : status === 'not_started'
+                                      ? '#fff3cd'
+                                      : '#f8d7da',
+                                }}
+                              >
+                                {status === 'ongoing'
+                                  ? 'Sedang Berlangsung'
+                                  : status === 'not_started'
+                                  ? 'Belum Dimulai'
+                                  : 'Sudah Berakhir'}
+                              </Text>
+                            );
+                          })()}
+
+                          <View style={styles.timeRow}>
                             <Ionicons
-                              name="document-text-outline"
+                              name="calendar-outline"
                               size={14}
                               color="#fff"
                             />
-                            <Text style={styles.menuDesc}>
-                              {item.jumlah_soal} Soal
+                            <Text style={styles.timeText}>
+                              {formatTanggalIndo(item.access_start_at)} -{' '}
+                              {formatTanggalIndo(item.access_end_at)}
                             </Text>
                           </View>
 
                           <View
                             style={{
                               flexDirection: 'row',
-                              alignItems: 'center',
-                              gap: 4,
+                              gap: 10,
+                              marginTop: 4,
                             }}
                           >
-                            <Ionicons
-                              name="time-outline"
-                              size={14}
-                              color="#fff"
-                            />
-                            <Text style={styles.menuDesc}>
-                              Durasi: {item.durasi} Menit
-                            </Text>
+                            <View
+                              style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                gap: 4,
+                              }}
+                            >
+                              <Ionicons
+                                name="document-text-outline"
+                                size={14}
+                                color="#fff"
+                              />
+                              <Text style={styles.menuDesc}>
+                                {item.jumlah_soal} Soal
+                              </Text>
+                            </View>
+
+                            <View
+                              style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                gap: 4,
+                              }}
+                            >
+                              <Ionicons
+                                name="time-outline"
+                                size={14}
+                                color="#fff"
+                              />
+                              <Text style={styles.menuDesc}>
+                                Durasi: {item.durasi} Menit
+                              </Text>
+                            </View>
                           </View>
-                        </View>
-                        <View
-                          style={{ flexDirection: 'row', marginTop: 6, gap: 8 }}
-                        >
-                          {/* Max attempt tetap ada untuk semua role */}
-                          <Text style={styles.attemptInfo}>
-                            Max Attempt: {item.max_attempt}
-                          </Text>
-
-                          {/* Jika peserta → tampilkan sisa attempt */}
-                          {user.role !== 'mentor' && (
-                            <Text
-                              style={[
-                                styles.attemptInfo,
-                                item.remaining_attempts === 0
-                                  ? styles.attemptZero
-                                  : styles.attemptAvailable,
-                              ]}
-                            >
-                              Sisa: {item.remaining_attempts ?? '-'}
+                          <View
+                            style={{
+                              flexDirection: 'row',
+                              marginTop: 6,
+                              gap: 8,
+                            }}
+                          >
+                            {/* Max attempt tetap ada untuk semua role */}
+                            <Text style={styles.attemptInfo}>
+                              Max Attempt: {item.max_attempt}
                             </Text>
-                          )}
 
-                          {/* Jika mentor → ganti menjadi visibility */}
-                          {user.role === 'mentor' && (
-                            <Text
-                              style={[
-                                styles.attemptInfo,
-                                {
-                                  backgroundColor: '#e3f2fd',
-                                  color: '#0d47a1',
-                                },
-                              ]}
-                            >
-                              Visibility: {item.visibility}
-                            </Text>
-                          )}
+                            {/* Jika peserta → tampilkan sisa attempt */}
+                            {user.role !== 'mentor' && (
+                              <Text
+                                style={[
+                                  styles.attemptInfo,
+                                  item.remaining_attempts === 0
+                                    ? styles.attemptZero
+                                    : styles.attemptAvailable,
+                                ]}
+                              >
+                                Sisa: {item.remaining_attempts ?? '-'}
+                              </Text>
+                            )}
+
+                            {/* Jika mentor → ganti menjadi visibility */}
+                            {user.role === 'mentor' && (
+                              <Text
+                                style={[
+                                  styles.attemptInfo,
+                                  {
+                                    backgroundColor: '#e3f2fd',
+                                    color: '#0d47a1',
+                                  },
+                                ]}
+                              >
+                                Visibility: {item.visibility}
+                              </Text>
+                            )}
+                          </View>
                         </View>
                       </View>
-                    </View>
-                  </LinearGradient>
-                </TouchableOpacity>
-              ))}
+                    </LinearGradient>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           )}
         </View>
@@ -544,7 +676,10 @@ const TryoutScreen = ({ navigation }) => {
                       colors={['#B71C1C', '#7B0D0D']}
                       style={styles.btnStart}
                     >
-                      <TouchableOpacity onPress={confirmStart}>
+                      <TouchableOpacity
+                        onPress={confirmStart}
+                        disabled={selectedTryout?.remaining_attempts === 0}
+                      >
                         <Text style={styles.textStart}>Mulai</Text>
                       </TouchableOpacity>
                     </LinearGradient>
@@ -854,6 +989,18 @@ const styles = StyleSheet.create({
   modalItemTextSelected: {
     color: '#fff',
     fontWeight: 'bold',
+  },
+  timeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
+    gap: 6,
+  },
+
+  timeText: {
+    fontSize: 12,
+    color: '#fff',
+    opacity: 0.9,
   },
 });
 
