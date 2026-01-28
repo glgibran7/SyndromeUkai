@@ -25,6 +25,11 @@ import RenderHtml from 'react-native-render-html';
 import AppModal from './AppModal';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const normalizeHtml = html =>
+  html
+    ?.replace(/\n/g, '<br />')
+    ?.replace(/&nbsp;/g, ' ')
+    ?.replace(/<p><br><\/p>/g, '<br />');
 
 const ExamScreen = ({ navigation, route }) => {
   const { FlagSecure, ScreenRecord } = NativeModules;
@@ -435,7 +440,9 @@ const ExamScreen = ({ navigation, route }) => {
             <View style={{ paddingHorizontal: 16, marginBottom: 12 }}>
               <RenderHtml
                 contentWidth={SCREEN_WIDTH - 32}
-                source={{ html: currentQuestion.pertanyaan || '' }}
+                source={{
+                  html: normalizeHtml(currentQuestion.pertanyaan || ''),
+                }}
                 tagsStyles={{
                   p: {
                     fontSize: 14,
@@ -463,6 +470,9 @@ const ExamScreen = ({ navigation, route }) => {
               return (
                 <TouchableOpacity
                   key={opt.key}
+                  source={{
+                    html: `<b>${opt.key}.</b> ${normalizeHtml(opt.text)}`,
+                  }}
                   style={[
                     styles.optionBox,
                     isSelected && styles.optionSelected,

@@ -31,17 +31,29 @@ const formatTanggalIndo = dateString => {
   });
 };
 
+const formatJam = time => {
+  if (!time) return '';
+  return time;
+};
+
 const getTryoutStatus = to => {
-  // sementara: null = boleh diakses
-  if (!to.access_start_at || !to.access_end_at) return 'ongoing';
+  // Jika date ATAU time null → bebas akses
+  if (
+    !to.access_start_at_date ||
+    !to.access_end_at_date ||
+    !to.access_start_at_time ||
+    !to.access_end_at_time
+  ) {
+    return 'ongoing';
+  }
 
   const now = new Date();
 
-  const start = new Date(to.access_start_at);
-  start.setHours(0, 0, 0, 0);
+  const start = new Date(
+    `${to.access_start_at_date}T${to.access_start_at_time}:00`,
+  );
 
-  const end = new Date(to.access_end_at);
-  end.setHours(23, 59, 59, 999);
+  const end = new Date(`${to.access_end_at_date}T${to.access_end_at_time}:00`);
 
   if (now >= start && now <= end) return 'ongoing';
   if (now < start) return 'not_started';
@@ -365,9 +377,13 @@ const TryoutScreen = ({ navigation }) => {
             <View style={{ marginTop: 40 }}>
               <ActivityIndicator size="large" color="#B71C1C" />
               <Text
-                style={{ textAlign: 'center', marginTop: 10, color: '#000' }}
+                style={{
+                  textAlign: 'center',
+                  marginTop: 10,
+                  color: theme.textPrimary,
+                }}
               >
-                Memuat daftar tryout...
+                Memuat data...
               </Text>
             </View>
           ) : filteredList.length === 0 ? (
@@ -422,51 +438,61 @@ const TryoutScreen = ({ navigation }) => {
                       end={{ x: 1, y: 1 }}
                     >
                       <View
-                        style={{ flexDirection: 'row', alignItems: 'center' }}
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'flex-start',
+                        }}
                       >
                         <Ionicons
                           name="document-text-outline"
-                          size={28}
+                          size={30}
                           color="#fff"
-                          style={{ marginRight: 12 }}
+                          style={{ marginRight: 14, marginTop: 4 }}
                         />
 
                         <View style={{ flex: 1 }}>
+                          {/* JUDUL */}
                           <Text style={styles.menuTitle}>{item.judul}</Text>
-                          {(() => {
-                            const status = getTryoutStatus(item);
-                            return (
-                              <Text
-                                style={{
-                                  alignSelf: 'flex-start',
-                                  marginTop: 6,
-                                  paddingHorizontal: 10,
-                                  paddingVertical: 3,
-                                  borderRadius: 12,
-                                  fontSize: 12,
-                                  color:
-                                    status === 'ongoing'
-                                      ? '#155724'
-                                      : status === 'not_started'
-                                      ? '#856404'
-                                      : '#721c24',
-                                  backgroundColor:
-                                    status === 'ongoing'
-                                      ? '#d4edda'
-                                      : status === 'not_started'
-                                      ? '#fff3cd'
-                                      : '#f8d7da',
-                                }}
-                              >
-                                {status === 'ongoing'
-                                  ? 'Sedang Berlangsung'
-                                  : status === 'not_started'
-                                  ? 'Belum Dimulai'
-                                  : 'Sudah Berakhir'}
-                              </Text>
-                            );
-                          })()}
 
+                          {/* STATUS */}
+                          <View
+                            style={{ marginTop: 6, alignSelf: 'flex-start' }}
+                          >
+                            {(() => {
+                              const status = getTryoutStatus(item);
+                              return (
+                                <Text
+                                  style={{
+                                    paddingHorizontal: 12,
+                                    paddingVertical: 4,
+                                    borderRadius: 20,
+                                    fontSize: 12,
+                                    fontWeight: '600',
+                                    color:
+                                      status === 'ongoing'
+                                        ? '#155724'
+                                        : status === 'not_started'
+                                        ? '#856404'
+                                        : '#721c24',
+                                    backgroundColor:
+                                      status === 'ongoing'
+                                        ? '#d4edda'
+                                        : status === 'not_started'
+                                        ? '#fff3cd'
+                                        : '#f8d7da',
+                                  }}
+                                >
+                                  {status === 'ongoing'
+                                    ? 'Sedang Berlangsung'
+                                    : status === 'not_started'
+                                    ? 'Belum Dimulai'
+                                    : 'Sudah Berakhir'}
+                                </Text>
+                              );
+                            })()}
+                          </View>
+
+                          {/* WAKTU */}
                           <View style={styles.timeRow}>
                             <Ionicons
                               name="calendar-outline"
@@ -474,25 +500,27 @@ const TryoutScreen = ({ navigation }) => {
                               color="#fff"
                             />
                             <Text style={styles.timeText}>
-                              {formatTanggalIndo(item.access_start_at)} -{' '}
-                              {formatTanggalIndo(item.access_end_at)}
+                              {formatTanggalIndo(item.access_start_at_date)}
+                              {item.access_start_at_time
+                                ? ` ${item.access_start_at_time}`
+                                : ''}{' '}
+                              — {formatTanggalIndo(item.access_end_at_date)}
+                              {item.access_end_at_time
+                                ? ` ${item.access_end_at_time}`
+                                : ''}
                             </Text>
                           </View>
 
+                          {/* INFO UTAMA */}
                           <View
                             style={{
                               flexDirection: 'row',
+                              flexWrap: 'wrap',
                               gap: 10,
-                              marginTop: 4,
+                              marginTop: 10,
                             }}
                           >
-                            <View
-                              style={{
-                                flexDirection: 'row',
-                                alignItems: 'center',
-                                gap: 4,
-                              }}
-                            >
+                            <View style={styles.infoChip}>
                               <Ionicons
                                 name="document-text-outline"
                                 size={14}
@@ -503,62 +531,36 @@ const TryoutScreen = ({ navigation }) => {
                               </Text>
                             </View>
 
-                            <View
-                              style={{
-                                flexDirection: 'row',
-                                alignItems: 'center',
-                                gap: 4,
-                              }}
-                            >
+                            <View style={styles.infoChip}>
                               <Ionicons
                                 name="time-outline"
                                 size={14}
                                 color="#fff"
                               />
                               <Text style={styles.menuDesc}>
-                                Durasi: {item.durasi} Menit
+                                {item.durasi} Menit
                               </Text>
                             </View>
-                          </View>
-                          <View
-                            style={{
-                              flexDirection: 'row',
-                              marginTop: 6,
-                              gap: 8,
-                            }}
-                          >
-                            {/* Max attempt tetap ada untuk semua role */}
-                            <Text style={styles.attemptInfo}>
-                              Max Attempt: {item.max_attempt}
-                            </Text>
 
-                            {/* Jika peserta → tampilkan sisa attempt */}
+                            <View style={styles.infoChipSoft}>
+                              <Text style={styles.attemptInfo}>
+                                Max: {item.max_attempt}
+                              </Text>
+                            </View>
+
                             {user.role !== 'mentor' && (
-                              <Text
-                                style={[
-                                  styles.attemptInfo,
-                                  item.remaining_attempts === 0
-                                    ? styles.attemptZero
-                                    : styles.attemptAvailable,
-                                ]}
-                              >
-                                Sisa: {item.remaining_attempts ?? '-'}
-                              </Text>
-                            )}
-
-                            {/* Jika mentor → ganti menjadi visibility */}
-                            {user.role === 'mentor' && (
-                              <Text
-                                style={[
-                                  styles.attemptInfo,
-                                  {
-                                    backgroundColor: '#e3f2fd',
-                                    color: '#0d47a1',
-                                  },
-                                ]}
-                              >
-                                Visibility: {item.visibility}
-                              </Text>
+                              <View style={styles.infoChipSoft}>
+                                <Text
+                                  style={[
+                                    styles.attemptInfo,
+                                    item.remaining_attempts === 0
+                                      ? styles.attemptZero
+                                      : styles.attemptAvailable,
+                                  ]}
+                                >
+                                  Sisa: {item.remaining_attempts ?? '-'}
+                                </Text>
+                              </View>
                             )}
                           </View>
                         </View>
@@ -1001,6 +1003,22 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#fff',
     opacity: 0.9,
+  },
+  infoChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 14,
+  },
+
+  infoChipSoft: {
+    backgroundColor: '#eee',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 14,
   },
 });
 
